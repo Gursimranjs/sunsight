@@ -7,6 +7,8 @@ import { local_frame, sample_at, site_vector } from './engine/light';
 import { formatDeg } from './format';
 import { loadAppData, type AppData } from './state/data';
 import { clampScenario, defaultScenario, tableRange, VIEWS, type Scenario } from './state/scenario';
+import { decodeScenario, encodeScenario } from './state/url';
+import { ShareBar } from './views/ShareBar';
 import { Compare } from './views/Compare';
 import { MissView } from './views/MissView';
 import { Panorama } from './views/Panorama';
@@ -29,10 +31,20 @@ export function App() {
     loadAppData(() => setFixtureTick((x) => x + 1))
       .then((d) => {
         setData(d);
-        setScn(clampScenario(defaultScenario(d.sites[0]?.id ?? null), d.eph.meta));
+        const first = d.sites[0]?.id ?? null;
+        const q = typeof location !== 'undefined' ? location.search : '';
+        const s0 = q ? decodeScenario(q, d.eph.start_ms, first, d.sites.map((x) => x.id)) : defaultScenario(first);
+        setScn(clampScenario(s0, d.eph.meta));
       })
       .catch((e) => setError(String(e)));
   }, []);
+
+  // Keep the scenario in the address bar so a copied link reopens this exact view.
+  useEffect(() => {
+    if (!scn || !data) return;
+    const q = '?' + encodeScenario(scn, data.eph.start_ms);
+    if (q !== location.search) history.replaceState(null, '', q);
+  }, [scn, data]);
 
   const update = (patch: Partial<Scenario>) => setScn((s) => (s && data ? clampScenario({ ...s, ...patch }, data.eph.meta) : s));
   const site = data && scn?.site_id ? data.sites.find((s) => s.id === scn.site_id) ?? null : null;
@@ -136,6 +148,14 @@ export function App() {
               stay_s={shown.series.t_s[shown.series.t_s.length - 1] - shown.series.t_s[0]} t_off_s={scn.t_off_s}
               onTime={(t_off_s) => update({ t_off_s })} />
             <MetricTiles m={shown.metrics} rules={scn.rules} />
+            {fresh && place && (
+              <ShareBar answer={shown} ctx={{
+                fixture, epoch_ms: epochMs, preset: scn.preset, rules: scn.rules, stay_s: scn.stay_s,
+                start_utc: new Date(epochMs + scn.start_s * 1000).toISOString().slice(0, 16) + 'Z',
+                link: location.origin + location.pathname + '?' + encodeScenario(scn, epochMs),
+                site: { id: scn.site_id, name: placeName, lat_deg: place.lat_deg, lon_deg: place.lon_deg, h_m: place.h_m, horizon: place.horizonLabel },
+              }} />
+            )}
           </div>
         )}
         {scn.view === 'sky' && shown && now && place && (
