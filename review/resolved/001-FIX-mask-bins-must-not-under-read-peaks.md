@@ -51,3 +51,7 @@ direction. Update DECISIONS #16 to say this.
 A step (nearest-bin) read-back with [−0.125°, +0.125°) filling also never under-reads, but it changes
 the `horizon_at` contract in both languages and the shared vectors. That needs the owner's approval,
 so write your reasons below and leave this note here rather than switching on your own.
+
+## Resolution
+
+Resolved in 752e373: implemented exactly as proposed. `horizon.py` fills bin k from the window [k*0.25 - 0.25, k*0.25 + 0.25] deg (rays widen by +-0.025 deg, pixels by their circumscribed half-width). Tests 1 and 2 are in `pipeline/tests/test_horizon.py` (`test_far_spike_appears_at_its_direction_and_height`, 27 placements; `test_far_field_never_under_reads_brute_force`). Test 3 (bias vs a 0.1 deg run on the hero site) is scheduled with P17 sensitivity runs. DECISIONS #16 updated.
