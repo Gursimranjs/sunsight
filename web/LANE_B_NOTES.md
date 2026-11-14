@@ -363,6 +363,16 @@ Branch `review-fixes-web`, one commit per finding group. Each fix has a vitest u
 - **Station-elevation cap (4)**: `MAX_MOON_EL_DEG = 20` and `clampMoonElDeg` in `state/scenario.ts`; applied in the rules editor (input `min=0 max=20`, label "°, 0–20", value clamped on change), in `decodeScenario` (`moon_el_deg`) and in `clampScenario` (via `clampRules`, so every path into the scenario is covered). A non-number falls back to the default 10°.
 - **Duplicate compare slots (8)**: `uniqueCompareIds` (first three distinct non-empty ids, in order) is used by `decodeScenario` for `cmp=` and by the Compare view for its slots and its default list, so React/Preact keys (site ids) are unique. It also closes a hole: picking slot 3 while slot 2 was empty used to store `undefined` in the list.
 
+## 6. Tooltips with fixed numbers
+
+**Change**: the glossary moved to `web/src/views/glossary.ts`. `lit`, `contact`, `grazing`, `battery` and `score` are built from the rules in force (lit threshold, station elevation, grazing angle, contact mode, load, depth of discharge, efficiency, weights); `Term` reads the rules from a `RulesContext` that the App provides with `scn.rules`. The Athena story's grid caption now uses `litRuleText(scn.rules)` instead of "at least half". Glossary lookups use own keys only. Test: `web/tests/unit/glossary.test.ts` (default numbers, edited numbers, contact mode `earth`).
+
+| Decision | Value | Reason |
+| --- | --- | --- |
+| Lit threshold wording | "at least 50% of the Sun’s disc" (was "half") | A number that follows the rule; "half" only fits 50 % |
+| Contact mode `earth` | Contact tip says any part of Earth in view and that the station check is off; grazing tip says contact is never graded grazing under this rule | Matches `sample_at` in `light.ts` (earth mode returns clear or blocked only) |
+| Text left fixed | Pipeline facts in the story (e.g. "2 m observer" for the 2027–2030 lit shares), the 2 m astronaut camera, the timeline's "half height" bar for grazing | They describe a pipeline run or a drawing, not a rule |
+
 ## 7. Footer timing
 
 **Change**: `Engine` keeps `lastWindowMs`, set only by window jobs (worker and main-thread paths), and a new `windowTimed()` returns each window answer with its own job time. The App stores that time with the answer it shows, so the footer's "Scored N ten-minute steps in X ms" is the time of exactly the shown window, even when Compare (which also runs window jobs) or a calendar or miss job finished later. Test: `web/tests/unit/engine_timing_split.test.ts`.

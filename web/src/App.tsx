@@ -20,6 +20,7 @@ import { Timeline } from './views/Timeline';
 import { ValidationView } from './views/Validation';
 import { Hero3D } from './views/Hero3D';
 import { Story } from './views/Story';
+import { RulesContext } from './views/Term';
 
 export function App() {
   const [data, setData] = useState<AppData | null>(null);
@@ -102,7 +103,7 @@ export function App() {
   const placeName = site ? site.name : `Custom point ${formatDeg(scn.lat_deg, 3)}, ${formatDeg(scn.lon_deg, 3)}`;
 
   return (
-    <>
+    <RulesContext.Provider value={scn.rules}>
       {fixture && (
         <div class="fixture-banner" role="status" data-testid="fixture-banner">
           Fixture data: these numbers are made up for development and are not real.
@@ -200,6 +201,6 @@ export function App() {
           Sun and Earth positions from {data.manifest.fixture ? 'made-up fixture data' : 'NASA/JPL SPICE kernels'}. All maths runs in your browser; no data leaves it.
         </footer>
       </main>
-    </>
+    </RulesContext.Provider>
   );
 }
