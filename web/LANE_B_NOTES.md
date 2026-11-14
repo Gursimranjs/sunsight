@@ -217,3 +217,29 @@ Checked the files lane A has merged on `main` (no `manifest.json` yet): `sites.j
 | Missing or unreadable file | "Validation not run yet" (unreadable adds the error) | Honest; no placeholder numbers |
 | CSV preview | First 5 rows, fetched when the page opens; download link to the same file under `data/` | "A small table is enough"; same-origin file |
 | Missing fields | Filled with visible defaults ("not stated", "no number yet") | A partial file from the pipeline should still render |
+
+## P18 3D hero view
+
+**Generated files**: `web/src/views/terrain3d.ts` (Three-free geometry: south polar stereographic, sky direction → scene axes, grid layout, bilinear ground height), `web/src/views/Scene3D.tsx` (the Three.js scene; the only file that imports `three`), `web/src/views/Hero3D.tsx` (shell: terrain loading, WebGL check, dynamic `import('./Scene3D')`, buttons, time slider, engine numbers), "3D view" tab (`view=3d`), styles; test `web/tests/unit/terrain3d.test.ts`. New dependencies, exact-pinned: `three@0.186.1`, dev `@types/three@0.186.0` (also in this commit's package.json: `@playwright/test@1.64.1`, `@axe-core/playwright@4.14.0`, used from the e2e package on). Versions picked at least two weeks old; the newest Playwright (1.65.1) was a day old.
+
+**Verification**
+
+- Unit tests: the projection (2R·tan(45° + lat/2), R = 1,737.4 km; x = ρ sin λ, y = ρ cos λ) reproduces `map_x_m`/`map_y_m` of every shipped terrain centre within 1 m and inverts exactly; the sky-direction rule (local north = map (sin λ, cos λ), east = map (cos λ, −sin λ), up = +height; scene X = map x, Y = up, Z = −map y) gives the expected axes at λ = 0° and 90°; a ground point 1 km away at bearing az (computed on the sphere with `local_frame`) appears in the scene at bearing az within 0.05° at every shipped terrain centre, so the Sun's light direction is consistent with the ground; row 0 is the largest map y; bilinear ground height equals the node at nodes and the mean of four at cell centres; a wrong-size file is rejected.
+- Browser, real data (Shackleton ridge and Athena cuts): mesh 512×512 (523,264 triangles) with a shadow-casting directional light from the Sun's direction at the shared time; Sun and Earth drawn as true-size discs at their directions; the shared time slider and a second slider in the 3D card both drive `scn.t_off_s`; "Astronaut's eye (2 m)" puts the camera 2 m above bilinear ground at the landing point looking level toward the Sun (buttons to face the Sun or Earth; drag/arrow keys look around). Screenshot at 2027-01-02 06:00 UTC on the ridge shows the Sun (1.2°) just over the local ridge.
+- **Frame rate** (requestAnimationFrame intervals, averaged over 1 s, shown on screen and in `window.__sunsight3d`): Apple M4 Pro laptop GPU through Chromium/ANGLE Metal: **60 fps** with vsync (the display cap) in overview and astronaut views; with vsync and frame limit off, **≈ 750–775 fps** (≈ 1.3 ms a frame). Software rendering (SwiftShader, no GPU): 1–7 fps; the view drops to pixel ratio 1 when it measures under 24 fps.
+- First-load bundle unchanged by Three.js: `index` JS 95.8 kB (34.3 kB gzip; includes the P15/P17 work and the 3D shell), Three.js in `Scene3D-*.js` 556 kB (139 kB gzip), fetched only when the 3D tab opens (checked in e2e).
+- No WebGL: `hasWebGL()` checks `webgl2`/`webgl` before anything loads and shows "3D view unavailable" with a sentence saying every number still works; a renderer that throws on creation shows its message instead of crashing (checked in e2e by blocking `getContext`).
+
+**Decisions and assumptions**
+
+| Decision | Value | Reason |
+| --- | --- | --- |
+| Projection used to place the landing point | South polar stereographic on the 1,737.4 km sphere, true scale at the pole | Matches the cut's own `map_x_m`/`map_y_m` to < 1 m; the cut metadata gives no projection string |
+| Sky directions | `skyAt` (engine) at the cut's centre, then the stated ENU → map rotation at the centre's longitude | As specified; within 5 km the direction differs by < 0.2° |
+| Vertical scale | True (no exaggeration); heights relative to the centre node | Honest picture of the slopes |
+| Sun below the level horizon (el + r < 0) | Light intensity 0; ambient 0.06 only; legend says the scene is dark | A light from below the horizon would light slopes wrongly |
+| Shadow map | 4096², orthographic, ±1.45 × half the cut | Covers the whole cut at the long polar shadow angles |
+| Landing point outside the cut | Pin hidden, astronaut button disabled, note shown | No ground to stand on |
+| Miss ring | 250 m ring draped on the ground around the landing point | Ties the 3D view to the miss test |
+| Frame loop | Continuous rAF while the tab is open, stopped on leaving | Needed for orbit damping and the fps measure |
+| Terrain beyond the cut | Not drawn; label says distant ridges (20–300 km) are missing here | The numbers use the full horizon masks |

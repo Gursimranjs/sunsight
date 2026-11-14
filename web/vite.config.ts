@@ -38,7 +38,8 @@ function fixtureData(): Plugin {
 export default defineConfig(({ command, isPreview }) => ({
   base: command === 'build' || isPreview ? (process.env.SUNSIGHT_BASE ?? '/sunsight/') : '/',
   plugins: [preact(), fixtureData()],
-  build: { target: 'es2022', sourcemap: false },
+  // Three.js (~560 kB, ~140 kB gzip) is its own chunk, loaded only when the 3D tab opens.
+  build: { target: 'es2022', sourcemap: false, chunkSizeWarningLimit: 600 },
   worker: { format: 'es' },
   test: { include: ['tests/unit/**/*.test.ts'], environment: 'node' },
 }));

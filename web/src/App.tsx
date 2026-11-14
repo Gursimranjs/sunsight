@@ -17,6 +17,7 @@ import { ScenarioControls, TimeBar } from './views/RulesEditor';
 import { SitePicker } from './views/SitePicker';
 import { Timeline } from './views/Timeline';
 import { ValidationView } from './views/Validation';
+import { Hero3D } from './views/Hero3D';
 
 export function App() {
   const [data, setData] = useState<AppData | null>(null);
@@ -172,6 +173,11 @@ export function App() {
         {scn.view === 'compare' && (
           <div role="tabpanel" aria-label="Compare and calendar">
             <Compare data={data} scn={scn} update={update} />
+          </div>
+        )}
+        {scn.view === '3d' && (
+          <div role="tabpanel" aria-label="3D view">
+            <Hero3D data={data} site={site} place={place} scn={scn} now={now} update={update} />
           </div>
         )}
         {scn.view === 'validation' && (

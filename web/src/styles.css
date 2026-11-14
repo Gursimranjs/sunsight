@@ -144,3 +144,11 @@ td.cal.miss button { outline: 2px dashed #000; outline-offset: -5px; }
 table.csv-head { font-size: 14px; font-variant-numeric: tabular-nums; }
 table.csv-head caption { text-align: left; caption-side: top; padding-bottom: 2px; }
 table.csv-head th { white-space: nowrap; }
+
+/* 3D view */
+.scene3d { width: 100%; min-height: 300px; background: #000; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.scene3d canvas { display: block; }
+.illustrative { margin: 0 0 8px; padding: 6px 10px; border: 1px dashed var(--oi-yellow); border-radius: 6px; font-size: 15px; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.btnrow button[aria-pressed=true] { background: var(--oi-blue); border-color: var(--oi-blue); color: #fff; }
+.field input[type=range] { padding: 0; accent-color: var(--oi-orange); }
