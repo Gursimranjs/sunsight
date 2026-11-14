@@ -6,7 +6,7 @@ REGION ?=
 TARGET ?=
 
 PHONY_EXTRA = check-network
-.PHONY: setup check-network fixtures kernels ephemeris golden masks miss validate web web-release check check-py check-web e2e deploy
+.PHONY: setup check-network manifest fixtures kernels ephemeris golden masks miss validate web web-release check check-py check-web e2e deploy
 
 setup:
 	cd pipeline && $(UV) sync
@@ -29,6 +29,10 @@ masks:
 
 miss:
 	$(PY) python -m sunsight.missgrid --target $(TARGET)
+
+manifest:
+	$(PY) python -m sunsight.sites
+	$(PY) python -m sunsight.manifest
 
 validate:
 	$(PY) python -m sunsight.validate

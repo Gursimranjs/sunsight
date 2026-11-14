@@ -1,0 +1,24 @@
+{
+ "LDEM_80S_20MPP_ADJ.TIF": {
+  "name": "LDEM_80S_20MPP_ADJ.TIF",
+  "url": "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_80S_20MPP_ADJ.TIF",
+  "size_bytes": 2696082051,
+  "sha256": null,
+  "last_modified": "Fri, 07 Jul 2023 22:28:19 GMT",
+  "access": "windowed HTTP range reads (cached in data_raw/cache)"
+ },
+ "LDEM_80S_80MPP_ADJ.TIF": {
+  "name": "LDEM_80S_80MPP_ADJ.TIF",
+  "url": "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_80S_80MPP_ADJ.TIF",
+  "size_bytes": 189158392,
+  "sha256": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a",
+  "access": "downloaded"
+ },
+ "LDEM_60S_240MPP_ADJ.TIF": {
+  "name": "LDEM_60S_240MPP_ADJ.TIF",
+  "url": "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_60S_240MPP_ADJ.TIF",
+  "size_bytes": 218961039,
+  "sha256": "3f9663257b63022f2b0d5a623482ff3cadddceb91594a4e4ca14a94d8cec8b34",
+  "access": "downloaded"
+ }
+}

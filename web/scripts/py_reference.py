@@ -26,7 +26,7 @@ import numpy as np  # noqa: E402
 from sunsight import light as L  # noqa: E402
 from sunsight.export import decode_masks  # noqa: E402
 
-DATA = ROOT / "web" / "public" / "data"
+DATA = ROOT / "web" / "tests" / "fixtures" / "data"
 OUT = ROOT / "web" / "tests" / "unit" / "fixtures" / "py_reference.json"
 
 
