@@ -6,7 +6,7 @@ import type { Site } from '../data/types';
 import type { CalendarAnswer, MissCalendarDay, WindowAnswer } from '../engine/compute';
 import { formatHours, formatPct, formatUtc } from '../format';
 import { resolveForSite, type AppData } from '../state/data';
-import type { Scenario } from '../state/scenario';
+import { uniqueCompareIds, type Scenario } from '../state/scenario';
 import { dayStarts } from './calendar';
 import { MISS_RADII_M, MISS_TOLERANT_SHARE, missCalendarJob } from './missGeometry';
 import { VERDICT_TEXT, VerdictBadge } from './ReportCard';
@@ -35,7 +35,8 @@ function useResolved(data: AppData, sites: Site[], h_m: number): Resolved[] | nu
 
 export function Compare({ data, scn, update }: Props) {
   const defaults = data.sites.slice(0, 3).map((s) => s.id);
-  const chosenIds = (scn.compare.length ? scn.compare : defaults).slice(0, 3);
+  // Unique ids: the rows are keyed by site id, and the same site twice compares nothing.
+  const chosenIds = uniqueCompareIds(scn.compare.length ? scn.compare : defaults);
   const chosen = chosenIds.map((id) => data.sites.find((s) => s.id === id)).filter((s): s is Site => !!s);
   const places = useResolved(data, chosen, scn.rules.observer_height_m);
   const [answers, setAnswers] = useState<{ key: string; list: WindowAnswer[] } | null>(null);
@@ -54,7 +55,7 @@ export function Compare({ data, scn, update }: Props) {
   const setSlot = (k: number, id: string) => {
     const next = [...chosenIds];
     if (id === NONE) next.splice(k, 1); else next[k] = id;
-    update({ compare: [...new Set(next)] });
+    update({ compare: uniqueCompareIds(next) });
   };
   const list = answers && answers.key === key ? answers.list : null;
 

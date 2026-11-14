@@ -1,7 +1,7 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // The scenario in the URL query string, so a shared link reopens the same view on a static host.
 import { makeRules, PRESETS, type PresetId, type Rules } from '../engine/light';
-import { defaultScenario, VIEWS, type Scenario, type View } from './scenario';
+import { clampMoonElDeg, defaultScenario, uniqueCompareIds, VIEWS, type Scenario, type View } from './scenario';
 
 const H = 3600;
 const num = (v: string | null) => (v === null || v.trim() === '' ? NaN : Number(v));
@@ -40,8 +40,9 @@ export function decodeScenario(query: string, epoch_ms: number, fallbackSite: st
   const lat = num(q.get('lat')), lon = num(q.get('lon'));
   if (site && siteIds.includes(site)) s.site_id = site;
   else if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90) { s.site_id = null; s.lat_deg = lat; s.lon_deg = lon; }
-  const preset = q.get('preset') as PresetId | null;
-  if (preset && preset in PRESETS) s.preset = preset;
+  const preset = q.get('preset');
+  // Own keys only: `in` would accept "constructor", "__proto__" or "toString" from the prototype.
+  if (preset && Object.prototype.hasOwnProperty.call(PRESETS, preset)) s.preset = preset as PresetId;
   const base = PRESETS[s.preset];
   const r: Rules = makeRules(base);
   const set = (key: string, f: (v: number) => void) => { const v = num(q.get(key)); if (Number.isFinite(v)) f(v); };
@@ -49,7 +50,7 @@ export function decodeScenario(query: string, epoch_ms: number, fallbackSite: st
   set('dark_h', (v) => (r.max_dark_s = Math.max(0, v) * H));
   set('gap_h', (v) => (r.max_gap_s = Math.max(0, v) * H));
   set('lit', (v) => (r.lit_threshold = Math.min(1, Math.max(0.01, v))));
-  set('moon_el_deg', (v) => (r.min_moon_el_deg = v));
+  set('moon_el_deg', (v) => (r.min_moon_el_deg = clampMoonElDeg(v)));
   set('graze_deg', (v) => (r.grazing_deg = Math.max(0, v)));
   set('load_w', (v) => (r.load_w = Math.max(0, v)));
   const c = q.get('contact');
@@ -68,6 +69,6 @@ export function decodeScenario(query: string, epoch_ms: number, fallbackSite: st
   if (view && VIEWS.some((v) => v.id === view)) s.view = view;
   set('t_h', (v) => (s.t_off_s = v * H));
   const cmp = (q.get('cmp') ?? '').split(',').filter((id) => siteIds.includes(id));
-  if (cmp.length) s.compare = cmp.slice(0, 3);
+  if (cmp.length) s.compare = uniqueCompareIds(cmp);
   return s;
 }

@@ -354,3 +354,11 @@ Branch `review-fixes-web`, one commit per finding group. Each fix has a vitest u
 | --- | --- | --- |
 | Any observer-height edit makes the place stale | Yes, even 2 m → 3 m (same stored mask) | Simple and safe; re-resolving costs a cache lookup |
 | Old charts while computing | Kept, dimmed, `aria-busy`, with a visible note; verdict, countdowns, Sun elevation and export cleared | Avoids a jumping layout without passing old numbers off as current |
+
+## 3, 4 and 8. URL and rule hardening
+
+**Changes** (test: `web/tests/unit/url_hardening.test.ts`)
+
+- **Hostile preset (3)**: `decodeScenario` accepts a preset only if it is an own key of `PRESETS` (`Object.prototype.hasOwnProperty.call`). `?preset=constructor`, `__proto__`, `toString`, `hasOwnProperty`, `valueOf` now fall back to the robotic preset, and encoding the result no longer throws.
+- **Station-elevation cap (4)**: `MAX_MOON_EL_DEG = 20` and `clampMoonElDeg` in `state/scenario.ts`; applied in the rules editor (input `min=0 max=20`, label "°, 0–20", value clamped on change), in `decodeScenario` (`moon_el_deg`) and in `clampScenario` (via `clampRules`, so every path into the scenario is covered). A non-number falls back to the default 10°.
+- **Duplicate compare slots (8)**: `uniqueCompareIds` (first three distinct non-empty ids, in order) is used by `decodeScenario` for `cmp=` and by the Compare view for its slots and its default list, so React/Preact keys (site ids) are unique. It also closes a hole: picking slot 3 while slot 2 was empty used to store `undefined` in the list.
