@@ -57,17 +57,19 @@ Status is one of: todo, doing, done, cut.
 | P12 | Sky panorama | B | done | cda23b0 | Disc radius = r_deg × px/deg (test) |
 | P13 | Compare and calendar | B | done | cda23b0 | Calendar cells equal report cards |
 | P14 | Miss-test grids | A | done | 94a1687 | 3 targets × 317 pts, 42–50 s each; format v2 .dz masks |
-| P15 | Miss-test view | B | done | cda23b0 | Shares equal Python on fixture; miss-tolerant calendar pending |
+| P15 | Miss-test view | B | done | ab1619f | Shares equal Python; miss-tolerant calendar matches direct counts |
 | P16 | All regions | A | done | 741a956 | 7 Artemis III regions + Shackleton; dz 1.99–2.28 MB each |
-| P17 | Validation runs and page | Both | doing | 741a956 | Pipeline side done: 5 pass, 1 partial, 2 fail (explained); page with lane B2 |
-| P18 | 3D hero view | B | doing |  | Lane B2 subagent |
-| P19 | Guided Athena story | B | doing |  | Lane B2 subagent |
+| P17 | Validation runs and page | Both | done | ab1619f | 8 checks on the page: 5 pass, 1 partial, 2 fail (explained); sensitivity table |
+| P18 | 3D hero view | B | done | ab1619f | 60 fps (display cap) on M4 Pro; Three.js 135 kB gzip, lazy-loaded; labelled illustrative |
+| P19 | Guided Athena story | B | done | ab1619f | Five steps, works at 375 px; honest step 3/5 (20 m crater below map resolution) |
 | P20 | Share and export | B | done | cda23b0 | Scenario in URL; CSV/JSON export |
-| P21 | Quality pass | B | todo | | |
+| P21 | Quality pass | B | doing | ab1619f | axe 0 findings on 7 views; 38 e2e pass; first-load JS 43 kB gzip; 3.2 MB data first load (1.9 s @ 25 Mbit/s, 3.5 s @ 10) |
 | P22 | Demo, project page, submission | People | todo | | |
 
 ## Log
 
+- **Lane B2 (P15 calendar, P17 page, P18, P19, P21 pieces; merged 10:47).** Built by a second subagent; 77 unit and 38 browser tests pass (`make e2e`, Chromium). axe finds no issues on all 7 views; no sideways scroll at 375 px; text ≥ 14 px; first-load JS 43.0 kB gzip with a 60 kB budget script. 3D: 60 fps at the display cap (about 750 fps uncapped) on this laptop, 1–7 fps with software rendering.
+  Reviewer: first load is 3.22 MB, mostly the 2.5 MB ephemeris table, so the 3-second target holds at 25 Mbit/s (1.9 s) but not at 10 Mbit/s (3.5 s). The story credits the 250 m and "more than 400 m" miss figures to SpacePolicyOnline (which states both) and says the mission ended about 13 hours after landing, per that report.
 - **P16, P17 pipeline (10:25).** Seven Artemis III regions (961 points each, 75–112 s, compressed masks under 3 MB). Validation: Horizons, stations, physics sanity (10/10), known places (99.1% of PGDA permanent-shadow points never lit), Earth vs PGDA (+0.23) pass; sunlight vs PGDA −2.32 (fail), eclipses (1 of 84 pairs, fail), Gläser (partial). All explained on the page with computed numbers; nothing tuned.
   Reviewer: note 002 handled (A like-for-like recipe, B refined ridge/rim point 170 m from LROC's: 84.3%/86.0% vs 73.5%/85.7% at 2/10 m, as low as 32% within 300 m; C sensitivity table). Under "Needs a human" as the note asked.
 - **P14 (10:03).** Miss grids for the Athena target, Shackleton ridge/rim and Malapert Massif (317 points each, 10 m map near field, under a minute each). Mask format v2 adds lossless `.masks.dz` files (azimuth deltas + byte planes + gzip, ~37% of raw); both loaders tested.
