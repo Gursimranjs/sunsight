@@ -22,6 +22,10 @@ Checked Saturday November 14, 2026, 09:16 MST.
 
 1. **Rules question (people, before relying on this build).** `docs/PROJECT_PLAN.md` asks the team to check with the local lead how the "no work before the hackathon" and "AI is not for the idea" rules apply to this AI-drafted plan. The agent cannot do this.
 2. **Mirror host.** Connect `github.com/Gursimranjs/sunsight` to Cloudflare Pages or Netlify (build command `cd web && npm ci && npm run build`, output `web/dist`, env `SUNSIGHT_BASE=/`). Needs a login.
+4. **Read every validation number (BUILD_PLAN "What stays human").** `web/public/data/validation/summary.json` and the CSVs beside it. Two checks miss their pass marks and one is partial, each with its measured cause on the page:
+   - Sunlight vs PGDA, like for like (review note 002 recipe): mean −2.32 points against ±2 (−1.10 under the label's other definition; our bin rule accounts for −0.13). A person should decide whether to keep the pass mark as written and present it as a miss (the agent's default), or ask the PGDA team which definition the AVGVISIB map uses.
+   - Eclipses: 1 of 84 site-eclipse pairs (Peak near Cabeus B, 2029 Dec 20) shows 0.09% of the Sun in the last minute of NASA's totality; NASA enlarges Earth's shadow for the atmosphere, we use the bare sphere.
+   - Gläser ridge: −5.95/−5.97 points with the half-disc rule, −1.54/−2.03 with any part of the disc. Gläser's exact definition of "sunlit" was not checked; please check the paper (Icarus 243, 78) and say which applies.
 3. **FortiGuard classification.** Request a web-filter classification for `https://gursimranjs.github.io/sunsight/` at https://www.fortiguard.com/faq/classification (Submission Guide recommendation). Needs a person.
 
 ## Gates
@@ -52,10 +56,10 @@ Status is one of: todo, doing, done, cut.
 | P11 | Report card | B | done | cda23b0 | Countdowns equal event list (unit test) |
 | P12 | Sky panorama | B | done | cda23b0 | Disc radius = r_deg × px/deg (test) |
 | P13 | Compare and calendar | B | done | cda23b0 | Calendar cells equal report cards |
-| P14 | Miss-test grids | A | doing |  | Athena grid done (317 pts, 42 s); 2 more building |
+| P14 | Miss-test grids | A | done | 94a1687 | 3 targets × 317 pts, 42–50 s each; format v2 .dz masks |
 | P15 | Miss-test view | B | done | cda23b0 | Shares equal Python on fixture; miss-tolerant calendar pending |
-| P16 | All regions | A | todo | | |
-| P17 | Validation runs and page | Both | doing |  | Validation UI with lane B2; runs with lane A |
+| P16 | All regions | A | done | 741a956 | 7 Artemis III regions + Shackleton; dz 1.99–2.28 MB each |
+| P17 | Validation runs and page | Both | doing | 741a956 | Pipeline side done: 5 pass, 1 partial, 2 fail (explained); page with lane B2 |
 | P18 | 3D hero view | B | doing |  | Lane B2 subagent |
 | P19 | Guided Athena story | B | doing |  | Lane B2 subagent |
 | P20 | Share and export | B | done | cda23b0 | Scenario in URL; CSV/JSON export |
@@ -64,6 +68,9 @@ Status is one of: todo, doing, done, cut.
 
 ## Log
 
+- **P16, P17 pipeline (10:40).** Seven Artemis III regions (961 points each, 75–112 s, compressed masks under 3 MB). Validation: Horizons, stations, physics sanity (10/10), known places (99.1% of PGDA permanent-shadow points never lit), Earth vs PGDA (+0.23) pass; sunlight vs PGDA −2.32 (fail), eclipses (1 of 84 pairs, fail), Gläser (partial). All explained on the page with computed numbers; nothing tuned.
+  Reviewer: note 002 handled (A like-for-like recipe, B refined ridge/rim point 170 m from LROC's: 84.3%/86.0% vs 73.5%/85.7% at 2/10 m, as low as 32% within 300 m; C sensitivity table). Under "Needs a human" as the note asked.
+- **P14 (10:15).** Miss grids for the Athena target, Shackleton ridge/rim and Malapert Massif (317 points each, 10 m map near field, under a minute each). Mask format v2 adds lossless `.masks.dz` files (azimuth deltas + byte planes + gzip, ~37% of raw); both loaders tested.
 - **Gate 1 (10:01).** Real data live: manifest.json (fixture false), ephemeris, 28 cited sites, Shackleton region and terrain cut. Fixtures moved to `web/tests/fixtures/data` and never shipped; the release build refuses any `fixture_` file.
 - **Lane B (P9–P13, P15, P20, merged 09:58).** Built by a subagent on fixtures; all shared vectors reproduce to 1e-6; 14-day window 3.1 ms (budget 50 ms); bundle 77.8 kB JS (28 kB gzip). Not yet done: miss-tolerant calendar, axe run, the two people tests. Its notes are in `web/LANE_B_NOTES.md`.
   Reviewer: lane B found the shared vectors only reached no-go; added 21 verdict cases and a smooth-horizon window (merged).
