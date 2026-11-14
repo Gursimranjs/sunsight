@@ -37,7 +37,10 @@ export function MissView({ data, site, scn, onSite }: Props) {
   const [radius, setRadius] = useState(250);
   const [ref, W] = useWidth<HTMLDivElement>();
   const dragging = useRef(false);
-  const targetId = site?.miss_target_id ?? null;
+  // A site with its own grid uses it; a site that lies inside another target's grid (miss_grid_id, e.g. Athena's
+  // resting place inside the Athena-target grid) uses that grid, with the pin starting at the site's own point.
+  const ownGrid = site?.miss_target_id ?? null;
+  const targetId = ownGrid ?? (typeof site?.miss_grid_id === 'string' ? site.miss_grid_id : null);
 
   useEffect(() => {
     setSet(null); setErr(null); setPin(null);
@@ -87,7 +90,8 @@ export function MissView({ data, site, scn, onSite }: Props) {
   const ri = MISS_RADII_M.indexOf(radius);
   const share = a ? a.shares[ri] : NaN;
   const tolerant = share >= MISS_TOLERANT_SHARE;
-  const pinI = pin ?? nearestGridPoint(pts, 0, 0);
+  const sitePointI = !ownGrid && typeof site?.miss_point_id === 'string' ? pts.findIndex((p) => p.id === site.miss_point_id) : -1;
+  const pinI = pin ?? (sitePointI >= 0 ? sitePointI : nearestGridPoint(pts, 0, 0));
   const pinP = pts[pinI];
   const ticks = [-500, -250, 0, 250, 500].filter((t) => Math.abs(t) <= R * 1.05);
 
@@ -122,6 +126,13 @@ export function MissView({ data, site, scn, onSite }: Props) {
 
   return (
     <section class="card" aria-label="Miss test">
+      {!ownGrid && (
+        <p class="small" data-testid="miss-borrowed-grid">
+          This site lies inside the miss-test grid around <strong>{set.meta.name ?? targetId}</strong>. The shares below are for landing
+          around that target; the pin starts at the grid point nearest this site
+          {typeof site?.miss_point_offset_m === 'number' ? ` (${Math.round(site.miss_point_offset_m)} m from the cited coordinates)` : ''}.
+        </p>
+      )}
       <div class={`verdict ${a ? (tolerant ? 'go' : 'no-go') : ''}`} style={{ display: 'block', borderLeftWidth: 8, borderLeftStyle: 'solid', paddingLeft: 10, marginBottom: 10 }}>
         <h3 style={{ margin: 0 }} data-testid="miss-headline">
           {a ? <VerdictBadge v={tolerant ? 'go' : 'no-go'} small label={tolerant ? 'MISS-TOLERANT' : 'NOT MISS-TOLERANT'} /> : null}{' '}

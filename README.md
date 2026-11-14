@@ -80,7 +80,7 @@ for unit tests; it is never shipped and the release build refuses it.
 
 Most of the code, tests and data pipeline in this repository were written by Claude Code (Anthropic), an AI
 coding agent, and the planning documents were drafted with Claude (Anthropic). Every generated file starts with
-an "SI-generated" header line, every agent commit carries a co-author trailer, and the data manifest records
+an "SI-generated" header line, agent commits carry a co-author trailer (three merge commits are exceptions, listed in `SI_USE.md`), and the data manifest records
 `generated_with`. `SI_USE.md` records which tool did what, where and when.
 
 ## Licence

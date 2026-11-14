@@ -1,5 +1,5 @@
 place,point,our_lit_pct_18_6_years_2m,expectation
-Shackleton crater floor (region point 214 m from the USGS Gazetteer centre),p338,0.0,about 0%
+Shackleton crater floor (region point 214 m from the USGS Gazetteer centre),p338,0,about 0%
 "Shackleton-de Gerlache ridge at Shackleton's rim, at the LROC coordinates (miss-grid centre, 10 m map)",miss grid g158,73.5836905922832,among the best; higher than all but 0.0% of the 961 region points
-Nearest Shackleton-region point to that ridge site (298 m away),p472,39.082595815930375,context: a few hundred metres changes sunlight a lot here
-Region points in PGDA permanent shadow (LPSR map),437 points,99.08466819221968,share of those points we also find never lit
+Nearest Shackleton-region point to that ridge site (298 m away),p472,39.0825958159304,context: a few hundred metres changes sunlight a lot here
+Region points in PGDA permanent shadow (LPSR map),437 points,99.0846681922197,share of those points we also find never lit

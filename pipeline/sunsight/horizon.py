@@ -169,17 +169,24 @@ def _near_field(
 def pixel_points(g: Grid) -> tuple[np.ndarray, np.ndarray]:
     """3D points (km) of every valid pixel centre and their circumscribed half-size in km (true size)."""
     ny, nx = g.z_m.shape
-    xs = g.x0_m + g.pixel_m * np.arange(nx)
-    ys = g.y0_m - g.pixel_m * np.arange(ny)
-    x, y = np.meshgrid(xs, ys)
+    xs_m = g.x0_m + g.pixel_m * np.arange(nx)
+    ys_m = g.y0_m - g.pixel_m * np.arange(ny)
+    x_m, y_m = np.meshgrid(xs_m, ys_m)
     ok = np.isfinite(g.z_m)
-    x, y, z = x[ok], y[ok], g.z_m[ok]
-    rho = np.hypot(x, y)
-    lat = 2.0 * np.arctan(rho / (2.0 * g.sphere_r_m)) - np.pi / 2.0
-    lon = np.arctan2(x, y)
-    rr = MOON_RADIUS_KM + z / 1000.0
-    pts = np.stack([rr * np.cos(lat) * np.cos(lon), rr * np.cos(lat) * np.sin(lon), rr * np.sin(lat)], axis=1)
-    k = 2.0 / (1.0 - np.sin(lat))  # stereographic scale factor (true scale at the south pole)
+    x_m, y_m, z_m = x_m[ok], y_m[ok], g.z_m[ok]
+    rho_m = np.hypot(x_m, y_m)
+    lat_rad = 2.0 * np.arctan(rho_m / (2.0 * g.sphere_r_m)) - np.pi / 2.0
+    lon_rad = np.arctan2(x_m, y_m)
+    rr_km = MOON_RADIUS_KM + z_m / 1000.0
+    pts = np.stack(
+        [
+            rr_km * np.cos(lat_rad) * np.cos(lon_rad),
+            rr_km * np.cos(lat_rad) * np.sin(lon_rad),
+            rr_km * np.sin(lat_rad),
+        ],
+        axis=1,
+    )
+    k = 2.0 / (1.0 - np.sin(lat_rad))  # stereographic scale factor (true scale at the south pole)
     half_km = (math.sqrt(2.0) / 2.0) * (g.pixel_m / k) / 1000.0
     return np.ascontiguousarray(pts), np.ascontiguousarray(half_km)
 
@@ -228,15 +235,22 @@ def pixel_grid_points(g: Grid) -> tuple[np.ndarray, np.ndarray]:
     """Like pixel_points but kept on the grid: (ny, nx, 3) points in km (NaN where no data) and (ny, nx)
     half-sizes in km, so a kernel can visit only the pixels near each observer."""
     ny, nx = g.z_m.shape
-    xs = g.x0_m + g.pixel_m * np.arange(nx)
-    ys = g.y0_m - g.pixel_m * np.arange(ny)
-    x, y = np.meshgrid(xs, ys)
-    rho = np.hypot(x, y)
-    lat = 2.0 * np.arctan(rho / (2.0 * g.sphere_r_m)) - np.pi / 2.0
-    lon = np.arctan2(x, y)
-    rr = MOON_RADIUS_KM + g.z_m / 1000.0  # NaN propagates
-    pts = np.stack([rr * np.cos(lat) * np.cos(lon), rr * np.cos(lat) * np.sin(lon), rr * np.sin(lat)], axis=2)
-    k = 2.0 / (1.0 - np.sin(lat))
+    xs_m = g.x0_m + g.pixel_m * np.arange(nx)
+    ys_m = g.y0_m - g.pixel_m * np.arange(ny)
+    x_m, y_m = np.meshgrid(xs_m, ys_m)
+    rho_m = np.hypot(x_m, y_m)
+    lat_rad = 2.0 * np.arctan(rho_m / (2.0 * g.sphere_r_m)) - np.pi / 2.0
+    lon_rad = np.arctan2(x_m, y_m)
+    rr_km = MOON_RADIUS_KM + g.z_m / 1000.0  # NaN propagates
+    pts = np.stack(
+        [
+            rr_km * np.cos(lat_rad) * np.cos(lon_rad),
+            rr_km * np.cos(lat_rad) * np.sin(lon_rad),
+            rr_km * np.sin(lat_rad),
+        ],
+        axis=2,
+    )
+    k = 2.0 / (1.0 - np.sin(lat_rad))
     half_km = (math.sqrt(2.0) / 2.0) * (g.pixel_m / k) / 1000.0
     return np.ascontiguousarray(pts), np.ascontiguousarray(half_km)
 
@@ -302,23 +316,25 @@ def _far_field_grid(
 
 
 def observer_frames(lat_deg: np.ndarray, lon_deg: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    la, lo = np.radians(lat_deg), np.radians(lon_deg)
-    east = np.stack([-np.sin(lo), np.cos(lo), np.zeros_like(lo)], axis=1)
-    north = np.stack([-np.sin(la) * np.cos(lo), -np.sin(la) * np.sin(lo), np.cos(la)], axis=1)
-    up = np.stack([np.cos(la) * np.cos(lo), np.cos(la) * np.sin(lo), np.sin(la)], axis=1)
+    la_rad, lo_rad = np.radians(lat_deg), np.radians(lon_deg)
+    east = np.stack([-np.sin(lo_rad), np.cos(lo_rad), np.zeros_like(lo_rad)], axis=1)
+    north = np.stack(
+        [-np.sin(la_rad) * np.cos(lo_rad), -np.sin(la_rad) * np.sin(lo_rad), np.cos(la_rad)], axis=1
+    )
+    up = np.stack([np.cos(la_rad) * np.cos(lo_rad), np.cos(la_rad) * np.sin(lo_rad), np.sin(la_rad)], axis=1)
     return np.ascontiguousarray(up), np.ascontiguousarray(east), np.ascontiguousarray(north)
 
 
 def ground_heights(near: Grid, lat_deg: np.ndarray, lon_deg: np.ndarray) -> np.ndarray:
     out = np.empty(len(lat_deg))
-    for k, (la, lo) in enumerate(zip(lat_deg, lon_deg, strict=True)):
+    for k, (la_deg, lo_deg) in enumerate(zip(lat_deg, lon_deg, strict=True)):
         u = (
-            math.cos(math.radians(la)) * math.cos(math.radians(lo)),
-            math.cos(math.radians(la)) * math.sin(math.radians(lo)),
-            math.sin(math.radians(la)),
+            math.cos(math.radians(la_deg)) * math.cos(math.radians(lo_deg)),
+            math.cos(math.radians(la_deg)) * math.sin(math.radians(lo_deg)),
+            math.sin(math.radians(la_deg)),
         )
-        x, y = _unit_to_xy(u[0], u[1], u[2], near.sphere_r_m)
-        out[k] = _bilinear(near.z_m, near.x0_m, near.y0_m, near.pixel_m, x, y)
+        x_m, y_m = _unit_to_xy(u[0], u[1], u[2], near.sphere_r_m)
+        out[k] = _bilinear(near.z_m, near.x0_m, near.y0_m, near.pixel_m, x_m, y_m)
     return out
 
 

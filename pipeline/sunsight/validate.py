@@ -70,7 +70,16 @@ def _write_csv(name: str, rows: list[dict]) -> str:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader()
         for r in rows:
-            w.writerow({k: (repr(float(v)) if isinstance(v, float) else v) for k, v in r.items()})
+            w.writerow(
+                {
+                    k: (
+                        (repr(float(v)) if k.startswith("jd") else f"{float(v):.15g}")
+                        if isinstance(v, float)
+                        else v
+                    )
+                    for k, v in r.items()
+                }
+            )
     return f"validation/{name}.csv"
 
 

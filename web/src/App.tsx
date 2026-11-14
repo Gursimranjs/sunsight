@@ -117,7 +117,7 @@ export function App() {
       <main>
         <VerdictHero
           verdict={fresh ? shown!.verdict : null}
-          busy={!fresh}
+          busy={!fresh && !jobError}
           placeName={placeName}
           horizonLabel={place?.horizonLabel ?? ''}
           terrain={place?.terrain ?? false}
@@ -154,8 +154,8 @@ export function App() {
         </nav>
 
         {scn.view === 'report' && shown && (
-          <div role="tabpanel" aria-label="Report card" aria-busy={!fresh} data-stale={!fresh} style={{ opacity: fresh ? 1 : 0.6 }}>
-            {!fresh && <p class="small" role="status" data-testid="stale-note">Updating: the charts below are from the previous inputs.</p>}
+          <div role="tabpanel" aria-label="Report card" aria-busy={!fresh && !jobError} data-stale={!fresh} style={{ opacity: fresh ? 1 : 0.6 }}>
+            {!fresh && <p class="small" role="status" data-testid="stale-note">{jobError ? 'The charts below are from the previous inputs; the engine failed for the current ones.' : 'Updating: the charts below are from the previous inputs.'}</p>}
             <Timeline series={shown.series} metrics={shown.metrics} rules={scn.rules} start_s={shown.series.t_s[0]}
               stay_s={shown.series.t_s[shown.series.t_s.length - 1] - shown.series.t_s[0]} t_off_s={scn.t_off_s}
               onTime={(t_off_s) => update({ t_off_s })} />

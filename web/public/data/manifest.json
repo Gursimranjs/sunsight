@@ -2,8 +2,8 @@
  "format_version": 2,
  "fixture": false,
  "generated_with": "SunSight pipeline; code written by Claude Code (Anthropic)",
- "pipeline_version": "0.1.0+39279ce",
- "build_time_utc": "2026-11-14T17:57:37Z",
+ "pipeline_version": "0.1.0+31f9276",
+ "build_time_utc": "2026-11-14T18:21:37Z",
  "kernels": [
   "naif0012.tls",
   "pck00011.tpc",
@@ -106,6 +106,30 @@
    "size_bytes": 23845070,
    "sha256": "bcb1a37a195babb159ee1f720a6c64d03842de87d10a7ba7d754f8873477606b",
    "used_for": "crater orientation test (pipeline/data/gazetteer_south.json)"
+  },
+  {
+   "name": "AVGVISIB_85S_060M_201608.TIF",
+   "url": "https://pgda.gsfc.nasa.gov/data/MoonIllumination/AVGVISIB_85S_060M_201608.TIF",
+   "size_bytes": 33994464,
+   "sha256": "ccf67d4f39e0a970c111196da7d6551ffcf50d075470b93067fb3904c0b05806",
+   "product_page": "https://pgda.gsfc.nasa.gov/products/69",
+   "used_for": "validation: sunlight_pgda"
+  },
+  {
+   "name": "AVGVISIB_85S_060M_201608_EARTH.TIF",
+   "url": "https://pgda.gsfc.nasa.gov/data/MoonIllumination/AVGVISIB_85S_060M_201608_EARTH.TIF",
+   "size_bytes": 24862958,
+   "sha256": "d71dc5adfff653e0e924e0a4cbf03795b996caa30b4ace3d5843a70a5ab2f3d2",
+   "product_page": "https://pgda.gsfc.nasa.gov/products/69",
+   "used_for": "validation: earth_pgda"
+  },
+  {
+   "name": "LPSR_85S_060M_201608.TIF",
+   "url": "https://pgda.gsfc.nasa.gov/data/MoonIllumination/LPSR_85S_060M_201608.TIF",
+   "size_bytes": 656183,
+   "sha256": "e9544c081dd4e36f079e92bc3a376d0913857a61a4a53c209175c081762de43c",
+   "product_page": "https://pgda.gsfc.nasa.gov/products/69",
+   "used_for": "validation: known_places"
   },
   {
    "name": "JPL Horizons answers",
@@ -539,33 +563,33 @@
   },
   {
    "path": "validation/eclipses.csv",
-   "size_bytes": 4703,
-   "sha256": "3e2b0c370b6c47da19095a55d1da9bc758b9147efe4cac36e68a2bd0af6e7ac3"
+   "size_bytes": 4536,
+   "sha256": "56b007dea31c9380e395fbef2e6df9dc678e529090b0838ae96caf8e6b97b746"
   },
   {
    "path": "validation/ephemeris_horizons.csv",
-   "size_bytes": 20484,
-   "sha256": "3dfa36060506950d68a1a24130ba228bfba8e278348bc25b6a583be19a5b7c38"
+   "size_bytes": 19641,
+   "sha256": "108f07b37c7168b05d0c2185066cf58629e0d7370ee875073c6a522cc1bab80a"
   },
   {
    "path": "validation/glaser_ridge.csv",
-   "size_bytes": 511,
-   "sha256": "c68f9b069c11af86c04c8cb4c3770b0f69a6ffa14c0d541f5aa04e471ae87de9"
+   "size_bytes": 491,
+   "sha256": "3b9ff99de0f74c7cd91fdddaf6389cf1e2057514e816a096431011ba0c5b6cfa"
   },
   {
    "path": "validation/known_places.csv",
-   "size_bytes": 622,
-   "sha256": "20232c1ff71796f8228c7370e2e76b37730e8a384bfb98f05f9ec68198abe076"
+   "size_bytes": 617,
+   "sha256": "b1d39bab976666ad8a29e86b6f713560f50306985e39de00669213a28c097b9a"
   },
   {
    "path": "validation/pgda_points.csv",
-   "size_bytes": 27019,
-   "sha256": "d9f0977934c2e102e6a4f507bcc3d58c6a6a8451d909d6fdbae483bbf518309c"
+   "size_bytes": 22628,
+   "sha256": "c435a6e1b946e92c35b5eb32165d221d903efe75b47f0f021b3a6a87a5a53500"
   },
   {
    "path": "validation/physics_sanity.csv",
-   "size_bytes": 885,
-   "sha256": "1ca875a6463a97b2ee7b0c33840e3108ceea3aa76b1c8eb556f901e0165342dd"
+   "size_bytes": 871,
+   "sha256": "7e59da7880c289f54978d4feeea871195a26436a346b40b0c422610077678b06"
   },
   {
    "path": "validation/sensitivity.csv",
@@ -574,13 +598,13 @@
   },
   {
    "path": "validation/station_geometry.csv",
-   "size_bytes": 7472,
-   "sha256": "2d12200eadf038ccb1c58ac8ee3f0043548093b33070d94d1c588a8af429ed4d"
+   "size_bytes": 7130,
+   "sha256": "09d2c55d3401c5a27b1d0605e8a0f62ac86beb43b18e9af80f7c21a700233dd3"
   },
   {
    "path": "validation/summary.json",
-   "size_bytes": 11914,
-   "sha256": "3e59900f4234abcfa8c965a97b2c84f5e7135691f78b94009f6f56b0614038d3"
+   "size_bytes": 11915,
+   "sha256": "43d0cde192169f08d81acbaf985c75930a5d67aac55d2f546f85202f0bec64b3"
   }
  ]
 }

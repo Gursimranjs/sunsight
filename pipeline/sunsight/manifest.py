@@ -98,6 +98,23 @@ def main() -> None:
             "used_for": "crater orientation test (pipeline/data/gazetteer_south.json)",
         }
     )
+    from . import validate as V
+
+    for pth, used in (
+        (V.PGDA_SUN, "validation: sunlight_pgda"),
+        (V.PGDA_EARTH, "validation: earth_pgda"),
+        (V.PGDA_LPSR, "validation: known_places"),
+    ):
+        inputs.append(
+            {
+                "name": pth.name,
+                "url": "https://pgda.gsfc.nasa.gov/data/MoonIllumination/" + pth.name,
+                "size_bytes": pth.stat().st_size if pth.exists() else None,
+                "sha256": sha256_file(pth) if pth.exists() else None,
+                "product_page": V.PGDA_URL,
+                "used_for": used,
+            }
+        )
     inputs.append(
         {
             "name": "JPL Horizons answers",
