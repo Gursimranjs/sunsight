@@ -1,0 +1,140 @@
+{
+ "note": "Computed by pipeline/sunsight/facts.py from web/public/data; lit = at least half the Sun's disc above the terrain, hourly 2027-2030.",
+ "miss_grids": {
+  "a3_malapert_massif": {
+   "points": 317,
+   "2m": {
+    "centre_lit_pct": 29.326374629249376,
+    "within_100m": {
+     "min_pct": 26.50866986082592,
+     "median_pct": 27.908966461327857,
+     "max_pct": 40.34052019164955,
+     "points": 13
+    },
+    "within_250m": {
+     "min_pct": 0.0,
+     "median_pct": 29.326374629249376,
+     "max_pct": 63.86322153775953,
+     "points": 81
+    },
+    "within_500m": {
+     "min_pct": 0.0,
+     "median_pct": 33.40177960301163,
+     "max_pct": 63.86322153775953,
+     "points": 317
+    }
+   },
+   "10m": {
+    "centre_lit_pct": 49.33835272644308,
+    "within_100m": {
+     "min_pct": 36.501825233858085,
+     "median_pct": 49.33835272644308,
+     "max_pct": 61.031257129819764,
+     "points": 13
+    },
+    "within_250m": {
+     "min_pct": 4.925279488934519,
+     "median_pct": 48.49418206707735,
+     "max_pct": 64.83572895277207,
+     "points": 81
+    },
+    "within_500m": {
+     "min_pct": 0.0,
+     "median_pct": 47.61864020077572,
+     "max_pct": 65.0467716176135,
+     "points": 317
+    }
+   }
+  },
+  "im2_athena_target": {
+   "points": 317,
+   "2m": {
+    "centre_lit_pct": 44.384553958475934,
+    "within_100m": {
+     "min_pct": 44.30755190508784,
+     "median_pct": 44.384553958475934,
+     "max_pct": 44.413073237508556,
+     "points": 13
+    },
+    "within_250m": {
+     "min_pct": 43.121149897330596,
+     "median_pct": 44.36459046315309,
+     "max_pct": 44.507186858316224,
+     "points": 81
+    },
+    "within_500m": {
+     "min_pct": 33.59000684462697,
+     "median_pct": 44.23054985169975,
+     "max_pct": 45.14316678074378,
+     "points": 317
+    }
+   },
+   "10m": {
+    "centre_lit_pct": 45.00057038558065,
+    "within_100m": {
+     "min_pct": 44.926420260095824,
+     "median_pct": 44.983458818161075,
+     "max_pct": 45.05475701574264,
+     "points": 13
+    },
+    "within_250m": {
+     "min_pct": 44.67545060460871,
+     "median_pct": 44.960643394934976,
+     "max_pct": 45.12605521332421,
+     "points": 81
+    },
+    "within_500m": {
+     "min_pct": 42.0231576545745,
+     "median_pct": 44.860825918320785,
+     "max_pct": 46.03867214236824,
+     "points": 317
+    }
+   }
+  },
+  "shackleton_ridge_rim": {
+   "points": 317,
+   "2m": {
+    "centre_lit_pct": 73.37725302304358,
+    "within_100m": {
+     "min_pct": 48.1548026465891,
+     "median_pct": 55.35592060232717,
+     "max_pct": 82.72016883413187,
+     "points": 13
+    },
+    "within_250m": {
+     "min_pct": 22.692790326260553,
+     "median_pct": 49.88307095596623,
+     "max_pct": 85.07015742642025,
+     "points": 81
+    },
+    "within_500m": {
+     "min_pct": 0.0,
+     "median_pct": 41.13335614875656,
+     "max_pct": 85.07015742642025,
+     "points": 317
+    }
+   },
+   "10m": {
+    "centre_lit_pct": 85.73750855578372,
+    "within_100m": {
+     "min_pct": 64.15126625598904,
+     "median_pct": 82.70305726671229,
+     "max_pct": 85.94284736481862,
+     "points": 13
+    },
+    "within_250m": {
+     "min_pct": 41.3672142368241,
+     "median_pct": 59.00638831850331,
+     "max_pct": 86.05407255304586,
+     "points": 81
+    },
+    "within_500m": {
+     "min_pct": 0.21959844855122063,
+     "median_pct": 48.39151266255989,
+     "max_pct": 86.05407255304586,
+     "points": 317
+    }
+   }
+  }
+ }
+}
