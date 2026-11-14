@@ -28,7 +28,7 @@ Checked Saturday November 14, 2026, 09:16 MST.
 
 | Gate | Due | Status | Note |
 | --- | --- | --- | --- |
-| 1: one real site end to end on the live address | Saturday 20:00 | Not reached | |
+| 1: one real site end to end on the live address | Saturday 20:00 | Reached Saturday 10:01 MST (machine clock) | https://gursimranjs.github.io/sunsight/?site=shackleton_ridge_rim&start=2028-06-01T00%3A00Z&days=14&preset=robotic shows the same longest darkness (173.1 h), gap (231.6 h) and sunrise (2028-06-08 05:04 UTC) as light.py on the real table. A person should open it on a laptop and a phone. |
 | 2: feature freeze | Sunday 14:00 | Not reached | |
 | 3: submitted by people | Sunday 22:30 | Not reached | |
 
@@ -42,28 +42,35 @@ Status is one of: todo, doing, done, cut.
 | P1 | Kernels and manifest | A | done | 60cc057 | Nine kernels load; Earth orientation covers 2027–2030 |
 | P2 | Frames | A | done | 7c45c2d | ME/PA 875 m; matches SPICE AZLCPO to 1e-6° |
 | P3 | Ephemeris table | A | done | e02475c | 35,064 rows; interp vs SPICE: Sun 1.8e-6°, Earth 5.8e-7° |
-| P4 | Horizons check | A | todo | | |
+| P4 | Horizons check | A | done | fe928bc | Sun 1.6e-6°, Earth 2.6e-5°; stations 5.9e-4° (geometry) |
 | P5 | Terrain access | A | done | 26088d4 | 1 km window over HTTP 1.04 s; 23 craters on bowls |
 | P6 | Horizon engine | A | done | 752e373 | All synthetic tests pass; review note 001 applied |
-| P7 | Hero site masks | A | doing |  | Shackleton region building |
+| P7 | Hero site masks | A | done | d86facf | 961 pts in 87 s; floor 0% lit; ridge top 3.9%/0.8% |
 | P8 | Light engine, reference | A | done | bd7ee2a | Reference maths + shared vectors; real-table integration follows P3 |
-| P9 | Light engine, browser | B | doing |  | Lane B subagent, branch lane-b |
-| P10 | Site library and Anywhere mode | B | doing |  | Lane B subagent |
-| P11 | Report card | B | doing |  | Lane B subagent |
-| P12 | Sky panorama | B | doing |  | Lane B subagent |
-| P13 | Compare and calendar | B | todo | | |
-| P14 | Miss-test grids | A | todo | | |
-| P15 | Miss-test view | B | doing |  | Lane B subagent |
+| P9 | Light engine, browser | B | done | cda23b0 | 3.1 ms per 14-day window; all vectors to 1e-6 |
+| P10 | Site library and Anywhere mode | B | done | cda23b0 | 28 cited sites; smooth horizon labelled |
+| P11 | Report card | B | done | cda23b0 | Countdowns equal event list (unit test) |
+| P12 | Sky panorama | B | done | cda23b0 | Disc radius = r_deg × px/deg (test) |
+| P13 | Compare and calendar | B | done | cda23b0 | Calendar cells equal report cards |
+| P14 | Miss-test grids | A | doing |  | Athena grid done (317 pts, 42 s); 2 more building |
+| P15 | Miss-test view | B | done | cda23b0 | Shares equal Python on fixture; miss-tolerant calendar pending |
 | P16 | All regions | A | todo | | |
-| P17 | Validation runs and page | Both | todo | | |
-| P18 | 3D hero view | B | todo | | |
-| P19 | Guided Athena story | B | todo | | |
-| P20 | Share and export | B | todo | | |
+| P17 | Validation runs and page | Both | doing |  | Validation UI with lane B2; runs with lane A |
+| P18 | 3D hero view | B | doing |  | Lane B2 subagent |
+| P19 | Guided Athena story | B | doing |  | Lane B2 subagent |
+| P20 | Share and export | B | done | cda23b0 | Scenario in URL; CSV/JSON export |
 | P21 | Quality pass | B | todo | | |
 | P22 | Demo, project page, submission | People | todo | | |
 
 ## Log
 
+- **Gate 1 (10:01).** Real data live: manifest.json (fixture false), ephemeris, 28 cited sites, Shackleton region and terrain cut. Fixtures moved to `web/tests/fixtures/data` and never shipped; the release build refuses any `fixture_` file.
+- **Lane B (P9–P13, P15, P20, merged 09:58).** Built by a subagent on fixtures; all shared vectors reproduce to 1e-6; 14-day window 3.1 ms (budget 50 ms); bundle 77.8 kB JS (28 kB gzip). Not yet done: miss-tolerant calendar, axe run, the two people tests. Its notes are in `web/LANE_B_NOTES.md`.
+  Reviewer: lane B found the shared vectors only reached no-go; added 21 verdict cases and a smooth-horizon window (merged).
+- **P7 (09:50).** Shackleton region, 961 points at 500 m in 87 s. 2027–2030 hourly: floor 0.00% lit; LROC ridge/rim point top 3.9% (2 m), top 0.8% (10 m). Region best: 58% (2 m), 74% (10 m).
+  Reviewer: those best values look low next to published rim numbers; 2 m→10 m lowers the median horizon at the rim point by 1.85°, i.e. terrain within ~250 m dominates at 2 m. P17 will compare like for like with PGDA and Gläser before anyone tunes anything. Odysseus ground height from our 20 m map 2,592 m vs NASA's 2,579 m.
+- **P4 (09:52).** Horizons: Sun 1.6e-6°, Earth 2.6e-5° (the P2 aberration term). Station elevations: geometry 5.9e-4° at all 60 times; interpolated column 3.9e-3° in its 0–20° band, 0.246° near station zenith (not used for decisions).
+  Reviewer: make check failed during this merge on a transient PGDA read error; the HTTP test now runs only in `make check-network`.
 - **P6 (09:52).** Numba horizon engine; 35 synthetic tests from closed-form 3D geometry (dip 0.087/0.194°, walls < 0.01°, 90° rotation, far spike at 27 placements, brute-force never-under-read, 10 m ≤ 2 m). Review note 001 resolved as proposed.
   Reviewer: near-field rays are 0.05° apart; a single-pixel spike within 5 km can be under-read by part of its height between rays (bilinear surface). Far field has the exact guarantee. P17 sensitivity runs will measure the near-field effect.
 - **P5 (09:45).** dem.py: projection checked against pyproj; map stretch 0.77/1.73/7.18%; 3D distance and bearing equal haversine and spherical bearing; 23 IAU craters (USGS Gazetteer extract committed) land on bowls, mirrored grid fails; 1 km window of the 20 m map over HTTP in 1.04 s.
