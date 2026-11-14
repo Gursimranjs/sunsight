@@ -43,6 +43,63 @@ for (const v of VIEWS) {
   });
 }
 
+/** Smallest rendered text size on the page, in CSS px (SVG text scaled by its screen transform). */
+async function smallestText(page: Page): Promise<{ px: number; where: string }[]> {
+  return page.evaluate(() => {
+    const out: { px: number; where: string }[] = [];
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const el = n.parentElement;
+      if (!el || !n.textContent?.trim()) continue;
+      if (el.closest('[aria-hidden="true"], .tip, script, style, option')) continue;
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) continue;
+      let px = parseFloat(getComputedStyle(el).fontSize);
+      if (el instanceof SVGElement) {
+        const m = (el as unknown as SVGGraphicsElement).getScreenCTM?.();
+        if (m) px *= Math.hypot(m.a, m.b);
+      }
+      if (px < 13.95) out.push({ px: Math.round(px * 10) / 10, where: `${el.tagName.toLowerCase()}.${el.getAttribute('class') ?? ''} "${n.textContent.trim().slice(0, 30)}"` });
+    }
+    return out;
+  });
+}
+
+for (const v of VIEWS) {
+  for (const width of [375, 1200]) {
+    test(`text is at least 14 px on "${v.tab}" at ${width} px`, async ({ browser }) => {
+      const ctx = await browser.newContext({ viewport: { width, height: 900 } });
+      const page = await ctx.newPage();
+      await ready(page, v);
+      await page.waitForTimeout(300);
+      expect(await smallestText(page)).toEqual([]);
+      await ctx.close();
+    });
+  }
+}
+
+test('keyboard focus is visible on every focusable control (report card and miss view)', async ({ page }) => {
+  for (const q of ['site=shackleton_ridge_rim', 'site=a3_malapert_massif&start=2027-10-13T00:00Z&preset=crew&view=miss']) {
+    await openApp(page, q);
+    if (q.includes('miss')) await expect(page.getByTestId('miss-shares')).toBeVisible({ timeout: 90_000 });
+    const missing: string[] = [];
+    for (let i = 0; i < 60; i++) {
+      await page.keyboard.press('Tab');
+      const r = await page.evaluate(() => {
+        const el = document.activeElement as HTMLElement | null;
+        if (!el || el === document.body) return null;
+        const cs = getComputedStyle(el);
+        const ring = cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) >= 2;
+        // SVG pin: ring drawn on its circle instead of an outline.
+        const svgRing = el instanceof SVGElement && Array.from(el.querySelectorAll('circle')).some((c) => getComputedStyle(c).stroke.includes('240, 228, 66'));
+        return { ok: ring || svgRing, what: `${el.tagName.toLowerCase()} ${el.getAttribute('aria-label') ?? el.textContent?.trim().slice(0, 24) ?? ''}` };
+      });
+      if (r && !r.ok) missing.push(r.what);
+    }
+    expect(missing).toEqual([]);
+  }
+});
+
 test('Three.js is not loaded on first load, only when the 3D tab opens', async ({ page }) => {
   const scripts: string[] = [];
   page.on('request', (r) => { if (r.resourceType() === 'script') scripts.push(r.url()); });

@@ -178,8 +178,8 @@ export function MissView({ data, site, scn, onSite }: Props) {
         </svg>
       </div>
       <ul class="legend">
-        <li><svg width="14" height="14" style={{ display: 'inline', verticalAlign: '-2px' }}><circle cx="7" cy="7" r="6" fill="var(--go)" /></svg> Passes every rule (go or marginal)</li>
-        <li><svg width="14" height="14" style={{ display: 'inline', verticalAlign: '-2px' }}><g stroke="var(--nogo)" stroke-width="3"><line x1="2" y1="2" x2="12" y2="12" /><line x1="2" y1="12" x2="12" y2="2" /></g></svg> Fails a rule (no-go)</li>
+        <li><svg aria-hidden="true" width="14" height="14" style={{ display: 'inline', verticalAlign: '-2px' }}><circle cx="7" cy="7" r="6" fill="var(--go)" /></svg> Passes every rule (go or marginal)</li>
+        <li><svg aria-hidden="true" width="14" height="14" style={{ display: 'inline', verticalAlign: '-2px' }}><g stroke="var(--nogo)" stroke-width="3"><line x1="2" y1="2" x2="12" y2="12" /><line x1="2" y1="12" x2="12" y2="2" /></g></svg> Fails a rule (no-go)</li>
         <li>+ Target. Drag the white pin, or focus it and use the arrow keys.</li>
       </ul>
       {a && (
