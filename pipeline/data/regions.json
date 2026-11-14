@@ -1,0 +1,15 @@
+{
+ "note": "SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md. Region boxes are in south polar stereographic map metres (the LOLA maps' own projection). Points sit on a square map grid; the stretch there is under 0.01%.",
+ "regions": [
+  {
+   "id": "shackleton",
+   "name": "Shackleton rim and connecting ridge",
+   "center_x_m": 1000.0,
+   "center_y_m": -9000.0,
+   "half_m": 7500.0,
+   "spacing_m": 500.0,
+   "near_map_m": 20,
+   "why": "Contains the Shackleton crater floor (USGS Gazetteer centre -89.67, 129.78) and the Shackleton end of the Shackleton-de Gerlache ridge (LROC: -89.684, 196.739E)."
+  }
+ ]
+}

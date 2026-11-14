@@ -222,6 +222,78 @@ def _far_field(
             _raise_bins(mask, i, az, half_deg, el_a, el_b)
 
 
+def pixel_grid_points(g: Grid) -> tuple[np.ndarray, np.ndarray]:
+    """Like pixel_points but kept on the grid: (ny, nx, 3) points in km (NaN where no data) and (ny, nx)
+    half-sizes in km, so a kernel can visit only the pixels near each observer."""
+    ny, nx = g.z_m.shape
+    xs = g.x0_m + g.pixel_m * np.arange(nx)
+    ys = g.y0_m - g.pixel_m * np.arange(ny)
+    x, y = np.meshgrid(xs, ys)
+    rho = np.hypot(x, y)
+    lat = 2.0 * np.arctan(rho / (2.0 * g.sphere_r_m)) - np.pi / 2.0
+    lon = np.arctan2(x, y)
+    rr = MOON_RADIUS_KM + g.z_m / 1000.0  # NaN propagates
+    pts = np.stack([rr * np.cos(lat) * np.cos(lon), rr * np.cos(lat) * np.sin(lon), rr * np.sin(lat)], axis=2)
+    k = 2.0 / (1.0 - np.sin(lat))
+    half_km = (math.sqrt(2.0) / 2.0) * (g.pixel_m / k) / 1000.0
+    return np.ascontiguousarray(pts), np.ascontiguousarray(half_km)
+
+
+@njit(parallel=True, cache=True)
+def _far_field_grid(
+    mask: np.ndarray,
+    up: np.ndarray,
+    east: np.ndarray,
+    north: np.ndarray,
+    r_obs_km: np.ndarray,
+    obs_xy: np.ndarray,
+    pts: np.ndarray,
+    half_km: np.ndarray,
+    x0: float,
+    y0: float,
+    p_m: float,
+    rmin_km: float,
+    rmax_km: float,
+) -> None:
+    """Same maths as _far_field, visiting only the grid rows and columns within rmax of each observer.
+    The map bound is padded by 10% (the stereographic stretch is under 8% north to 60S) plus a pixel."""
+    n_obs = up.shape[0]
+    ny, nx = half_km.shape
+    rmin2 = rmin_km * rmin_km
+    rmax2 = rmax_km * rmax_km
+    pad_m = rmax_km * 1000.0 * 1.10 + 2.0 * p_m
+    for i in prange(n_obs):
+        ux, uy, uz = up[i, 0], up[i, 1], up[i, 2]
+        px, py, pz = r_obs_km[i, 0] * ux, r_obs_km[i, 0] * uy, r_obs_km[i, 0] * uz
+        dh = r_obs_km[i, 1] - r_obs_km[i, 0]
+        c0 = max(0, int(math.floor((obs_xy[i, 0] - pad_m - x0) / p_m)))
+        c1 = min(nx, int(math.ceil((obs_xy[i, 0] + pad_m - x0) / p_m)) + 1)
+        r0 = max(0, int(math.floor((y0 - (obs_xy[i, 1] + pad_m)) / p_m)))
+        r1 = min(ny, int(math.ceil((y0 - (obs_xy[i, 1] - pad_m)) / p_m)) + 1)
+        for r in range(r0, r1):
+            for c in range(c0, c1):
+                qx = pts[r, c, 0]
+                if math.isnan(qx):
+                    continue
+                ex = qx - px
+                ey = pts[r, c, 1] - py
+                ez = pts[r, c, 2] - pz
+                d2 = ex * ex + ey * ey + ez * ez
+                if d2 < rmin2 or d2 > rmax2:
+                    continue
+                e = ex * east[i, 0] + ey * east[i, 1] + ez * east[i, 2]
+                nn = ex * north[i, 0] + ey * north[i, 1] + ez * north[i, 2]
+                u = ex * ux + ey * uy + ez * uz
+                hor = math.sqrt(e * e + nn * nn)
+                dist = math.sqrt(d2)
+                el_a = math.degrees(math.asin(u / dist))
+                u2 = u - dh
+                el_b = math.degrees(math.asin(u2 / math.sqrt(hor * hor + u2 * u2)))
+                az = math.degrees(math.atan2(e, nn))
+                half_deg = math.degrees(half_km[r, c] / hor)
+                _raise_bins(mask, i, az, half_deg, el_a, el_b)
+
+
 # ---------------------------------------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------------------------------------
@@ -272,6 +344,22 @@ def compute_masks(
         mask, up, east, north, r_obs, near.z_m, near.x0_m, near.y0_m, near.pixel_m, near.sphere_r_m, near_km
     )
     for ring in rings:
-        pts, half = pixel_points(ring.grid)
-        _far_field(mask, up, east, north, r_obs, pts, half, ring.rmin_km, ring.rmax_km)
+        gr = ring.grid
+        obs_xy = np.array([_unit_to_xy(up[i, 0], up[i, 1], up[i, 2], gr.sphere_r_m) for i in range(len(up))])
+        pts, half = pixel_grid_points(gr)
+        _far_field_grid(
+            mask,
+            up,
+            east,
+            north,
+            r_obs,
+            obs_xy,
+            pts,
+            half,
+            gr.x0_m,
+            gr.y0_m,
+            gr.pixel_m,
+            ring.rmin_km,
+            ring.rmax_km,
+        )
     return mask, g

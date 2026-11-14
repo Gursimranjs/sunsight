@@ -207,3 +207,23 @@ def test_ten_metre_observer_never_sees_higher_terrain():
     ring = Hz.Ring(make_grid(cx, cy, 22_000, 40.0, f), 5.0, 20.0)
     mask, _ = Hz.compute_masks(np.array([lat, lat + 0.01]), np.array([lon, lon]), near, [ring])
     assert np.all(mask[:, 1, :] <= mask[:, 0, :] + 1e-9)
+
+
+def test_grid_kernel_equals_flat_kernel():
+    """The bounded grid kernel used by compute_masks gives exactly the flat all-pixel kernel's result."""
+    lat, lon = -88.2, 140.0
+    cx, cy = xy_of(lat, lon)
+    f = _rand_terrain(5, 800.0)
+    g = make_grid(cx, cy, 40_000, 240.0, f)
+    g.z_m[5:9, 3:30] = np.nan
+    lats, lons = np.array([lat, lat + 0.02, lat - 0.03]), np.array([lon, lon + 1.0, lon - 2.0])
+    up, east, north = Hz.observer_frames(lats, lons)
+    r_obs = np.stack([np.full(3, R_KM + 0.5), np.full(3, R_KM + 0.508)], axis=1)
+    m_flat = np.full((3, 2, 1440), Hz.NEG)
+    pts, half = Hz.pixel_points(g)
+    Hz._far_field(m_flat, up, east, north, r_obs, pts, half, 5.0, 30.0)
+    m_grid = np.full((3, 2, 1440), Hz.NEG)
+    obs_xy = np.array([Hz._unit_to_xy(*up[i], g.sphere_r_m) for i in range(3)])
+    gp, gh = Hz.pixel_grid_points(g)
+    Hz._far_field_grid(m_grid, up, east, north, r_obs, obs_xy, gp, gh, g.x0_m, g.y0_m, g.pixel_m, 5.0, 30.0)
+    np.testing.assert_array_equal(m_flat, m_grid)
