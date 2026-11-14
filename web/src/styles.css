@@ -175,3 +175,5 @@ input:focus, input:focus-within, select:focus, textarea:focus { outline: 3px sol
 
 table.sens td.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .refined { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--line); }
+/* Long file names and identifiers in validation text must wrap on phones. */
+.vcheck p, .vcheck dd, .vcheck h3, #sens-title + p { overflow-wrap: anywhere; }

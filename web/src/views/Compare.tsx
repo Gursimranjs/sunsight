@@ -207,7 +207,7 @@ function Calendar({ data, scn, update }: Props) {
       {!starts.length && <p>The stay is too long to fit any start date after the selected one in the table.</p>}
       {!a && starts.length > 0 && <p>Computing {sites.length * starts.length} stays… {formatPct(progress)}</p>}
       {a && (
-        <div class="scroll-x">
+        <div class="scroll-x" tabIndex={0} role="region" aria-label="Calendar table (scrolls sideways)">
           <table class="calendar" data-testid="calendar">
             <thead>
               <tr><th scope="col">Site \ start (UTC)</th>{starts.map((s) => <th key={s} scope="col" class="small">{dayLabel(s)}</th>)}</tr>

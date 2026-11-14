@@ -189,7 +189,7 @@ export function MissView({ data, site, scn, onSite }: Props) {
       )}
 
       {a && (
-        <div class="scroll-x" style={{ marginTop: 10 }}>
+        <div class="scroll-x" style={{ marginTop: 10 }} tabIndex={0} role="region" aria-label="Shares by miss radius (scrolls sideways)">
           <table data-testid="miss-shares">
             <caption class="small muted" style={{ textAlign: 'left' }}>Share of landing points that meet the rules, by miss radius</caption>
             <thead><tr><th>Within</th><th>Points</th><th>Pass</th><th>Share</th><th>Miss-tolerant (≥{formatPct(MISS_TOLERANT_SHARE)})</th></tr></thead>

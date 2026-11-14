@@ -31,7 +31,7 @@ function CsvHead({ path, title }: { path: string; title: string }) {
   if (err) return <p class="small">The data file could not be read ({err}).</p>;
   if (!t) return <p class="small muted">Reading the data file…</p>;
   return (
-    <div class="scroll-x">
+    <div class="scroll-x" tabIndex={0} role="region" aria-label={`First rows of the data for ${title} (scrolls sideways)`}>
       <table class="csv-head">
         <caption class="small muted">First {Math.min(HEAD_ROWS, t.total)} of {t.total} rows of the data for “{title}”</caption>
         <thead><tr>{t.header.map((h, i) => <th key={i} scope="col">{h}</th>)}</tr></thead>
@@ -88,7 +88,7 @@ function SensitivityTable({ sn }: { sn: Sensitivity }) {
           Point: {sn.point.label} ({Math.abs(sn.point.lat_deg).toFixed(4)}° {sn.point.lat_deg < 0 ? 'S' : 'N'}, {Math.abs(sn.point.lon_deg).toFixed(4)}° {sn.point.lon_deg < 0 ? 'W' : 'E'}). Each row changes one thing from the first row.
         </p>
       )}
-      <div class="scroll-x">
+      <div class="scroll-x" tabIndex={0} role="region" aria-label="Sensitivity table (scrolls sideways)">
         <table class="sens">
           <thead><tr><th scope="col">Change</th><th scope="col">Lit share</th><th scope="col">Change from baseline</th></tr></thead>
           <tbody>
