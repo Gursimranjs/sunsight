@@ -50,6 +50,19 @@ ECLIPSES = [  # NASA lunar eclipse table 2021-2030 (TD of greatest eclipse, dura
 ECLIPSE_URL = "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
 
 
+def ensure_illum() -> None:
+    """Download the three PGDA 69 maps used for validation (the plain TIFs; the COG links were broken on
+    2026-11-14). Each file must start with a TIFF signature."""
+    ILLUM.mkdir(parents=True, exist_ok=True)
+    for p in (PGDA_SUN, PGDA_EARTH, PGDA_LPSR):
+        if p.exists() and p.read_bytes()[:2] in (b"II", b"MM"):
+            continue
+        url = "https://pgda.gsfc.nasa.gov/data/MoonIllumination/" + p.name
+        subprocess.run(["curl", "-sSfL", "--retry", "3", "-o", str(p), url], check=True)
+        if p.read_bytes()[:2] not in (b"II", b"MM"):
+            raise RuntimeError(f"{url} did not return a TIFF")
+
+
 def _write_csv(name: str, rows: list[dict]) -> str:
     OUT.mkdir(parents=True, exist_ok=True)
     path = OUT / f"{name}.csv"
@@ -703,6 +716,27 @@ def sensitivity(lat: float, lon: float, coarse_pct: float) -> list[dict]:
     ):
         v = lit(hz, rule, span)
         rows.append({"change": label, "lit_pct": v, "delta_points": v - base})
+    # Search limited to 100 km (the 240 m ring stops at 100 km instead of 300 km)
+    short = [Hz.Ring(r.grid, r.rmin_km, min(r.rmax_km, 100.0)) for r in rings]
+    m, g = Hz.compute_masks(la, lo, near, short, (2.0, 10.0), 5.0)
+    sf, _ = series_for(m[:, 0, :], la, lo, g, 2.0, sun_t, earth_t)
+    v = float(100.0 * (sf >= 0.5).mean())
+    rows.append(
+        {"change": "Terrain search stops at 100 km instead of 300 km", "lit_pct": v, "delta_points": v - base}
+    )
+    # Coarser terrain: the 80 m map for the near field and out to 20 km
+    near80, rings80 = R.load_terrain(np.array([x]), np.array([y]), 80)
+    rings80 = [Hz.Ring(rings80[1].grid, 5.0, 20.0), *rings80[1:]]
+    m, g = Hz.compute_masks(la, lo, near80, rings80, (2.0, 10.0), 5.0)
+    sf, _ = series_for(m[:, 0, :], la, lo, g, 2.0, sun_t, earth_t)
+    v = float(100.0 * (sf >= 0.5).mean())
+    rows.append(
+        {
+            "change": "Coarser terrain: 80 m map near the site instead of 20 m",
+            "lit_pct": v,
+            "delta_points": v - base,
+        }
+    )
     rows.append(
         {
             "change": "Grid: best point of the ~240 m validation grid instead of this refined point",
@@ -961,6 +995,7 @@ def main() -> None:
     groups = ap.parse_args().only or ["ephemeris", "eclipses", "sanity", "known", "glaser", "pgda"]
     path = OUT / "summary.json"
     have = {c["id"]: c for c in json.loads(path.read_text())["checks"]} if path.exists() else {}
+    ensure_illum()
     t0 = time.time()
     sens = json.loads(path.read_text()).get("sensitivity") if path.exists() else None
     if "sensitivity" in groups:
