@@ -1,5 +1,5 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
-export interface FileRef { id?: string; meta: string; bin?: string; masks?: string }
+export interface FileRef { id?: string; meta: string; bin?: string; masks?: string; masks_dz?: string }
 
 export interface Manifest {
   format_version: number;

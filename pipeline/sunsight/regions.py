@@ -25,7 +25,7 @@ from .contracts import (
     TERRAIN_SIZE,
     TERRAIN_SPACING_M,
 )
-from .export import encode_masks, write_json
+from .export import encode_masks, encode_masks_dz, write_json
 
 CONFIG = REPO_ROOT / "pipeline" / "data" / "regions.json"
 RINGS = ((20, 5.0, 20.0), (80, 20.0, 60.0), (240, 60.0, 300.0))
@@ -99,7 +99,9 @@ def build(region_id: str) -> dict:
     t_mask = time.time() - t0 - t_read
     out_dir = DATA_OUT / "regions"
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / f"{region_id}.masks.bin").write_bytes(encode_masks(masks))
+    raw = encode_masks(masks)
+    (out_dir / f"{region_id}.masks.bin").write_bytes(raw)
+    (out_dir / f"{region_id}.masks.dz").write_bytes(encode_masks_dz(raw, BIN_COUNT))
     points = [
         {
             "id": f"p{k}",

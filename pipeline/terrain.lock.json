@@ -20,5 +20,13 @@
   "size_bytes": 218961039,
   "sha256": "3f9663257b63022f2b0d5a623482ff3cadddceb91594a4e4ca14a94d8cec8b34",
   "access": "downloaded"
+ },
+ "LDEM_83S_10MPP_ADJ.TIF": {
+  "name": "LDEM_83S_10MPP_ADJ.TIF",
+  "url": "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_83S_10MPP_ADJ.TIF",
+  "size_bytes": 5116709568,
+  "sha256": null,
+  "last_modified": "Fri, 07 Jul 2023 21:55:14 GMT",
+  "access": "windowed HTTP range reads (cached in data_raw/cache)"
  }
 }

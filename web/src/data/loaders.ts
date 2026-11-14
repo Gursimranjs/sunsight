@@ -57,3 +57,32 @@ export function decodeMasks(buf: ArrayBuffer, scaleDeg: number): Float64Array {
   for (let i = 0; i < raw.length; i++) out[i] = raw[i] * scaleDeg;
   return out;
 }
+
+/** Gunzip with the browser's (or Node's) built-in DecompressionStream. */
+export async function gunzip(buf: ArrayBuffer): Promise<ArrayBuffer> {
+  const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return await new Response(stream).arrayBuffer();
+}
+
+/**
+ * Inverse of pipeline export.encode_masks_dz: gunzipped bytes hold a plane of low bytes then a plane of high
+ * bytes of per-row differences along azimuth (mod 2^16). Returns the raw int16 values as an ArrayBuffer,
+ * ready for decodeMasks.
+ */
+export function undeltaMasks(planes: ArrayBuffer, rowLen: number): ArrayBuffer {
+  const b = new Uint8Array(planes);
+  const n = b.length / 2;
+  const out = new Uint16Array(n);
+  for (let r = 0; r < n; r += rowLen) {
+    let acc = 0;
+    for (let k = 0; k < rowLen; k++) {
+      acc = (acc + (b[r + k] | (b[n + r + k] << 8))) & 0xffff;
+      out[r + k] = acc;
+    }
+  }
+  return out.buffer;
+}
+
+export function canGunzip(): boolean {
+  return typeof DecompressionStream !== 'undefined';
+}

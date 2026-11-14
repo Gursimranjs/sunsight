@@ -1,7 +1,7 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // Site library and Anywhere mode: which mask and which point to use for a site or custom coordinates.
 import { BIN_COUNT } from './contracts';
-import { decodeMasks, DATA_BASE } from './loaders';
+import { canGunzip, decodeMasks, DATA_BASE, gunzip, undeltaMasks } from './loaders';
 import type { Manifest, Site } from './types';
 import { great_circle_deg } from '../engine/geometry';
 import { flat_mask, smooth_horizon_deg } from '../engine/light';
@@ -77,7 +77,10 @@ export async function loadMaskSet(
   const ref = (m.files[kind] ?? []).find((r) => r.id === id);
   if (!ref || !ref.masks) throw new Error(`No ${kind} entry "${id}" in the manifest`);
   const meta = (await (await fetcher(base + ref.meta)).json()) as MaskSetMeta;
-  const buf = await (await fetcher(base + ref.masks)).arrayBuffer();
+  // Format v2: prefer the compressed .masks.dz (about 40% of the raw size); fall back to the raw .bin.
+  const buf = ref.masks_dz && canGunzip()
+    ? undeltaMasks(await gunzip(await (await fetcher(base + ref.masks_dz)).arrayBuffer()), meta.bin_count)
+    : await (await fetcher(base + ref.masks)).arrayBuffer();
   const masks = decodeMasks(buf, meta.scale_deg);
   const want = meta.points.length * meta.observer_heights_m.length * meta.bin_count;
   if (masks.length !== want) throw new Error(`${kind}/${id}: ${masks.length} mask values, expected ${want}`);

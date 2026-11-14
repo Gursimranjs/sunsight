@@ -76,7 +76,9 @@ def build() -> dict:
                     rec["region_id"], rec["region_point_id"] = meta["id"], pid
                 if kind == "miss" and meta.get("target_site_id") == s["id"]:
                     rec["miss_target_id"] = meta["id"]
-        if (DATA_OUT / "terrain" / f"{rec['region_id']}.json").exists():
+        if (DATA_OUT / "terrain" / f"{s['id']}.json").exists():
+            rec["terrain_id"] = s["id"]
+        elif rec["region_id"] and (DATA_OUT / "terrain" / f"{rec['region_id']}.json").exists():
             rec["terrain_id"] = rec["region_id"]
         sites.append(rec)
     out = {

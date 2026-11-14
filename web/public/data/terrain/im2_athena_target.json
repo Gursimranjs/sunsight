@@ -1,0 +1,18 @@
+{
+ "site_id": "im2_athena_target",
+ "size": 512,
+ "spacing_m": 20.0,
+ "center": {
+  "lat_deg": -84.78,
+  "lon_deg": 29.13,
+  "map_x_m": 77106.75,
+  "map_y_m": 138362.95
+ },
+ "row_order": "decreasing map y",
+ "col_order": "increasing map x",
+ "map_note": "Map +y points from the south pole toward 0 deg longitude; +x toward 90 deg E.",
+ "dtype": "int16",
+ "units": "m above the 1737.4 km sphere",
+ "source": "LDEM_80S_20MPP_ADJ.TIF",
+ "note": "For the illustrative 3D view only; numbers come from the horizon masks."
+}

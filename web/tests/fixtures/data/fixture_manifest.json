@@ -1,9 +1,9 @@
 {
- "format_version": 1,
+ "format_version": 2,
  "fixture": true,
  "generated_with": "SunSight pipeline; code written by Claude Code (Anthropic)",
- "pipeline_version": "0.1.0+cda23b0",
- "build_time_utc": "2026-11-14T16:54:57Z",
+ "pipeline_version": "0.1.0+fc2226d",
+ "build_time_utc": "2026-11-14T17:01:51Z",
  "kernels": [],
  "inputs": [],
  "files": {
@@ -15,7 +15,8 @@
    {
     "id": "fixture_ridge",
     "meta": "regions/fixture_ridge.json",
-    "masks": "regions/fixture_ridge.masks.bin"
+    "masks": "regions/fixture_ridge.masks.bin",
+    "masks_dz": "regions/fixture_ridge.masks.dz"
    }
   ],
   "miss": [
