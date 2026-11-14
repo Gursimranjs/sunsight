@@ -20,6 +20,7 @@ import { Timeline } from './views/Timeline';
 import { ValidationView } from './views/Validation';
 import { Hero3D } from './views/Hero3D';
 import { Story } from './views/Story';
+import { AboutData, SiteSource, TerrainCredit } from './views/Credits';
 import { RulesContext } from './views/Term';
 
 export function App() {
@@ -125,7 +126,10 @@ export function App() {
           countdowns={cds}
           epochMs={epochMs}
           nowMs={epochMs + t_s * 1000}
-          siteNote={site && asRefined(site.refined) ? <RefinedNote r={asRefined(site.refined)!} /> : undefined}
+          siteNote={site ? <>
+            {asRefined(site.refined) && <RefinedNote r={asRefined(site.refined)!} />}
+            <SiteSource site={site} />
+          </> : undefined}
         />
         <section class="controls" aria-label="Scenario">
           <SitePicker
@@ -174,6 +178,7 @@ export function App() {
         {scn.view === 'miss' && (
           <div role="tabpanel" aria-label="Miss test">
             <MissView data={data} site={site} scn={scn} onSite={(id) => update({ site_id: id })} />
+            <TerrainCredit />
           </div>
         )}
         {scn.view === 'compare' && (
@@ -184,6 +189,7 @@ export function App() {
         {scn.view === '3d' && (
           <div role="tabpanel" aria-label="3D view">
             <Hero3D data={data} site={site} place={place} scn={scn} now={now} update={update} />
+            <TerrainCredit />
           </div>
         )}
         {scn.view === 'story' && (
@@ -196,6 +202,7 @@ export function App() {
             <ValidationView data={data} />
           </div>
         )}
+        <AboutData sites={data.sites} fixture={fixture} />
         <footer class="small muted" style={{ marginTop: 24 }}>
           {fresh && result && <>Scored {shown!.metrics.n_samples} ten-minute steps in {result.windowMs.toFixed(0)} ms. </>}
           Sun and Earth positions from {data.manifest.fixture ? 'made-up fixture data' : 'NASA/JPL SPICE kernels'}. All maths runs in your browser; no data leaves it.

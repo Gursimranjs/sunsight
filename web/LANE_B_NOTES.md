@@ -363,6 +363,17 @@ Branch `review-fixes-web`, one commit per finding group. Each fix has a vitest u
 - **Station-elevation cap (4)**: `MAX_MOON_EL_DEG = 20` and `clampMoonElDeg` in `state/scenario.ts`; applied in the rules editor (input `min=0 max=20`, label "°, 0–20", value clamped on change), in `decodeScenario` (`moon_el_deg`) and in `clampScenario` (via `clampRules`, so every path into the scenario is covered). A non-number falls back to the default 10°.
 - **Duplicate compare slots (8)**: `uniqueCompareIds` (first three distinct non-empty ids, in order) is used by `decodeScenario` for `cmp=` and by the Compare view for its slots and its default list, so React/Preact keys (site ids) are unique. It also closes a hole: picking slot 3 while slot 2 was empty used to store `undefined` in the list.
 
+## 5. Credits
+
+**Change**: `web/src/views/sourceCredits.ts` (pure: `siteCredit`, `dataCredits`, `TERRAIN_CREDIT`, `safeHttpUrl`) and `web/src/views/Credits.tsx` (`SiteSource`, `TerrainCredit`, `AboutData`). The verdict card ends with "Site coordinates: <source_org>." linked to `source_url`, with `notes` as the link's `title` (and in screen-reader text); for a site with `refined`, the line adds "Best-lit point nearby computed by SunSight (<refined.method>); not a cited figure." An "About the data" card above the footer lists: LOLA south polar terrain maps, PGDA product 90 (Barker et al. 2023) → https://pgda.gsfc.nasa.gov/products/90; NAIF SPICE kernels, NASA JPL → https://naif.jpl.nasa.gov/; LROC, NASA/GSFC/Arizona State University (only when a site cites an LROC page; no general link, each site card links its own page); PGDA product 69 → https://pgda.gsfc.nasa.gov/products/69 and JPL Horizons → https://ssd.jpl.nasa.gov/horizons/ for validation. The miss and 3D tabs show the terrain credit line under the view. Test: `web/tests/unit/credits.test.ts` (including: every shipped site gets a source line with an http(s) link).
+
+| Decision | Value | Reason |
+| --- | --- | --- |
+| Links | Plain `<a href rel="noopener">`, same tab | As specified; the URL keeps the scenario, so Back returns to the same view |
+| Unsafe or missing `source_url` | Not linked (only http/https); org falls back to the link's host name; no line if neither exists | Data files must not inject `javascript:` links |
+| With fixture data loaded | "About the data" says the numbers on screen are made up and do not come from these sources | Honest; the fixture banner is also shown |
+| File name | `sourceCredits.ts`, not `credits.ts` | `credits.ts` and `Credits.tsx` clash on case-insensitive disks (same issue as `storyNumbers.ts`) |
+
 ## 6. Tooltips with fixed numbers
 
 **Change**: the glossary moved to `web/src/views/glossary.ts`. `lit`, `contact`, `grazing`, `battery` and `score` are built from the rules in force (lit threshold, station elevation, grazing angle, contact mode, load, depth of discharge, efficiency, weights); `Term` reads the rules from a `RulesContext` that the App provides with `scn.rules`. The Athena story's grid caption now uses `litRuleText(scn.rules)` instead of "at least half". Glossary lookups use own keys only. Test: `web/tests/unit/glossary.test.ts` (default numbers, edited numbers, contact mode `earth`).
