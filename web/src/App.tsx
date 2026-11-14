@@ -1,11 +1,11 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { resolveCustom, resolveSite, type Resolved } from './data/sites';
+import { resolveCustom, type Resolved } from './data/sites';
 import type { WindowAnswer } from './engine/compute';
 import { countdownsAt } from './engine/countdown';
 import { local_frame, sample_at, site_vector } from './engine/light';
 import { formatDeg } from './format';
-import { loadAppData, type AppData } from './state/data';
+import { loadAppData, resolveForSite, type AppData } from './state/data';
 import { clampScenario, defaultScenario, tableRange, VIEWS, type Scenario } from './state/scenario';
 import { decodeScenario, encodeScenario } from './state/url';
 import { ShareBar } from './views/ShareBar';
@@ -58,12 +58,7 @@ export function App() {
     let live = true;
     const h = scn.rules.observer_height_m;
     if (!site) setPlace(resolveCustom(scn.lat_deg, scn.lon_deg, h));
-    else if (!site.region_id) setPlace(resolveSite(site, null, h));
-    else {
-      data.region(site.region_id)
-        .then((r) => live && setPlace(resolveSite(site, r, h)))
-        .catch(() => live && setPlace({ ...resolveSite(site, null, h), horizonLabel: 'Terrain file missing: smooth horizon used' }));
-    }
+    else resolveForSite(data, site, h).then((r) => live && setPlace(r));
     return () => { live = false; };
   }, [data, site, scn?.lat_deg, scn?.lon_deg, scn?.rules.observer_height_m]);
 

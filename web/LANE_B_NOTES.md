@@ -288,3 +288,9 @@ The brief also cites a NASA news release ("more than 1,300 feet (400 meters)") a
 
 1. **The miss-test landing pin could not get keyboard focus** (P15): Preact writes `tabIndex` on an SVG element as a case-sensitive `tabIndex` attribute, which SVG ignores, so arrow keys never reached it. Now `tabindex`, plus `aria-valuemin/max/now` for the slider role.
 2. Once focusable, axe flagged it as **nested-interactive** inside the map's `role="img"`; the map is now `role="group"` with the same label.
+
+## P10 follow-up: sites with a miss grid but no region
+
+**Change** (coordinator request): site resolution now follows region point → miss-grid centre point (east 0 m, north 0 m, its own lat/lon/height and masks at the nearest stored observer height) → smooth horizon. Label: "Terrain horizon from the miss-test grid (target point)". `resolveSite(site, region, h, missGrid?)` does the choice; `resolveForSite` (now also used by the report card, so all views share one rule) loads the region or grid. A region that fails to load falls back to the grid if the site has one, else to "Terrain file missing: smooth horizon used". A `miss_target_id` that the manifest does not list is ignored (smooth horizon, no error).
+
+**Verification**: `web/tests/unit/resolve_miss.test.ts` on the fixture (fixture_target has a grid and no region): centre point coordinates, height and the exact mask at 2 m and 10 m; priority region > grid > smooth, including a site with both. Browser on real data: the Athena target's report card now reads "Terrain horizon from the miss-test grid (target point)"; Malapert and the Shackleton ridge read their region points; Apollo 11 the smooth horizon. The Athena target row of the calendar and compare views uses the same terrain horizon.
