@@ -78,3 +78,34 @@ def test_fixture_files_are_marked():
             assert json.loads(p.read_text()).get("fixture") is not True, (
                 f"{p} says fixture but is not named fixture_"
             )
+
+
+def test_masks_dz_round_trip_is_exact():
+    from sunsight.export import decode_masks_dz, encode_masks_dz
+
+    rnd = np.random.default_rng(0)
+    raw = rnd.integers(-32767, 32768, size=(7, 1440), dtype=np.int64).astype("<i2").tobytes()
+    assert decode_masks_dz(encode_masks_dz(raw, 1440), 1440) == raw
+    smooth = (
+        np.round(np.cumsum(rnd.normal(0, 30, size=(5, 1440)), axis=1))
+        .clip(-32767, 32767)
+        .astype("<i2")
+        .tobytes()
+    )
+    dz = encode_masks_dz(smooth, 1440)
+    assert decode_masks_dz(dz, 1440) == smooth and len(dz) < len(smooth)
+
+
+@pytest.mark.parametrize("manifest_path", _manifests(), ids=lambda p: p.name)
+def test_dz_files_decode_to_the_raw_masks(manifest_path):
+    from sunsight.export import decode_masks_dz
+
+    root = manifest_path.parent
+    files = json.loads(manifest_path.read_text())["files"]
+    for group in ("regions", "miss"):
+        for item in files.get(group, []):
+            if "masks_dz" in item:
+                assert (
+                    decode_masks_dz((root / item["masks_dz"]).read_bytes(), BIN_COUNT)
+                    == (root / item["masks"]).read_bytes()
+                )

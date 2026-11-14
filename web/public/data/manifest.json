@@ -1,9 +1,9 @@
 {
- "format_version": 1,
+ "format_version": 2,
  "fixture": false,
  "generated_with": "SunSight pipeline; code written by Claude Code (Anthropic)",
- "pipeline_version": "0.1.0+cda23b0",
- "build_time_utc": "2026-11-14T16:55:00Z",
+ "pipeline_version": "0.1.0+fc2226d",
+ "build_time_utc": "2026-11-14T17:02:57Z",
  "kernels": [
   "naif0012.tls",
   "pck00011.tpc",
@@ -93,6 +93,14 @@
    "access": "downloaded"
   },
   {
+   "name": "LDEM_83S_10MPP_ADJ.TIF",
+   "url": "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_83S_10MPP_ADJ.TIF",
+   "size_bytes": 5116709568,
+   "sha256": null,
+   "last_modified": "Fri, 07 Jul 2023 21:55:14 GMT",
+   "access": "windowed HTTP range reads (cached in data_raw/cache)"
+  },
+  {
    "name": "MOON_nomenclature_center_pts.zip",
    "url": "https://planetarynames.wr.usgs.gov/GIS_Downloads",
    "size_bytes": 23845070,
@@ -118,15 +126,50 @@
    {
     "id": "shackleton",
     "meta": "regions/shackleton.json",
-    "masks": "regions/shackleton.masks.bin"
+    "masks": "regions/shackleton.masks.bin",
+    "masks_dz": "regions/shackleton.masks.dz"
    }
   ],
-  "miss": [],
+  "miss": [
+   {
+    "id": "a3_malapert_massif",
+    "meta": "miss/a3_malapert_massif.json",
+    "masks": "miss/a3_malapert_massif.masks.bin",
+    "masks_dz": "miss/a3_malapert_massif.masks.dz"
+   },
+   {
+    "id": "im2_athena_target",
+    "meta": "miss/im2_athena_target.json",
+    "masks": "miss/im2_athena_target.masks.bin",
+    "masks_dz": "miss/im2_athena_target.masks.dz"
+   },
+   {
+    "id": "shackleton_ridge_rim",
+    "meta": "miss/shackleton_ridge_rim.json",
+    "masks": "miss/shackleton_ridge_rim.masks.bin",
+    "masks_dz": "miss/shackleton_ridge_rim.masks.dz"
+   }
+  ],
   "terrain": [
+   {
+    "id": "a3_malapert_massif",
+    "meta": "terrain/a3_malapert_massif.json",
+    "bin": "terrain/a3_malapert_massif.bin"
+   },
+   {
+    "id": "im2_athena_target",
+    "meta": "terrain/im2_athena_target.json",
+    "bin": "terrain/im2_athena_target.bin"
+   },
    {
     "id": "shackleton",
     "meta": "terrain/shackleton.json",
     "bin": "terrain/shackleton.bin"
+   },
+   {
+    "id": "shackleton_ridge_rim",
+    "meta": "terrain/shackleton_ridge_rim.json",
+    "bin": "terrain/shackleton_ridge_rim.bin"
    }
   ]
  },
@@ -142,6 +185,36 @@
    "sha256": "ee1e940e729cf3be7a9aeef2e87cd06b8477df69206fe62c33d03f6db5597027"
   },
   {
+   "path": "miss/a3_malapert_massif.json",
+   "size_bytes": 61231,
+   "sha256": "5bd37ba3ffc03cfc0fcdbb716c8e99eac4cc3fbde551b4ec643c6bfcd573ae65"
+  },
+  {
+   "path": "miss/a3_malapert_massif.masks.bin",
+   "size_bytes": 1825920,
+   "sha256": "4d42c9a36d4862282f7c4d8a8cadda64fb01750b9934829ac3f2a53a98ac6759"
+  },
+  {
+   "path": "miss/im2_athena_target.json",
+   "size_bytes": 62105,
+   "sha256": "9bed4b4c31fd22e53e37fe2202be2f2861ee29e95f8ecba17e8d56056335f485"
+  },
+  {
+   "path": "miss/im2_athena_target.masks.bin",
+   "size_bytes": 1825920,
+   "sha256": "82fe74916f9fa5f18141425dc16c99d76ca23ed54b9258da951a3fac3f9ed8a2"
+  },
+  {
+   "path": "miss/shackleton_ridge_rim.json",
+   "size_bytes": 62447,
+   "sha256": "dd3ff939807f9cf4599b7a4c476424a937e77e2e25fa1f90c739adc62e22d84e"
+  },
+  {
+   "path": "miss/shackleton_ridge_rim.masks.bin",
+   "size_bytes": 1825920,
+   "sha256": "032a8f30173942f794e9cda3f06a8c1a5b600da9abb304f6b47279f5a34db222"
+  },
+  {
    "path": "regions/shackleton.json",
    "size_bytes": 143501,
    "sha256": "35d0174ce36a1dc0f4dc86e67a3da70b9c2e5470a8fc03ae6eb3b8db79e60d03"
@@ -153,8 +226,28 @@
   },
   {
    "path": "sites.json",
-   "size_bytes": 19054,
-   "sha256": "fb7228e31f32d19d892b3472e2db854cce1c7706ec04df5e8bfb22ba3e972737"
+   "size_bytes": 19144,
+   "sha256": "ee53652e56de6d2ea483436aa58abfb19441e98a2648135be7d35d48cb9edfe3"
+  },
+  {
+   "path": "terrain/a3_malapert_massif.bin",
+   "size_bytes": 524288,
+   "sha256": "c7a5f0db1698db9b03068751a0942a546c6d169e52c935319af8ebe2cf28fe6b"
+  },
+  {
+   "path": "terrain/a3_malapert_massif.json",
+   "size_bytes": 514,
+   "sha256": "ae7563608898d3022c39269272049c27ce32e90260017c9ea475666ebca38fb1"
+  },
+  {
+   "path": "terrain/im2_athena_target.bin",
+   "size_bytes": 524288,
+   "sha256": "1ae44c98bbeea1ec9ecc7a19dda0370a120aa93cf8e169932c4c15f72174ba7f"
+  },
+  {
+   "path": "terrain/im2_athena_target.json",
+   "size_bytes": 518,
+   "sha256": "95a0cc762c0aa9ee2904016d708d0cb77007342803a623cd48f91882446855ae"
   },
   {
    "path": "terrain/shackleton.bin",
@@ -165,6 +258,16 @@
    "path": "terrain/shackleton.json",
    "size_bytes": 518,
    "sha256": "2cefd9b91549cc29a1e8f923a706fd06e3d994642590edb2c1ac7b2c630f73e7"
+  },
+  {
+   "path": "terrain/shackleton_ridge_rim.bin",
+   "size_bytes": 524288,
+   "sha256": "fe1c92a21180a18194e2669676e7cc3abf4c204b56979235751382708beb78db"
+  },
+  {
+   "path": "terrain/shackleton_ridge_rim.json",
+   "size_bytes": 524,
+   "sha256": "035d4c3d2534e72ba22209bf16d7a3a74b2bfa571307b18eeb5a20c2fafd0b1d"
   }
  ]
 }

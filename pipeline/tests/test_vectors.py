@@ -56,3 +56,23 @@ def test_window_vectors():
             else:
                 assert m[k] == v, k
         assert L.verdict(m, rules) == w["verdict"]
+
+
+def test_verdict_cases_cover_every_branch():
+    kinds = {c["expected"]["verdict"] for c in V["verdict_cases"]}
+    assert kinds == {"go", "marginal", "no-go"}
+    for c in V["verdict_cases"]:
+        assert L.verdict(c["metrics"], L.PRESETS[c["preset"]]) == c["expected"]
+
+
+def test_extra_windows():
+    table = np.array(V["table"]["rows"], dtype=np.float32).astype(np.float64)
+    for w in V["windows_extra"]:
+        rules = L.PRESETS[w["preset"]]
+        mask = L.flat_mask(L.smooth_horizon_deg(w["mask"]["smooth_m"]))
+        m = L.window_metrics(
+            table, w["lat_deg"], w["lon_deg"], w["h_m"], mask, w["start_s"], w["end_s"], rules
+        )
+        for k, v in w["metrics"].items():
+            assert (m[k] == pytest.approx(v, abs=TOL)) if isinstance(v, float) else (m[k] == v), k
+        assert L.verdict(m, rules) == w["verdict"]

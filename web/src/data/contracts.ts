@@ -1,6 +1,6 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // Mirrors pipeline/sunsight/contracts.py. tests/unit/contracts.test.ts checks they agree.
-export const FORMAT_VERSION = 1;
+export const FORMAT_VERSION = 2; // v2: masks also ship as .masks.dz (delta + byte planes + gzip)
 export const MOON_RADIUS_KM = 1737.4;
 export const SUN_RADIUS_KM = 695_700.0;
 export const EARTH_RADIUS_KM = 6_371.0;

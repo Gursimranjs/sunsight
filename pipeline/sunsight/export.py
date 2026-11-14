@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
 import subprocess
@@ -32,6 +33,26 @@ def decode_masks(raw: bytes, n_points: int, n_heights: int, n_bins: int) -> np.n
     """Inverse of encode_masks; returns degrees with shape (points, heights, bins)."""
     arr = np.frombuffer(raw, dtype="<i2").astype(np.float64) * MASK_SCALE_DEG
     return arr.reshape(n_points, n_heights, n_bins)
+
+
+def encode_masks_dz(raw_int16: bytes, row_len: int) -> bytes:
+    """Compressed mask encoding (format v2, `.masks.dz`): per row of `row_len` int16 values, take differences
+    along azimuth (first value kept, arithmetic mod 2^16), split the result into a plane of low bytes followed
+    by a plane of high bytes, then gzip (level 9). Lossless; decode_masks_dz inverts it exactly."""
+    a = np.frombuffer(raw_int16, dtype="<u2").reshape(-1, row_len)
+    d = np.empty_like(a)
+    d[:, 0] = a[:, 0]
+    d[:, 1:] = a[:, 1:] - a[:, :-1]  # uint16 arithmetic wraps mod 2^16
+    b = d.astype("<u2").view(np.uint8).reshape(-1, 2)
+    return gzip.compress(np.concatenate([b[:, 0], b[:, 1]]).tobytes(), compresslevel=9, mtime=0)
+
+
+def decode_masks_dz(dz: bytes, row_len: int) -> bytes:
+    """Inverse of encode_masks_dz; returns the raw little-endian int16 bytes."""
+    planes = np.frombuffer(gzip.decompress(dz), dtype=np.uint8)
+    n = planes.size // 2
+    d = (planes[:n].astype(np.uint16) | (planes[n:].astype(np.uint16) << 8)).reshape(-1, row_len)
+    return np.cumsum(d, axis=1, dtype=np.uint16).astype("<u2").tobytes()
 
 
 def write_json(path: Path, obj: Any) -> None:

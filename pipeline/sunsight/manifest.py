@@ -69,7 +69,10 @@ def main() -> None:
     for kind, key in (("regions", "masks"), ("miss", "masks")):
         items = []
         for p in sorted((DATA_OUT / kind).glob("*.json")) if (DATA_OUT / kind).exists() else []:
-            items.append({"id": p.stem, "meta": f"{kind}/{p.name}", key: f"{kind}/{p.stem}.masks.bin"})
+            item = {"id": p.stem, "meta": f"{kind}/{p.name}", key: f"{kind}/{p.stem}.masks.bin"}
+            if (DATA_OUT / kind / f"{p.stem}.masks.dz").exists():
+                item["masks_dz"] = f"{kind}/{p.stem}.masks.dz"
+            items.append(item)
         files[kind] = items
     files["terrain"] = [
         {"id": p.stem, "meta": f"terrain/{p.name}", "bin": f"terrain/{p.stem}.bin"}
