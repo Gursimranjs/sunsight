@@ -18,3 +18,6 @@ The build agent appends one row per package.
 | P8 | 2026-11-14 09:26 MST | Reference sunlight and contact maths, its tests, and the shared test vectors (made-up inputs) | `pipeline/sunsight/{light,vectors}.py`, `pipeline/tests/test_{light,vectors}.py`, `tests/vectors/light_vectors.json` |
 | P1 | 2026-11-14 09:28 MST | Kernel download, checksum lock file and load-time checks | `pipeline/sunsight/kernels.py`, `pipeline/kernels.lock.json`, `pipeline/tests/test_kernels.py` |
 | P2 | 2026-11-14 09:31 MST | Frame helpers and tests against SPICE topocentric routines | `pipeline/sunsight/frames.py`, `pipeline/tests/test_frames.py` |
+| P3 | 2026-11-14 09:38 MST | Ephemeris builder and its tests; the generated table `ephemeris/2027_2030.bin/.json` (computed by SPICE from NAIF kernels) | `pipeline/sunsight/ephemeris.py`, `pipeline/tests/test_ephemeris.py`, `web/public/data/ephemeris/` |
+| P5 | 2026-11-14 09:45 MST | Terrain access module and tests; extract of USGS Gazetteer features south of 82°S | `pipeline/sunsight/dem.py`, `pipeline/tests/test_dem.py`, `pipeline/data/gazetteer_south.json` |
+| P6 | 2026-11-14 09:52 MST | Horizon engine and synthetic-terrain tests; curated site list compiled from NASA/NSSDCA/LROC/USGS pages by a research subagent | `pipeline/sunsight/horizon.py`, `pipeline/tests/test_horizon.py`, `pipeline/data/curated_sites.json` |

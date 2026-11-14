@@ -41,11 +41,11 @@ Status is one of: todo, doing, done, cut.
 | P0 | Skeleton and fixtures | Both | done | 3dd52bc | Fixture data, CI, Pages deploy |
 | P1 | Kernels and manifest | A | done | 60cc057 | Nine kernels load; Earth orientation covers 2027–2030 |
 | P2 | Frames | A | done | 7c45c2d | ME/PA 875 m; matches SPICE AZLCPO to 1e-6° |
-| P3 | Ephemeris table | A | todo | | |
+| P3 | Ephemeris table | A | done | e02475c | 35,064 rows; interp vs SPICE: Sun 1.8e-6°, Earth 5.8e-7° |
 | P4 | Horizons check | A | todo | | |
-| P5 | Terrain access | A | todo | | |
-| P6 | Horizon engine | A | todo | | |
-| P7 | Hero site masks | A | todo | | |
+| P5 | Terrain access | A | done | 26088d4 | 1 km window over HTTP 1.04 s; 23 craters on bowls |
+| P6 | Horizon engine | A | done | 752e373 | All synthetic tests pass; review note 001 applied |
+| P7 | Hero site masks | A | doing |  | Shackleton region building |
 | P8 | Light engine, reference | A | done | bd7ee2a | Reference maths + shared vectors; real-table integration follows P3 |
 | P9 | Light engine, browser | B | doing |  | Lane B subagent, branch lane-b |
 | P10 | Site library and Anywhere mode | B | doing |  | Lane B subagent |
@@ -64,6 +64,12 @@ Status is one of: todo, doing, done, cut.
 
 ## Log
 
+- **P6 (09:52).** Numba horizon engine; 35 synthetic tests from closed-form 3D geometry (dip 0.087/0.194°, walls < 0.01°, 90° rotation, far spike at 27 placements, brute-force never-under-read, 10 m ≤ 2 m). Review note 001 resolved as proposed.
+  Reviewer: near-field rays are 0.05° apart; a single-pixel spike within 5 km can be under-read by part of its height between rays (bilinear surface). Far field has the exact guarantee. P17 sensitivity runs will measure the near-field effect.
+- **P5 (09:45).** dem.py: projection checked against pyproj; map stretch 0.77/1.73/7.18%; 3D distance and bearing equal haversine and spherical bearing; 23 IAU craters (USGS Gazetteer extract committed) land on bowls, mirrored grid fails; 1 km window of the 20 m map over HTTP in 1.04 s.
+  Reviewer: the PGDA 90 page does not state the height reference radius; I used the LOLA PDS label ("Map values are relative to a radius of 1737.4 km", `OFFSET = 1737400`), DECISIONS #27. The crater-depth thresholds were set after a first run (my first guess, depth > 4% of D, failed on degraded craters).
+- **P3 (09:38).** Hourly table, 2.5 MB. Interpolation vs fresh SPICE at 100 random times: Sun 1.8e-6°, Earth 5.8e-7°, stations 7.9e-5°; Moon elevation at stations 0.0046° in the 0–20° band.
+  Reviewer: three test bounds I first wrote were wrong and were replaced by derivations after diagnosis: station elevation interpolates badly near the station zenith (DECISIONS #24); apparent-size bounds need the Moon's orbit and the real apogee (#26); the plan's "Earth averages −0.26° at the pole" is not true for 2027–2030 (#25, SPICE mean sub-Earth latitude −0.163°).
 - **P2 (09:31).** frames.py + 20 tests. MOON_ME/MOON_PA max displacement 875 m (pole 663 m), derived from TKFRAME_31009 angles before running. Our az/el equal SPICE AZLCPO to 1e-6°.
   Reviewer: the table design (Moon-centred apparent vector minus site) differs from SPICE SPKCPO by up to 2.4e-5° for Earth. Cause diagnosed (stellar aberration is applied along the centre's line of sight; second order (v/c)(R/d)); bound derived as 2.94e-5° and set as the test limit after the first run failed my un-derived 1e-5° guess. See DECISIONS #20.
 - **P1 (09:28).** Nine kernels downloaded with curl (python.org Python lacks CA certs), SHA-256 in `pipeline/kernels.lock.json`. Station names confirmed in the SPK comments (1X/2X Goldstone, 3X/4X Canberra, 5X/6X Madrid).
