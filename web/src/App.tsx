@@ -7,6 +7,7 @@ import { local_frame, sample_at, site_vector } from './engine/light';
 import { formatDeg } from './format';
 import { loadAppData, type AppData } from './state/data';
 import { clampScenario, defaultScenario, tableRange, VIEWS, type Scenario } from './state/scenario';
+import { Panorama } from './views/Panorama';
 import { MetricTiles, VerdictHero } from './views/ReportCard';
 import { ScenarioControls, TimeBar } from './views/RulesEditor';
 import { SitePicker } from './views/SitePicker';
@@ -135,7 +136,12 @@ export function App() {
             <MetricTiles m={shown.metrics} rules={scn.rules} />
           </div>
         )}
-        {scn.view !== 'report' && (
+        {scn.view === 'sky' && shown && now && place && (
+          <div role="tabpanel" aria-label="Sky panorama" style={{ opacity: fresh ? 1 : 0.6 }}>
+            <Panorama series={shown.series} now={now} mask={place.mask} horizonLabel={place.horizonLabel} />
+          </div>
+        )}
+        {(scn.view === 'miss' || scn.view === 'compare') && (
           <div role="tabpanel" class="card"><p>This view is coming in a later package.</p></div>
         )}
         <footer class="small muted" style={{ marginTop: 24 }}>
