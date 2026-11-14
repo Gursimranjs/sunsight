@@ -68,9 +68,9 @@ Status is one of: todo, doing, done, cut.
 
 ## Log
 
-- **P16, P17 pipeline (10:24).** Seven Artemis III regions (961 points each, 75–112 s, compressed masks under 3 MB). Validation: Horizons, stations, physics sanity (10/10), known places (99.1% of PGDA permanent-shadow points never lit), Earth vs PGDA (+0.23) pass; sunlight vs PGDA −2.32 (fail), eclipses (1 of 84 pairs, fail), Gläser (partial). All explained on the page with computed numbers; nothing tuned.
+- **P16, P17 pipeline (10:25).** Seven Artemis III regions (961 points each, 75–112 s, compressed masks under 3 MB). Validation: Horizons, stations, physics sanity (10/10), known places (99.1% of PGDA permanent-shadow points never lit), Earth vs PGDA (+0.23) pass; sunlight vs PGDA −2.32 (fail), eclipses (1 of 84 pairs, fail), Gläser (partial). All explained on the page with computed numbers; nothing tuned.
   Reviewer: note 002 handled (A like-for-like recipe, B refined ridge/rim point 170 m from LROC's: 84.3%/86.0% vs 73.5%/85.7% at 2/10 m, as low as 32% within 300 m; C sensitivity table). Under "Needs a human" as the note asked.
-- **P14 (10:10).** Miss grids for the Athena target, Shackleton ridge/rim and Malapert Massif (317 points each, 10 m map near field, under a minute each). Mask format v2 adds lossless `.masks.dz` files (azimuth deltas + byte planes + gzip, ~37% of raw); both loaders tested.
+- **P14 (10:03).** Miss grids for the Athena target, Shackleton ridge/rim and Malapert Massif (317 points each, 10 m map near field, under a minute each). Mask format v2 adds lossless `.masks.dz` files (azimuth deltas + byte planes + gzip, ~37% of raw); both loaders tested.
 - **Gate 1 (10:01).** Real data live: manifest.json (fixture false), ephemeris, 28 cited sites, Shackleton region and terrain cut. Fixtures moved to `web/tests/fixtures/data` and never shipped; the release build refuses any `fixture_` file.
 - **Lane B (P9–P13, P15, P20, merged 09:58).** Built by a subagent on fixtures; all shared vectors reproduce to 1e-6; 14-day window 3.1 ms (budget 50 ms); bundle 77.8 kB JS (28 kB gzip). Not yet done: miss-tolerant calendar, axe run, the two people tests. Its notes are in `web/LANE_B_NOTES.md`.
   Reviewer: lane B found the shared vectors only reached no-go; added 21 verdict cases and a smooth-horizon window (merged).
