@@ -384,6 +384,10 @@ Branch `review-fixes-web`, one commit per finding group. Each fix has a vitest u
 | Contact mode `earth` | Contact tip says any part of Earth in view and that the station check is off; grazing tip says contact is never graded grazing under this rule | Matches `sample_at` in `light.ts` (earth mode returns clear or blocked only) |
 | Text left fixed | Pipeline facts in the story (e.g. "2 m observer" for the 2027–2030 lit shares), the 2 m astronaut camera, the timeline's "half height" bar for grazing | They describe a pipeline run or a drawing, not a rule |
 
+## End-to-end checks for the review fixes
+
+`web/tests/e2e/review_fixes.spec.ts` (built app, shipped data): the Shackleton ridge reads "…miss-test grid (10 m map), point g158" with its LROC source link (`rel="noopener"`) and the computed-point text; "About the data" has the PGDA 90, NAIF, LROC, PGDA 69 and Horizons entries; the Shackleton crater label says "nearest region point p338, 214 m from the cited site"; `?preset=constructor`, `__proto__` and `toString` load with a verdict and rewrite the URL to `preset=robotic`; a MutationObserver on the verdict card during a site switch (Shackleton ridge → Apollo 11) records every state, and no state shows Apollo 11's name with another verdict reason or Sun elevation; `moon_el_deg=45` becomes 20, the input has `min=0 max=20` and typing 35 gives 20; `cmp=apollo_11,apollo_11,apollo_12` gives two rows; the miss and 3D tabs show the terrain credit. No existing e2e test depended on the old behaviour; all 38 old tests still pass unchanged (47 in total).
+
 ## 7. Footer timing
 
 **Change**: `Engine` keeps `lastWindowMs`, set only by window jobs (worker and main-thread paths), and a new `windowTimed()` returns each window answer with its own job time. The App stores that time with the answer it shows, so the footer's "Scored N ten-minute steps in X ms" is the time of exactly the shown window, even when Compare (which also runs window jobs) or a calendar or miss job finished later. Test: `web/tests/unit/engine_timing_split.test.ts`.
