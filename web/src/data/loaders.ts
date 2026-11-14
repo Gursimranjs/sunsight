@@ -47,10 +47,13 @@ export async function loadSites(m: Manifest, fetcher: Fetcher = fetch, base = DA
   return { fixture: j.fixture === true, sites: j.sites };
 }
 
-/** Decode int16 horizon masks (units of scale_deg) to degrees: points x heights x bins. */
-export function decodeMasks(buf: ArrayBuffer, scaleDeg: number): Float32Array {
+/**
+ * Decode int16 horizon masks (units of scale_deg) to degrees: points x heights x bins.
+ * Float64, exactly as pipeline/sunsight/export.py decode_masks() does, so both engines see the same mask.
+ */
+export function decodeMasks(buf: ArrayBuffer, scaleDeg: number): Float64Array {
   const raw = new Int16Array(buf);
-  const out = new Float32Array(raw.length);
+  const out = new Float64Array(raw.length);
   for (let i = 0; i < raw.length; i++) out[i] = raw[i] * scaleDeg;
   return out;
 }
