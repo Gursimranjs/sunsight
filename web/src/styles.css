@@ -57,11 +57,14 @@ details.rules summary { cursor: pointer; font-weight: 600; min-height: 32px; }
 .verdict.go { border-left-color: var(--go); }
 .verdict.marginal { border-left-color: var(--marginal); }
 .verdict.no-go { border-left-color: var(--nogo); }
-.verdict-badge { display: inline-flex; align-items: center; gap: 8px; font-size: 1.9rem; font-weight: 800; letter-spacing: .02em; margin: 0; }
-.verdict-badge .sym { display: inline-grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; font-size: 1.3rem; color: #000; }
-.go .verdict-badge .sym { background: var(--go); border-radius: 50%; }
-.marginal .verdict-badge .sym { background: var(--marginal); border-radius: 4px; transform: rotate(0deg); }
-.no-go .verdict-badge .sym { background: var(--nogo); border-radius: 2px; }
+.verdict-badge { font-size: 1.9rem; font-weight: 800; letter-spacing: .02em; margin: 2px 0 0; }
+.vbadge { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; }
+.vbadge .sym { display: inline-grid; place-items: center; width: 1.15em; height: 1.15em; font-size: .8em; color: #000; line-height: 1; }
+.vbadge.go .sym { background: var(--go); border-radius: 50%; }
+.vbadge.marginal .sym { background: var(--marginal); clip-path: polygon(50% 0, 100% 100%, 0 100%); padding-top: .2em; }
+.vbadge.no-go .sym { background: var(--nogo); border-radius: 2px; }
+.vbadge.small { font-size: 14px; gap: 4px; }
+.cd-k { color: var(--muted); }
 .verdict-reason { margin: 4px 0 0; font-size: 1.05rem; }
 .sun-el { text-align: right; }
 .sun-el .big { font-size: 2.2rem; font-weight: 800; color: var(--sun); line-height: 1.1; }
@@ -108,4 +111,7 @@ th, td { padding: 4px 8px; border-bottom: 1px solid var(--line); text-align: lef
   .verdict-badge { font-size: 1.6rem; }
   .field select { min-width: 0; width: 100%; }
   .site-picker, .site-picker .field { width: 100%; }
+  .controls { gap: 8px 12px; }
+  .controls > .field { flex: 1 1 40%; }
+  .controls > .field input { width: 100%; }
 }

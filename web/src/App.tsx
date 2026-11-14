@@ -1,12 +1,16 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { resolveCustom, resolveSite, type Resolved } from './data/sites';
-import { skyAt } from './engine/sky';
-import { formatDeg, formatUtc, compass } from './format';
+import type { WindowAnswer } from './engine/compute';
+import { countdownsAt } from './engine/countdown';
+import { local_frame, sample_at, site_vector } from './engine/light';
+import { formatDeg } from './format';
 import { loadAppData, type AppData } from './state/data';
-import { clampScenario, defaultScenario, type Scenario } from './state/scenario';
+import { clampScenario, defaultScenario, tableRange, VIEWS, type Scenario } from './state/scenario';
+import { MetricTiles, VerdictHero } from './views/ReportCard';
+import { ScenarioControls, TimeBar } from './views/RulesEditor';
 import { SitePicker } from './views/SitePicker';
-import { Term } from './views/Term';
+import { Timeline } from './views/Timeline';
 
 export function App() {
   const [data, setData] = useState<AppData | null>(null);
@@ -14,6 +18,9 @@ export function App() {
   const [fixtureTick, setFixtureTick] = useState(0);
   const [scn, setScn] = useState<Scenario | null>(null);
   const [place, setPlace] = useState<Resolved | null>(null);
+  const [result, setResult] = useState<{ key: string; answer: WindowAnswer } | null>(null);
+  const [jobError, setJobError] = useState<string | null>(null);
+  const reqKey = useRef('');
 
   useEffect(() => {
     loadAppData(() => setFixtureTick((x) => x + 1))
@@ -42,17 +49,37 @@ export function App() {
     return () => { live = false; };
   }, [data, site, scn?.lat_deg, scn?.lon_deg, scn?.rules.observer_height_m]);
 
+  // Score the window in the worker whenever the place, dates or rules change.
+  const key = place && scn ? JSON.stringify([place.lat_deg, place.lon_deg, place.h_m, place.pointId, place.horizonLabel, scn.start_s, scn.stay_s, scn.rules]) : '';
+  useEffect(() => {
+    if (!data || !place || !scn || !key) return;
+    reqKey.current = key;
+    setJobError(null);
+    data.engine
+      .window({ place: { lat_deg: place.lat_deg, lon_deg: place.lon_deg, h_m: place.h_m }, mask: place.mask, start_s: scn.start_s, end_s: scn.start_s + scn.stay_s, rules: scn.rules })
+      .then((answer) => { if (reqKey.current === key) setResult({ key, answer }); })
+      .catch((e) => setJobError(String(e)));
+  }, [key]);
+
   const t_s = scn ? scn.start_s + scn.t_off_s : 0;
-  const sky = useMemo(() => {
+  const now = useMemo(() => {
     if (!data || !place || !scn) return null;
-    return skyAt(data.table, t_s, place.lat_deg, place.lon_deg, place.h_m + scn.rules.observer_height_m);
-  }, [data, place, t_s, scn?.rules.observer_height_m]);
+    const site_km = site_vector(place.lat_deg, place.lon_deg, place.h_m + scn.rules.observer_height_m);
+    return sample_at(data.table, t_s, site_km, local_frame(place.lat_deg, place.lon_deg), place.mask, scn.rules);
+  }, [data, place, t_s, scn?.rules]);
 
   if (error) return <main><p role="alert">Could not load data: {error}</p></main>;
   if (!data || !scn) return <main><p>Loading SunSight…</p></main>;
   void fixtureTick;
   const fixture = data.fixtureFiles.size > 0;
-  const now_ms = data.eph.start_ms + t_s * 1000;
+  const epochMs = data.eph.start_ms;
+  const answer = result && result.key === key ? result.answer : null;
+  const fresh = answer !== null;
+  const shown = answer ?? result?.answer ?? null; // keep the previous answer on screen while computing
+  const cds = shown && fresh
+    ? countdownsAt(shown.metrics, { lit0: shown.series.sun_frac[0] >= scn.rules.lit_threshold, earth0: shown.series.earth_frac[0] > 0, contact0: shown.series.contact[0] > 0 }, t_s)
+    : null;
+  const placeName = site ? site.name : `Custom point ${formatDeg(scn.lat_deg, 3)}, ${formatDeg(scn.lon_deg, 3)}`;
 
   return (
     <>
@@ -66,6 +93,18 @@ export function App() {
         <p class="tagline">Will a lunar landing site have sunlight for power and a line of sight to Earth?</p>
       </header>
       <main>
+        <VerdictHero
+          verdict={fresh ? shown!.verdict : null}
+          busy={!fresh}
+          placeName={placeName}
+          horizonLabel={place?.horizonLabel ?? ''}
+          terrain={place?.terrain ?? false}
+          sunElDeg={now?.sun_el_deg ?? null}
+          sunVisible={now?.sun_frac ?? null}
+          countdowns={cds}
+          epochMs={epochMs}
+          nowMs={epochMs + t_s * 1000}
+        />
         <section class="controls" aria-label="Scenario">
           <SitePicker
             sites={data.sites}
@@ -75,20 +114,34 @@ export function App() {
             onSite={(id) => update({ site_id: id })}
             onCustom={(lat_deg, lon_deg) => update({ site_id: null, lat_deg, lon_deg })}
           />
+          <ScenarioControls scn={scn} epochMs={epochMs} rangeS={tableRange(data.eph.meta)} onChange={update} />
         </section>
-        {place && sky && (
-          <section class="card" aria-label="Sun and Earth now" data-testid="sky-now">
-            <h2>Sun and Earth on {formatUtc(now_ms)}</h2>
-            <p class="muted">
-              {site ? site.name : 'Custom point'} at {formatDeg(place.lat_deg, 3)} latitude, {formatDeg(place.lon_deg, 3)} longitude.{' '}
-              <span data-testid="horizon-label">{place.terrain ? place.horizonLabel : <Term tip="smooth">{place.horizonLabel}</Term>}</span>
-            </p>
-            <ul class="pos">
-              <li>Sun: <Term tip="azimuth">azimuth</Term> {formatDeg(sky.sun.az_deg, 1)} ({compass(sky.sun.az_deg)}), <Term tip="elevation">elevation</Term> {formatDeg(sky.sun.el_deg, 2)}</li>
-              <li>Earth: azimuth {formatDeg(sky.earth.az_deg, 1)} ({compass(sky.earth.az_deg)}), elevation {formatDeg(sky.earth.el_deg, 2)}</li>
-            </ul>
-          </section>
+
+        {jobError && <p role="alert">The engine failed: {jobError}</p>}
+
+        <TimeBar scn={scn} epochMs={epochMs} onTime={(t_off_s) => update({ t_off_s })} />
+
+        <nav class="tabs" role="tablist" aria-label="Views">
+          {VIEWS.map((v) => (
+            <button key={v.id} role="tab" aria-selected={scn.view === v.id} onClick={() => update({ view: v.id })}>{v.label}</button>
+          ))}
+        </nav>
+
+        {scn.view === 'report' && shown && (
+          <div role="tabpanel" aria-label="Report card" style={{ opacity: fresh ? 1 : 0.6 }}>
+            <Timeline series={shown.series} metrics={shown.metrics} rules={scn.rules} start_s={shown.series.t_s[0]}
+              stay_s={shown.series.t_s[shown.series.t_s.length - 1] - shown.series.t_s[0]} t_off_s={scn.t_off_s}
+              onTime={(t_off_s) => update({ t_off_s })} />
+            <MetricTiles m={shown.metrics} rules={scn.rules} />
+          </div>
         )}
+        {scn.view !== 'report' && (
+          <div role="tabpanel" class="card"><p>This view is coming in a later package.</p></div>
+        )}
+        <footer class="small muted" style={{ marginTop: 24 }}>
+          {fresh && <>Scored {shown!.metrics.n_samples} ten-minute steps in {data.engine.lastMs.toFixed(0)} ms. </>}
+          Sun and Earth positions from {data.manifest.fixture ? 'made-up fixture data' : 'NASA/JPL SPICE kernels'}; see the validation page for checks.
+        </footer>
       </main>
     </>
   );
