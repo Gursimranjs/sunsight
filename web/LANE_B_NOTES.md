@@ -362,3 +362,7 @@ Branch `review-fixes-web`, one commit per finding group. Each fix has a vitest u
 - **Hostile preset (3)**: `decodeScenario` accepts a preset only if it is an own key of `PRESETS` (`Object.prototype.hasOwnProperty.call`). `?preset=constructor`, `__proto__`, `toString`, `hasOwnProperty`, `valueOf` now fall back to the robotic preset, and encoding the result no longer throws.
 - **Station-elevation cap (4)**: `MAX_MOON_EL_DEG = 20` and `clampMoonElDeg` in `state/scenario.ts`; applied in the rules editor (input `min=0 max=20`, label "°, 0–20", value clamped on change), in `decodeScenario` (`moon_el_deg`) and in `clampScenario` (via `clampRules`, so every path into the scenario is covered). A non-number falls back to the default 10°.
 - **Duplicate compare slots (8)**: `uniqueCompareIds` (first three distinct non-empty ids, in order) is used by `decodeScenario` for `cmp=` and by the Compare view for its slots and its default list, so React/Preact keys (site ids) are unique. It also closes a hole: picking slot 3 while slot 2 was empty used to store `undefined` in the list.
+
+## 7. Footer timing
+
+**Change**: `Engine` keeps `lastWindowMs`, set only by window jobs (worker and main-thread paths), and a new `windowTimed()` returns each window answer with its own job time. The App stores that time with the answer it shows, so the footer's "Scored N ten-minute steps in X ms" is the time of exactly the shown window, even when Compare (which also runs window jobs) or a calendar or miss job finished later. Test: `web/tests/unit/engine_timing_split.test.ts`.

@@ -27,7 +27,8 @@ export function App() {
   const [fixtureTick, setFixtureTick] = useState(0);
   const [scn, setScn] = useState<Scenario | null>(null);
   const [tagged, setTagged] = useState<TaggedPlace | null>(null);
-  const [result, setResult] = useState<{ key: string; answer: WindowAnswer } | null>(null);
+  /** The last window answer, the key of the inputs it was computed from, and how long that job took. */
+  const [result, setResult] = useState<{ key: string; answer: WindowAnswer; windowMs: number } | null>(null);
   const [jobError, setJobError] = useState<string | null>(null);
   const reqKey = useRef('');
 
@@ -73,8 +74,8 @@ export function App() {
     setJobError(null);
     if (!data || !place || !scn || !key) return;
     data.engine
-      .window({ place: { lat_deg: place.lat_deg, lon_deg: place.lon_deg, h_m: place.h_m }, mask: place.mask, start_s: scn.start_s, end_s: scn.start_s + scn.stay_s, rules: scn.rules })
-      .then((answer) => { if (reqKey.current === key) setResult({ key, answer }); })
+      .windowTimed({ place: { lat_deg: place.lat_deg, lon_deg: place.lon_deg, h_m: place.h_m }, mask: place.mask, start_s: scn.start_s, end_s: scn.start_s + scn.stay_s, rules: scn.rules })
+      .then(({ answer, ms }) => { if (reqKey.current === key) setResult({ key, answer, windowMs: ms }); })
       .catch((e) => { if (reqKey.current === key) setJobError(String(e)); });
   }, [key]);
 
@@ -195,7 +196,7 @@ export function App() {
           </div>
         )}
         <footer class="small muted" style={{ marginTop: 24 }}>
-          {fresh && <>Scored {shown!.metrics.n_samples} ten-minute steps in {data.engine.lastMs.toFixed(0)} ms. </>}
+          {fresh && result && <>Scored {shown!.metrics.n_samples} ten-minute steps in {result.windowMs.toFixed(0)} ms. </>}
           Sun and Earth positions from {data.manifest.fixture ? 'made-up fixture data' : 'NASA/JPL SPICE kernels'}. All maths runs in your browser; no data leaves it.
         </footer>
       </main>
