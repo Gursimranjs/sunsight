@@ -974,6 +974,7 @@ def main() -> None:
     groups = ap.parse_args().only or ["ephemeris", "eclipses", "sanity", "known", "glaser", "pgda"]
     path = OUT / "summary.json"
     have = {c["id"]: c for c in json.loads(path.read_text())["checks"]} if path.exists() else {}
+    ensure_illum()
     t0 = time.time()
     sens = json.loads(path.read_text()).get("sensitivity") if path.exists() else None
     if "sensitivity" in groups:
