@@ -134,7 +134,7 @@ def test_shackleton_deep_bowl_in_80m_map():
     assert rim - h0 > 3000.0  # Shackleton is about 4 km deep
 
 
-@pytest.mark.slow
+@pytest.mark.network
 def test_one_km_window_over_http_under_5_s():
     info = D.dem_info("/vsicurl/" + D.PGDA_BASE + D.MAPS[20])
     x, y = D.ll_to_xy(-84.79, 29.2, R)

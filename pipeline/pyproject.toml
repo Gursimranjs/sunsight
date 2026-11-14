@@ -41,4 +41,5 @@ testpaths = ["tests"]
 pythonpath = ["."]
 markers = [
   "slow: needs downloaded kernels or terrain; skipped in fast CI when data is absent",
+  "network: reads from a remote server; run with make check-network, not in make check",
 ]

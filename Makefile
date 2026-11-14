@@ -5,7 +5,8 @@ PY = cd pipeline && $(UV) run
 REGION ?=
 TARGET ?=
 
-.PHONY: setup fixtures kernels ephemeris golden masks miss validate web web-release check check-py check-web e2e deploy
+PHONY_EXTRA = check-network
+.PHONY: setup check-network fixtures kernels ephemeris golden masks miss validate web web-release check check-py check-web e2e deploy
 
 setup:
 	cd pipeline && $(UV) sync
@@ -44,7 +45,10 @@ check-py:
 	$(PY) ruff check .
 	$(PY) ruff format --check .
 	$(PY) mypy sunsight
-	$(PY) pytest -q
+	$(PY) pytest -q -m "not network"
+
+check-network:
+	$(PY) pytest -q -m network
 
 check-web:
 	cd web && npx tsc --noEmit
