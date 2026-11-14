@@ -32,3 +32,4 @@ The build agent appends one row per package.
 | Facts | 2026-11-14 10:35 MST | Facts sheet renderer and miss-grid statistics | `pipeline/sunsight/{facts,factsheet}.py`, `docs/submission/FACTS.md`, `docs/submission/facts_numbers.json` |
 
 Note on commit trailers: three merge commits made by the lane B2 subagent when it merged `main` into its branch (`50b446b`, `a315f69`, `935d6b3`, all "Merge branch 'main' into lane-b2") lack the co-author trailer. Their content is covered by the trailer-bearing commits around them; the published history is left unchanged.
+| Review | 2026-11-14 10:46–11:22 MST | Seven-lens review and fix-verification workflows (Claude Code subagents, read-only), the fixes they led to (pipeline and web), and the screenshot/clip capture script; the screenshots and clips are captures of the real app, not generated images | `pipeline/`, `web/src/`, `web/tests/`, `web/playwright.capture.config.ts`, `docs/submission/` |

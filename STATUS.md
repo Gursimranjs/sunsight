@@ -27,6 +27,7 @@ Checked Saturday November 14, 2026, 09:16 MST.
    - Eclipses: 1 of 84 site-eclipse pairs (Peak near Cabeus B, 2029 Dec 20) shows 0.09% of the Sun in the last minute of NASA's totality; NASA enlarges Earth's shadow for the atmosphere, we use the bare sphere.
    - Earth visibility vs PGDA: mean +0.23 points (within ±2), but only 2 of the 5 largest outliers are measurably isolated PGDA pixels; marked partial because the plan's pass mark asks for every outlier to be explained.
    - Gläser ridge: −5.95/−5.97 points with the half-disc rule, −1.54/−2.03 with any part of the disc. Gläser's exact definition of "sunlit" was not checked; please check the paper (Icarus 243, 78) and say which applies.
+5. **P22, for people.** Material is in `docs/submission/` (FACTS.md, screenshots, raw clips; see its README). Record the voice-over and cut the 30-second video, write the eight project-page fields in the team's own words (SI field from `SI_USE.md`), submit by 22:30, then tag the submitted commit: `git tag v1.0-submission <commit> && git push origin v1.0-submission`. Keep the live site on that build until January 26, 2027.
 3. **FortiGuard classification.** Request a web-filter classification for `https://gursimranjs.github.io/sunsight/` at https://www.fortiguard.com/faq/classification (Submission Guide recommendation). Needs a person.
 
 ## Gates
@@ -64,11 +65,12 @@ Status is one of: todo, doing, done, cut.
 | P18 | 3D hero view | B | done | ab1619f | 60 fps (display cap) on M4 Pro; Three.js 135 kB gzip, lazy-loaded; labelled illustrative |
 | P19 | Guided Athena story | B | done | ab1619f | Five steps, works at 375 px; honest step 3/5 (20 m crater below map resolution) |
 | P20 | Share and export | B | done | cda23b0 | Scenario in URL; CSV/JSON export |
-| P21 | Quality pass | B | doing | ab1619f | axe 0 findings on 7 views; 38 e2e pass; first-load JS 43 kB gzip; 3.2 MB data first load (1.9 s @ 25 Mbit/s, 3.5 s @ 10) |
-| P22 | Demo, project page, submission | People | todo | | |
+| P21 | Quality pass | B | done | 65d45a4 | axe 0 findings, 48 e2e pass, no console errors; first load 1.9 s @ 25 Mbit/s but 3.5 s @ 10 Mbit/s (2.5 MB table) |
+| P22 | Demo, project page, submission | People | todo |  | People: video, project page, submit, tag |
 
 ## Log
 
+- **All build packages done (11:25), ahead of the Sunday 14:00 freeze.** A verification workflow (25 agents) found 21 of the 23 review findings fixed and 4 minor regressions; the 2 remaining findings and the 4 regressions are fixed and merged (65d45a4), with tests. Captures in `docs/submission/` come from the final build (`make capture`). From here: only fixes, and the people's P22 work.
 - **Pre-freeze review (10:56).** A seven-lens review workflow (85 agents; each finding checked by three skeptics) confirmed 23 of 26 findings. The serious one: the Shackleton ridge/rim report card was computed at region point p472, 298 m from LROC's coordinates (39% lit instead of 73% at 2 m), shown under the site's name. Pipeline fixes merged (cdaf002): site offsets and miss-grid links, full-precision CSVs, measured outlier evidence (earth_pgda now partial), known places at the cited coordinate, complete manifest, unit-bearing names in the horizon kernels (masks byte-identical). Web fixes (site resolution priority, stale results, hostile URL, 20° cap, credits, tooltips) are with a subagent.
 - **Lane B2 (P15 calendar, P17 page, P18, P19, P21 pieces; merged 10:37).** Built by a second subagent; 77 unit and 38 browser tests pass (`make e2e`, Chromium). axe finds no issues on all 7 views; no sideways scroll at 375 px; text ≥ 14 px; first-load JS 43.0 kB gzip with a 60 kB budget script. 3D: 60 fps at the display cap (about 750 fps uncapped) on this laptop, 1–7 fps with software rendering.
   Reviewer: first load is 3.22 MB, mostly the 2.5 MB ephemeris table, so the 3-second target holds at 25 Mbit/s (1.9 s) but not at 10 Mbit/s (3.5 s). The story credits the 250 m and "more than 400 m" miss figures to SpacePolicyOnline (which states both) and says the mission ended about 13 hours after landing, per that report.
