@@ -116,7 +116,30 @@ export function resolveCustom(lat_deg: number, lon_deg: number, observer_height_
  * nearest region point by great-circle distance, and that point's own coordinates and height (the
  * mask was computed there). Without a region, the smooth horizon at the site's coordinates and height.
  */
-export function resolveSite(site: Site, region: MaskSet | null, observer_height_m: number): Resolved {
+export const MISS_CENTRE_LABEL = 'Terrain horizon from the miss-test grid (target point)';
+
+/** Index of the miss grid's centre point (east 0 m, north 0 m), or -1. */
+export function missCentreIndex(grid: MaskSet): number {
+  return grid.meta.points.findIndex((p) => (p.east_m ?? NaN) === 0 && (p.north_m ?? NaN) === 0);
+}
+
+/**
+ * Where to evaluate a curated site. Priority: its region point; else the centre point of its
+ * miss-test grid (sites with a miss_target_id but no region, such as Athena's target); else the
+ * smooth horizon at the site's own coordinates.
+ */
+export function resolveSite(site: Site, region: MaskSet | null, observer_height_m: number, missGrid: MaskSet | null = null): Resolved {
+  if (!(site.region_id && region) && site.miss_target_id && missGrid) {
+    const i = missCentreIndex(missGrid);
+    if (i >= 0) {
+      const p = missGrid.meta.points[i];
+      const hi = heightIndex(missGrid.meta.observer_heights_m, observer_height_m);
+      return {
+        lat_deg: p.lat_deg, lon_deg: p.lon_deg, h_m: p.height_m,
+        mask: maskOf(missGrid, i, hi), terrain: true, horizonLabel: MISS_CENTRE_LABEL, pointId: p.id,
+      };
+    }
+  }
   if (site.region_id && region) {
     const pts = region.meta.points;
     const named = typeof site.region_point_id === 'string' ? pts.findIndex((p) => p.id === site.region_point_id) : -1;

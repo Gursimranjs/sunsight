@@ -1,21 +1,24 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { resolveCustom, resolveSite, type Resolved } from './data/sites';
+import { resolveCustom, type Resolved } from './data/sites';
 import type { WindowAnswer } from './engine/compute';
 import { countdownsAt } from './engine/countdown';
 import { local_frame, sample_at, site_vector } from './engine/light';
 import { formatDeg } from './format';
-import { loadAppData, type AppData } from './state/data';
+import { loadAppData, resolveForSite, type AppData } from './state/data';
 import { clampScenario, defaultScenario, tableRange, VIEWS, type Scenario } from './state/scenario';
 import { decodeScenario, encodeScenario } from './state/url';
 import { ShareBar } from './views/ShareBar';
 import { Compare } from './views/Compare';
 import { MissView } from './views/MissView';
 import { Panorama } from './views/Panorama';
-import { MetricTiles, VerdictHero } from './views/ReportCard';
+import { asRefined, MetricTiles, RefinedNote, VerdictHero } from './views/ReportCard';
 import { ScenarioControls, TimeBar } from './views/RulesEditor';
 import { SitePicker } from './views/SitePicker';
 import { Timeline } from './views/Timeline';
+import { ValidationView } from './views/Validation';
+import { Hero3D } from './views/Hero3D';
+import { Story } from './views/Story';
 
 export function App() {
   const [data, setData] = useState<AppData | null>(null);
@@ -55,12 +58,7 @@ export function App() {
     let live = true;
     const h = scn.rules.observer_height_m;
     if (!site) setPlace(resolveCustom(scn.lat_deg, scn.lon_deg, h));
-    else if (!site.region_id) setPlace(resolveSite(site, null, h));
-    else {
-      data.region(site.region_id)
-        .then((r) => live && setPlace(resolveSite(site, r, h)))
-        .catch(() => live && setPlace({ ...resolveSite(site, null, h), horizonLabel: 'Terrain file missing: smooth horizon used' }));
-    }
+    else resolveForSite(data, site, h).then((r) => live && setPlace(r));
     return () => { live = false; };
   }, [data, site, scn?.lat_deg, scn?.lon_deg, scn?.rules.observer_height_m]);
 
@@ -119,6 +117,7 @@ export function App() {
           countdowns={cds}
           epochMs={epochMs}
           nowMs={epochMs + t_s * 1000}
+          siteNote={site && asRefined(site.refined) ? <RefinedNote r={asRefined(site.refined)!} /> : undefined}
         />
         <section class="controls" aria-label="Scenario">
           <SitePicker
@@ -171,6 +170,21 @@ export function App() {
         {scn.view === 'compare' && (
           <div role="tabpanel" aria-label="Compare and calendar">
             <Compare data={data} scn={scn} update={update} />
+          </div>
+        )}
+        {scn.view === '3d' && (
+          <div role="tabpanel" aria-label="3D view">
+            <Hero3D data={data} site={site} place={place} scn={scn} now={now} update={update} />
+          </div>
+        )}
+        {scn.view === 'story' && (
+          <div role="tabpanel" aria-label="Athena story">
+            <Story data={data} scn={scn} update={update} />
+          </div>
+        )}
+        {scn.view === 'validation' && (
+          <div role="tabpanel" aria-label="Validation">
+            <ValidationView data={data} />
           </div>
         )}
         <footer class="small muted" style={{ marginTop: 24 }}>

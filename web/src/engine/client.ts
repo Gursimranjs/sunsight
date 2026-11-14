@@ -1,12 +1,15 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // Promise wrapper around the engine worker. Falls back to running on the main thread when Web
 // Workers are unavailable (for example in unit tests), so the app still works.
-import { runCalendar, runMiss, runWindow, type CalendarAnswer, type CalendarJob, type MissAnswer, type MissJob, type WindowAnswer, type WindowJob } from './compute';
+import {
+  runCalendar, runMiss, runMissCalendar, runWindow,
+  type CalendarAnswer, type CalendarJob, type MissAnswer, type MissCalendarAnswer, type MissCalendarJob, type MissJob, type WindowAnswer, type WindowJob,
+} from './compute';
 import type { Table } from './light';
 import type { Reply, Request } from './protocol';
 
 type Pending = { resolve: (v: unknown) => void; reject: (e: Error) => void; onProgress?: (f: number) => void };
-type Job = { type: 'window'; job: WindowJob } | { type: 'miss'; job: MissJob } | { type: 'calendar'; job: CalendarJob };
+type Job = { type: 'window'; job: WindowJob } | { type: 'miss'; job: MissJob } | { type: 'calendar'; job: CalendarJob } | { type: 'missCalendar'; job: MissCalendarJob };
 
 export class Engine {
   private worker: Worker | null = null;
@@ -51,6 +54,7 @@ export class Engine {
           const t0 = performance.now();
           const r = job.type === 'window' ? runWindow(this.table, job.job)
             : job.type === 'miss' ? runMiss(this.table, job.job)
+            : job.type === 'missCalendar' ? runMissCalendar(this.table, job.job)
             : runCalendar(this.table, job.job);
           this.lastMs = performance.now() - t0;
           resolve(r as T);
@@ -67,4 +71,5 @@ export class Engine {
   window(job: WindowJob): Promise<WindowAnswer> { return this.run({ type: 'window', job }); }
   miss(job: MissJob, onProgress?: (f: number) => void): Promise<MissAnswer> { return this.run({ type: 'miss', job }, onProgress); }
   calendar(job: CalendarJob, onProgress?: (f: number) => void): Promise<CalendarAnswer> { return this.run({ type: 'calendar', job }, onProgress); }
+  missCalendar(job: MissCalendarJob, onProgress?: (f: number) => void): Promise<MissCalendarAnswer> { return this.run({ type: 'missCalendar', job }, onProgress); }
 }

@@ -60,6 +60,8 @@ export interface MissAnswer {
   verdicts: VerdictKind[];
   reasons: string[];
   passes: boolean[];
+  /** Share of the stay each point is lit (metrics.lit_share), for the story's lit ranges. */
+  lit_share: number[];
   /** miss_share at each radius in radii_m. */
   shares: number[];
 }
@@ -70,16 +72,18 @@ export const passes = (v: VerdictKind) => v !== 'no-go';
 export function runMiss(table: Table, job: MissJob, progress?: (done: number, total: number) => void): MissAnswer {
   const verdicts: VerdictKind[] = [];
   const reasons: string[] = [];
+  const lit_share: number[] = [];
   job.places.forEach((p, i) => {
     const mask = job.masks.subarray(i * BIN_COUNT, (i + 1) * BIN_COUNT);
     const m = window_compute(table, p.lat_deg, p.lon_deg, p.h_m, mask, job.start_s, job.end_s, job.rules).metrics;
     const v = verdict(m, job.rules);
     verdicts.push(v.verdict);
     reasons.push(v.reason);
+    lit_share.push(m.lit_share);
     if (progress && i % 16 === 15) progress(i + 1, job.places.length);
   });
   const ok = verdicts.map(passes);
-  return { verdicts, reasons, passes: ok, shares: job.radii_m.map((r) => miss_share(ok, job.east_m, job.north_m, r)) };
+  return { verdicts, reasons, passes: ok, lit_share, shares: job.radii_m.map((r) => miss_share(ok, job.east_m, job.north_m, r)) };
 }
 
 /** Days x sites: a verdict and score for a stay starting on each day. */
@@ -107,4 +111,41 @@ export function runCalendar(table: Table, job: CalendarJob, progress?: (done: nu
     cells.push(row);
   }
   return { cells };
+}
+
+/**
+ * Miss-tolerant calendar for one miss-test target: for each start day, the share of grid points
+ * inside the miss radius that pass (go or marginal). A day is tolerant when share >= min_share.
+ * The job carries only the points inside the radius; the others cannot change the share.
+ */
+export interface MissCalendarJob {
+  places: Place[];
+  /** Masks in degrees, places.length x BIN_COUNT, for the chosen observer height. */
+  masks: Float64Array;
+  day_starts_s: number[];
+  stay_s: number;
+  rules: Rules;
+  radius_m: number;
+  min_share: number;
+}
+export interface MissCalendarDay { n_inside: number; n_pass: number; share: number; tolerant: boolean }
+export interface MissCalendarAnswer { days: MissCalendarDay[] }
+
+export function runMissCalendar(table: Table, job: MissCalendarJob, progress?: (done: number, total: number) => void): MissCalendarAnswer {
+  const n = job.places.length;
+  const total = n * job.day_starts_s.length;
+  let done = 0;
+  const days = job.day_starts_s.map((d) => {
+    let n_pass = 0;
+    job.places.forEach((p, i) => {
+      const mask = job.masks.subarray(i * BIN_COUNT, (i + 1) * BIN_COUNT);
+      const m = window_compute(table, p.lat_deg, p.lon_deg, p.h_m, mask, d, d + job.stay_s, job.rules).metrics;
+      if (passes(verdict(m, job.rules).verdict)) n_pass++;
+      done++;
+      if (progress && done % 16 === 0) progress(done, total);
+    });
+    const share = n ? n_pass / n : NaN;
+    return { n_inside: n, n_pass, share, tolerant: n > 0 && share >= job.min_share };
+  });
+  return { days };
 }

@@ -115,6 +115,11 @@ td.cal.marginal button { background: var(--marginal); }
 td.cal.no-go button { background: var(--nogo); }
 table.calendar td button:hover { border-color: #fff; }
 
+/* Checkbox field and miss-tolerant calendar cells (outlined so the mode shows without colour) */
+.check { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; font-size: 15px; font-weight: 600; color: var(--fg); }
+.check input { width: 22px; height: 22px; accent-color: var(--oi-orange); }
+td.cal.miss button { outline: 2px dashed #000; outline-offset: -5px; }
+
 @media (max-width: 600px) {
   .verdict { grid-template-columns: 1fr; }
   .sun-el { text-align: left; }
@@ -125,3 +130,50 @@ table.calendar td button:hover { border-color: #fff; }
   .controls > .field { flex: 1 1 40%; }
   .controls > .field input { width: 100%; }
 }
+
+/* Validation page */
+.vbadge.notrun .sym { background: var(--muted); border-radius: 2px; }
+.vcheck { border-left: 8px solid var(--line); }
+.vcheck.go { border-left-color: var(--go); }
+.vcheck.no-go { border-left-color: var(--nogo); }
+.vcheck.marginal { border-left-color: var(--marginal); }
+.check-nums { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 4px 0; }
+.check-nums div { min-width: 9rem; }
+.check-nums dt { font-size: 14px; color: var(--muted); }
+.check-nums dd { margin: 0; font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+table.csv-head { font-size: 14px; font-variant-numeric: tabular-nums; }
+table.csv-head caption { text-align: left; caption-side: top; padding-bottom: 2px; }
+table.csv-head th { white-space: nowrap; }
+
+/* 3D view */
+.scene3d { width: 100%; min-height: 300px; background: #000; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.scene3d canvas { display: block; }
+.illustrative { margin: 0 0 8px; padding: 6px 10px; border: 1px dashed var(--oi-yellow); border-radius: 6px; font-size: 15px; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.btnrow button[aria-pressed=true] { background: var(--oi-blue); border-color: var(--oi-blue); color: #fff; }
+.field input[type=range] { padding: 0; accent-color: var(--oi-orange); }
+
+/* Guided Athena story */
+.story h2 { font-size: 1.35rem; }
+.story p { max-width: 42rem; }
+.story-steps { display: flex; gap: 6px; list-style: none; padding: 0; margin: 4px 0 10px; }
+.story-steps button { width: 44px; height: 44px; padding: 0; border-radius: 50%; font-weight: 700; }
+.story-steps button[aria-current=step] { background: var(--oi-orange); border-color: var(--oi-orange); color: #000; }
+.story-nav { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin: 14px 0 8px; }
+.story-nav button { min-height: 44px; }
+.future-label { display: inline-block; margin: 0 0 8px; padding: 4px 10px; border: 2px solid var(--oi-sky); border-radius: 6px; font-weight: 700; }
+.story q { font-style: italic; }
+.story .card { padding-left: 0; padding-right: 0; border: 0; background: transparent; }
+
+/* Focus on SVG controls: outlines do not draw on SVG groups, so ring the pin instead */
+.pin { outline: none; }
+.pin:focus-visible circle { stroke: var(--oi-yellow); stroke-width: 6; }
+.pin:focus-visible path { stroke: var(--oi-yellow); stroke-width: 3; }
+canvas:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
+/* Form fields keep their ring even when focus sits on a built-in part (e.g. the date picker button). */
+input:focus, input:focus-within, select:focus, textarea:focus { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+table.sens td.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.refined { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--line); }
+/* Long file names and identifiers in validation text must wrap on phones. */
+.vcheck p, .vcheck dd, .vcheck h3, #sens-title + p { overflow-wrap: anywhere; }

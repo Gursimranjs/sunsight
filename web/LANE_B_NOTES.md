@@ -175,3 +175,151 @@ Checked the files lane A has merged on `main` (no `manifest.json` yet): `sites.j
 - On the fixture, the loader first asks for `manifest.json`, gets a 404 and falls back to `fixture_manifest.json`; the browser logs that 404 as a console error. It disappears once lane A ships `manifest.json`.
 - Accessible names: form controls are wrapped in `<label>` elements; worth an axe run in P21.
 - The "<30 s outsider" and "explain the miss map in 10 s" checks need people.
+
+---
+
+# Lane B, second builder (branch `lane-b2`)
+
+## P15 leftover: miss-tolerant calendar
+
+**Generated files**: `MissCalendarJob`/`runMissCalendar` in `web/src/engine/compute.ts` (plus worker, protocol and `Engine.missCalendar`), `missCalendarJob` in `web/src/views/missGeometry.ts`, calendar controls in `web/src/views/Compare.tsx`, styles; test `web/tests/unit/miss_calendar.test.ts`. `web/vite.config.ts` gained a dev-server-only plugin: `SUNSIGHT_FIXTURE=1 npx vite` answers `/data/*` from `web/tests/fixtures/data/` so the fixture miss grid can be viewed in a browser without putting fixtures in `public/data` (builds are unaffected; `apply: 'serve'`).
+
+**Verification**
+
+- Unit test: on the fixture grid, for radii 100/250/500 m × required shares 50/75/90 % × 8 start days, every day's `n_inside`, `n_pass`, `share` and `tolerant` equal a direct computation (`window_compute` + `verdict` at each point inside the radius). The share also equals the miss view's `runMiss` share for the same window (< 1e-12), and the `Engine` client path gives the same answer.
+- Browser (fixture dev server, fixture target, 3-day robotic stays, gap limit 1,000 h, 250 m, 90 %): 2027-01-07 reads 15 of 21 (71 %, not tolerant), equal to the P15 reference case; 2027-01-09 to 01-16 are tolerant (19–21 of 21); the ◎ row is outlined so the mode is visible without colour.
+
+**Decisions and assumptions**
+
+| Decision | Value | Reason |
+| --- | --- | --- |
+| Which rows use the grid | Only sites with `miss_target_id`; other rows keep the single-point verdict and the note says so | A grid exists only for named targets |
+| Good date with the miss test on | `n_pass / n_inside ≥ required share` over grid points with `hypot(east, north) ≤ r + 1e-9`; a point passes when its verdict is not no-go | Same inside test and pass rule as `miss_share` and the miss view |
+| The site's own single-point verdict | Not combined; the grid (which contains the target point with its own terrain mask) decides | The single point of a target without a region uses a smooth horizon, the grid has real terrain |
+| Controls | Checkbox "Miss test on", radius 100/250/500 m (default 250), required share in % (default 90, any 1–100) | DECISIONS #13 default, "adjustable" in the plan |
+| Cost | Only points inside the radius are sent to the worker (5 / 21 / 81 on the fixture; ~80 at 250 m on a 50 m grid) | 80 points × 14 days × ~3 ms ≈ 3–4 s with progress shown |
+| Miss-test state in the URL | Not stored | Kept local to the calendar card; easy to add later |
+
+## P17 Validation page (UI)
+
+**Generated files**: `web/src/data/validation.ts` (schema normaliser, loader, CSV parser, value formatting), `web/src/views/Validation.tsx`, a "Validation" tab (`view=validation` in the URL), `markFixture()` on `AppData` (late-loaded fixture files raise the banner), styles; test `web/tests/unit/validation.test.ts`. Fixture: `web/tests/fixtures/data/validation/fixture_summary.json` **rewritten to the agreed schema** (8 made-up checks covering pass / fail / partial / not run, flagged `"fixture": true`, titles end "(fixture)") plus three fixture CSVs (`fixture_ephemeris_horizons.csv`, `fixture_sunlight_pgda.csv`, `fixture_eclipses.csv`). **Lane A:** `pipeline/sunsight/fixtures.py` still writes the older placeholder shape; if it is rerun it will overwrite this file (the app copes, see below), so please update it to the schema or stop it writing this file. The fixture manifest's checksum for this file is now stale (nothing checks it).
+
+**Verification**
+
+- Unit tests: the fixture summary loads through the fixture manifest; every check has a title, pass mark, explanation and one of the four statuses, and a finite number unless "not run"; counts add up; a manifest without `files.validation`, or naming a file that 404s, gives `missing`; the old placeholder shape normalises (unknown status → "not run", empty explanation → "No explanation was recorded"); value formatting (2.6e-5 deg → "0.000026°", "%" and free-text units); CSV parsing with quoted commas, doubled quotes and CRLF; every CSV the fixture names exists and has the stated row count.
+- Browser: fixture dev server, 1200 px and 375 px: every check card shows status (shape + word + coloured edge), the number with unit and its label, pass mark, explanation ("Why it fails:" for a fail), a download link and the first ≤ 5 CSV rows; limits list at the end; no horizontal page scroll at 375 px (wide CSV tables scroll inside their own box). Real data (no validation file in the manifest yet): "Validation not run yet" with an honest sentence.
+
+**Decisions and assumptions**
+
+| Decision | Value | Reason |
+| --- | --- | --- |
+| Status display | pass ✓ green circle, fail ✕ vermillion square, partial ! yellow triangle, not run – grey square, plus the word and a coloured card edge | Never colour alone; same shapes as the verdicts |
+| Missing or unreadable file | "Validation not run yet" (unreadable adds the error) | Honest; no placeholder numbers |
+| CSV preview | First 5 rows, fetched when the page opens; download link to the same file under `data/` | "A small table is enough"; same-origin file |
+| Missing fields | Filled with visible defaults ("not stated", "no number yet") | A partial file from the pipeline should still render |
+
+## P18 3D hero view
+
+**Generated files**: `web/src/views/terrain3d.ts` (Three-free geometry: south polar stereographic, sky direction → scene axes, grid layout, bilinear ground height), `web/src/views/Scene3D.tsx` (the Three.js scene; the only file that imports `three`), `web/src/views/Hero3D.tsx` (shell: terrain loading, WebGL check, dynamic `import('./Scene3D')`, buttons, time slider, engine numbers), "3D view" tab (`view=3d`), styles; test `web/tests/unit/terrain3d.test.ts`. New dependencies, exact-pinned: `three@0.186.1`, dev `@types/three@0.186.0` (also in this commit's package.json: `@playwright/test@1.64.1`, `@axe-core/playwright@4.14.0`, used from the e2e package on). Versions picked at least two weeks old; the newest Playwright (1.65.1) was a day old.
+
+**Verification**
+
+- Unit tests: the projection (2R·tan(45° + lat/2), R = 1,737.4 km; x = ρ sin λ, y = ρ cos λ) reproduces `map_x_m`/`map_y_m` of every shipped terrain centre within 1 m and inverts exactly; the sky-direction rule (local north = map (sin λ, cos λ), east = map (cos λ, −sin λ), up = +height; scene X = map x, Y = up, Z = −map y) gives the expected axes at λ = 0° and 90°; a ground point 1 km away at bearing az (computed on the sphere with `local_frame`) appears in the scene at bearing az within 0.05° at every shipped terrain centre, so the Sun's light direction is consistent with the ground; row 0 is the largest map y; bilinear ground height equals the node at nodes and the mean of four at cell centres; a wrong-size file is rejected.
+- Browser, real data (Shackleton ridge and Athena cuts): mesh 512×512 (523,264 triangles) with a shadow-casting directional light from the Sun's direction at the shared time; Sun and Earth drawn as true-size discs at their directions; the shared time slider and a second slider in the 3D card both drive `scn.t_off_s`; "Astronaut's eye (2 m)" puts the camera 2 m above bilinear ground at the landing point looking level toward the Sun (buttons to face the Sun or Earth; drag/arrow keys look around). Screenshot at 2027-01-02 06:00 UTC on the ridge shows the Sun (1.2°) just over the local ridge.
+- **Frame rate** (requestAnimationFrame intervals, averaged over 1 s, shown on screen and in `window.__sunsight3d`): Apple M4 Pro laptop GPU through Chromium/ANGLE Metal: **60 fps** with vsync (the display cap) in overview and astronaut views; with vsync and frame limit off, **≈ 750–775 fps** (≈ 1.3 ms a frame). Software rendering (SwiftShader, no GPU): 1–7 fps; the view drops to pixel ratio 1 when it measures under 24 fps.
+- First-load bundle unchanged by Three.js: `index` JS 95.8 kB (34.3 kB gzip; includes the P15/P17 work and the 3D shell), Three.js in `Scene3D-*.js` 556 kB (139 kB gzip), fetched only when the 3D tab opens (checked in e2e).
+- No WebGL: `hasWebGL()` checks `webgl2`/`webgl` before anything loads and shows "3D view unavailable" with a sentence saying every number still works; a renderer that throws on creation shows its message instead of crashing (checked in e2e by blocking `getContext`).
+
+**Decisions and assumptions**
+
+| Decision | Value | Reason |
+| --- | --- | --- |
+| Projection used to place the landing point | South polar stereographic on the 1,737.4 km sphere, true scale at the pole | Matches the cut's own `map_x_m`/`map_y_m` to < 1 m; the cut metadata gives no projection string |
+| Sky directions | `skyAt` (engine) at the cut's centre, then the stated ENU → map rotation at the centre's longitude | As specified; within 5 km the direction differs by < 0.2° |
+| Vertical scale | True (no exaggeration); heights relative to the centre node | Honest picture of the slopes |
+| Sun below the level horizon (el + r < 0) | Light intensity 0; ambient 0.06 only; legend says the scene is dark | A light from below the horizon would light slopes wrongly |
+| Shadow map | 4096², orthographic, ±1.45 × half the cut | Covers the whole cut at the long polar shadow angles |
+| Landing point outside the cut | Pin hidden, astronaut button disabled, note shown | No ground to stand on |
+| Miss ring | 250 m ring draped on the ground around the landing point | Ties the 3D view to the miss test |
+| Frame loop | Continuous rAF while the tab is open, stopped on leaving | Needed for orbit damping and the fps measure |
+| Terrain beyond the cut | Not drawn; label says distant ridges (20–300 km) are missing here | The numbers use the full horizon masks |
+
+## P19 Guided Athena story
+
+**Generated files**: `web/src/views/Story.tsx` (five steps, Back/Next, numbered step buttons), `web/src/views/storyNumbers.ts` (distance, offset, rounding box, possible-miss range; named so it does not clash with `Story.tsx` on case-insensitive disks), "Athena story" tab (`view=story`), styles; test `web/tests/unit/story.test.ts`. `MissView`'s map now keeps its aspect ratio when scaled down (`height: auto`), which fixed a tall empty gap on phones.
+
+**Facts used, and where from**
+
+| Fact | Source |
+| --- | --- |
+| Intended site 84.78° S, 29.13° E, about 160 km from the south pole | LROC image 1401 (`sites.json` `im2_athena_target`) |
+| Resting place 84.7906° S, 29.1957° E; came down faster than intended and "ended up on its side within a 20-meter diameter crater" | LROC image 1408 (`im2_athena_actual`) |
+| Landed 6 March 2025; NASA declared the mission over about 12 h 45 min (≈ 13 h) after landing; on its side in a crater sunlight could not reach, so the solar cells could not recharge the batteries; Intuitive Machines put the miss at about 250 m, NASA at more than 400 m | SpacePolicyOnline, https://spacepolicyonline.com/news/im-2-mission-ends-one-day-after-lunar-landing/ (read 2026-11-14; the page title says "one day", its text says about 13 hours, so the story says "about 13 hours") |
+
+The brief also cites a NASA news release ("more than 1,300 feet (400 meters)") and a NASA Marshall page (250 m). I had no URLs for those, so the story attributes both figures to the SpacePolicyOnline report, which states both. **People:** if you want direct NASA links, add them in `Story.tsx` step 2.
+
+**Computed in the app** (from the two LROC coordinate pairs, Moon sphere 1,737.4 km): target to resting place **369 m**, toward the south-south-east (321 m south, 181 m east). The target is quoted to two decimals, i.e. ±0.005° = ±152 m north–south and ±14 m east–west at 84.78° S, so the miss could be anywhere from about **240 m to 510 m**; both published figures fit inside. Unit tests check the distance against an independent haversine (< 1 cm), the rounding box, and the min/max against a brute-force search over the box.
+
+**Honesty points built in**: step 3 says a 20 m crater is at the limit of the 20 m terrain map and draws it over 20 m cells; step 4 says the table covers 2027–2030 only, so SunSight cannot replay March 2025, and that it does not model a tipped lander; step 5 shows the real `miss/im2_athena_target` grid for a start date the user picks inside 2027–2030, with a boxed "Future date: … not the 2025 landing" label; if the grid is not in the manifest it says the map is not available (no fixture fallback). Credits link LROC images 1401 and 1408 (NASA/GSFC/Arizona State University) and SpacePolicyOnline; no images are reproduced.
+
+**Verification (phone)**: Playwright, 375 × 812, touch, real data: tapped Next through all five steps; no horizontal page scroll on any step (`scrollWidth == 375`), no console errors; step 5 ran the 317-point grid (2027-03-01 start, robotic preset: 0 % pass at every radius, the real answer for that date, each point's reason is a > 300 h dark spell).
+
+## End-to-end and accessibility tests (Playwright + axe)
+
+**Generated files**: `web/playwright.config.ts`, `web/tests/e2e/helpers.ts`, `web/tests/e2e/journeys.spec.ts`, `web/tests/e2e/quality.spec.ts`; `tsconfig.json` now type-checks `tests/e2e` and the config. Dev dependencies, exact: `@playwright/test@1.64.1`, `@axe-core/playwright@4.14.0`, and `playwright-core@1.64.1` (pinned so axe's peer dependency does not pull a second, newer core; with two cores the `Page` types clash). Browser: `npx playwright install chromium` (user cache). `make e2e` (unchanged: `cd web && npm run build && npx playwright test`) builds, starts `vite preview` on port 4183 (`SUNSIGHT_E2E_PORT` to change; base `/sunsight/`) and runs 23 tests in ~17 s on the laptop. Not part of `make check`.
+
+**What runs, on the shipped real data**
+
+| Test | Checks |
+| --- | --- |
+| load | verdict and reason render, no fixture banner, **no console errors** |
+| journey (a) date → sites | set the start date (URL follows), open Compare, pick Malapert massif, Shackleton ridge and Apollo 11, each row shows its name and a GO / MARGINAL / NO-GO badge, takeaway shows |
+| journey (b) site → dates | calendar (7 days) for all sites, click the Shackleton ridge cell for 2027-02-04, the report card opens with that site and date in the URL and the same verdict word as the cell |
+| journey (c) miss test | Malapert massif grid on 2027-10-13, crew preset (a mixed map: 184 / 317 pass, found by scanning 2027 with the engine); the pin starts on the target, a keyboard sweep reaches a point whose verdict word differs, then a mouse drag moves it to the north-west and the verdict line follows. Skips itself if no miss grid ships |
+| miss-tolerant calendar | the ◎ rows appear with "n of m points within 250 m pass" |
+| axe × 7 views | report, sky, miss, compare/calendar, 3D, story, validation: WCAG 2.0/2.1 A and AA tags, **0 findings of any impact on every view** after the fixes below |
+| 375 px × 7 views | `scrollWidth ≤ clientWidth` on every view |
+| 3D lazy load | no `Scene3D` script request on first load (network idle), requested when the tab opens; the illustrative label text is exact |
+| 3D controls | fps readout appears, astronaut button works, the 3D card's slider moves the shared time in the URL |
+| no WebGL | with `getContext('webgl*')` returning null: "3D view unavailable", the verdict still shows, no console errors |
+| Athena story on a phone | 375 × 812 touch: all five steps by tapping Next, no horizontal scroll, future-date label, miss table (or the "not available" note) |
+
+**Bugs found and fixed by these tests**
+
+1. **The miss-test landing pin could not get keyboard focus** (P15): Preact writes `tabIndex` on an SVG element as a case-sensitive `tabIndex` attribute, which SVG ignores, so arrow keys never reached it. Now `tabindex`, plus `aria-valuemin/max/now` for the slider role.
+2. Once focusable, axe flagged it as **nested-interactive** inside the map's `role="img"`; the map is now `role="group"` with the same label.
+
+## P10 follow-up: sites with a miss grid but no region
+
+**Change** (coordinator request): site resolution now follows region point → miss-grid centre point (east 0 m, north 0 m, its own lat/lon/height and masks at the nearest stored observer height) → smooth horizon. Label: "Terrain horizon from the miss-test grid (target point)". `resolveSite(site, region, h, missGrid?)` does the choice; `resolveForSite` (now also used by the report card, so all views share one rule) loads the region or grid. A region that fails to load falls back to the grid if the site has one, else to "Terrain file missing: smooth horizon used". A `miss_target_id` that the manifest does not list is ignored (smooth horizon, no error).
+
+**Verification**: `web/tests/unit/resolve_miss.test.ts` on the fixture (fixture_target has a grid and no region): centre point coordinates, height and the exact mask at 2 m and 10 m; priority region > grid > smooth, including a site with both. Browser on real data: the Athena target's report card now reads "Terrain horizon from the miss-test grid (target point)"; Malapert and the Shackleton ridge read their region points; Apollo 11 the smooth horizon. The Athena target row of the calendar and compare views uses the same terrain horizon.
+
+## P17 follow-up: real validation file, sensitivity table, refined ridge point
+
+- Real `validation/summary.json` (main) renders: 5 pass, 2 fail (sunlight vs PGDA, eclipses), 1 partial (Gläser ridge). Fails show "Why it fails:" with the pipeline's explanation text unchanged; partial shows "Why only partly:". Each check now also shows, when present, its reference link (`source`, http/https only), "Spread of the differences" (`spread_points`) and run time (`timing_s`).
+- New top-level `sensitivity` → table "What moves the number (points of sunlight at the best ridge point)": change, lit share, change from baseline (first row labelled "baseline"), the point's label and coordinates, a one-line takeaway naming the largest effect, and a link to `sensitivity.csv`. A malformed block is dropped rather than half-shown.
+- Fixture summary gained a made-up `sensitivity` block, a `source`, `spread_points` and `timing_s`, plus `fixture_sensitivity.csv`. Unit tests cover the new fields, the malformed cases, and that the shipped real summary parses with no default-filled fields.
+- Site card: when a site has the pipeline's `refined` object (now the Shackleton ridge), the verdict card ends with "Best-lit point within 300 m (computed): 170 m away, 86.0% vs 85.7% at the cited point; as low as 32.0% within 300 m." with the method in a tooltip that says these are 18.6-year shares at a 10 m mast computed by SunSight, not cited figures. The radius is read from the method text (default 300 m). Unit-tested formatting.
+
+## P19 follow-up: honest step 5 (coordinator's facts run)
+
+- **Step 3** now says the terrain near the target is NASA's LOLA 10 m map (the Athena grid's `terrain.near_field` is `LDEM_83S_10MPP_ADJ.TIF`), so a 20 m crater spans two cells, too few to capture its walls; SunSight cannot see Athena's crater and would **not** have shown that spot going dark; hazards smaller than the map are why a landing needs a margin. The picture now draws a 20 m crater over 10 m cells.
+- **Step 5** no longer implies the Athena spot goes dark. It computes live, for the user's future stay and rules, the lit share at the target and its min–max within 250 m and 500 m for **Athena's target** and the **Shackleton ridge** (both grids), with a generated takeaway ("a 250 m miss changes the sunlight by up to X points around Athena's target and by up to Y points on the Shackleton ridge"). Example, 14-day stay from 2027-03-01, 2 m: Athena 2.0 % at the target, 1.8–2.2 % within 250 m (0.4 points); ridge 82.4 %, 16.1–82.7 % (66.6 points). Below it, the 2027–2030 numbers from the pipeline run (`docs/submission/facts_numbers.json`, checked against the file: Athena 44.4 %, 43.1–44.5 % within 250 m; ridge 73.4 %, 22.7–85.1 %), then either pass/fail map (buttons) and a link to the full miss test.
+- `runMiss` now also returns each point's `lit_share` (`MissAnswer.lit_share`); `litRange()` in `storyNumbers.ts` is unit-tested against a direct per-point scan of the fixture grid.
+
+## P21 quality pieces (lane B2)
+
+**Accessibility**
+
+- axe (WCAG 2.0/2.1 A + AA) on all seven views with real data: **0 findings of any impact** (e2e, every run).
+- Visible keyboard focus: e2e tabs through 60 stops on the report card and the miss view and requires a ≥ 2 px outline (or the yellow ring on the SVG pin) on every stop. Fixes: the SVG pin now takes focus at all (`tabindex`, see e2e notes) and draws a yellow ring; form fields keep a ring while focus is inside a built-in part (date picker button: `input:focus-within`); the 3D canvas has an inset ring; sideways-scrolling tables are focusable labelled regions (axe `scrollable-region-focusable`, hit with the real validation CSVs).
+- Text ≥ 14 px: e2e walks every visible text node on all seven views at 375 px and 1200 px, scaling SVG text by its screen transform. Found and fixed: the miss map drew at 560 px and was squeezed to **7.8 px** text on phones because `useWidth` measured only on first mount (the map mounts after a loading message); `useWidth` now re-measures whenever its element changes. The timeline's "% of disc" label went from 12 px to 14 px.
+- SVG labels: every chart SVG has `role="img"` and an `aria-label` (or `role="group"` with a label where it contains a control); decorative legend swatches are `aria-hidden`.
+- 375 px: no horizontal page scroll on any view (e2e). Long identifiers in validation text wrap (`overflow-wrap: anywhere`), which the real results needed (page was 380 px wide).
+
+**Speed**
+
+- First-load JavaScript: entry 111.5 kB (**39.2 kB gzip**) + engine worker 9.5 kB (3.8 kB gzip) = **43.0 kB gzip**; CSS 9.1 kB (2.7 kB gzip). Three.js (543 kB, 135 kB gzip) is lazy. `npm run size` (`web/scripts/bundle-size.mjs`) prints these and fails above a 60 kB gzip budget; not wired into `make check` (needs a build).
+- First load to verdict on screen (`vite preview` of the build, cache off, Chromium, measured with CDP throttling): local 0.11 s; **25 Mbit/s + 40 ms: 1.9 s**; 10 Mbit/s + 60 ms: 3.5 s. 3.22 MB transferred, of which the 2.52 MB ephemeris table is most (Float32, gzips only to 2.37 MB) and the default site's miss grid (0.64 MB `.masks.dz`) next. The 3 s target holds on a typical laptop connection, not on a slow one; the lever would be a shorter or quantised first table (lane A's format), not the JS.
+- Service worker: **not added** (optional). It is not trivial to do safely here: it must cache data per region on demand under the `/sunsight/` base path and must never serve a stale `manifest.json` after a data release; a mistake would show old numbers with no visible sign. Left for a person to decide.

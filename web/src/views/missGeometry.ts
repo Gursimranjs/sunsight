@@ -2,7 +2,7 @@
 // Miss-test map helpers (pure, unit-tested).
 import type { MaskPoint, MaskSet } from '../data/sites';
 import { heightIndex, masksForHeight } from '../data/sites';
-import type { MissJob } from '../engine/compute';
+import type { MissCalendarJob, MissJob } from '../engine/compute';
 import type { Rules } from '../engine/light';
 
 export const MISS_RADII_M = [100, 250, 500];
@@ -45,4 +45,21 @@ export function stepGridPoint(points: MaskPoint[], i: number, dx: number, dy: nu
     if (d < bestD) { bestD = d; best = k; }
   });
   return best;
+}
+
+/** Miss-tolerant calendar job: only the grid points inside radius_m (same inside test as miss_share). */
+export function missCalendarJob(
+  set: MaskSet, day_starts_s: number[], stay_s: number, rules: Rules, radius_m: number, min_share = MISS_TOLERANT_SHARE,
+): MissCalendarJob {
+  const pts = set.meta.points;
+  const hi = heightIndex(set.meta.observer_heights_m, rules.observer_height_m);
+  const all = masksForHeight(set, hi);
+  const nb = set.meta.bin_count;
+  const inside = pts.map((_, i) => i).filter((i) => Math.hypot(pts[i].east_m ?? 0, pts[i].north_m ?? 0) <= radius_m + 1e-9);
+  const masks = new Float64Array(inside.length * nb);
+  inside.forEach((i, k) => masks.set(all.subarray(i * nb, (i + 1) * nb), k * nb));
+  return {
+    places: inside.map((i) => ({ lat_deg: pts[i].lat_deg, lon_deg: pts[i].lon_deg, h_m: pts[i].height_m })),
+    masks, day_starts_s, stay_s, rules, radius_m, min_share,
+  };
 }

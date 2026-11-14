@@ -1,6 +1,6 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // Web Worker: holds the ephemeris table and runs the heavy maths off the UI thread.
-import { runCalendar, runMiss, runWindow } from './compute';
+import { runCalendar, runMiss, runMissCalendar, runWindow } from './compute';
 import type { Request } from './protocol';
 import type { Table } from './light';
 
@@ -27,6 +27,9 @@ self.onmessage = (ev: MessageEvent<Request>) => {
       post({ id: req.id, ok: true, result, ms: performance.now() - t0 });
     } else if (req.type === 'calendar') {
       const result = runCalendar(table, req.job, (done, total) => post({ id: req.id, progress: done / total }));
+      post({ id: req.id, ok: true, result, ms: performance.now() - t0 });
+    } else if (req.type === 'missCalendar') {
+      const result = runMissCalendar(table, req.job, (done, total) => post({ id: req.id, progress: done / total }));
       post({ id: req.id, ok: true, result, ms: performance.now() - t0 });
     }
   } catch (e) {

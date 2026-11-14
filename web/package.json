@@ -12,14 +12,20 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "size": "node scripts/bundle-size.mjs"
   },
   "dependencies": {
-    "preact": "10.26.9"
+    "preact": "10.26.9",
+    "three": "0.186.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.64.1",
     "@preact/preset-vite": "2.10.1",
     "@types/node": "20.19.1",
+    "@types/three": "0.186.0",
+    "playwright-core": "1.64.1",
     "typescript": "5.8.3",
     "vite": "6.3.5",
     "vitest": "3.2.4"

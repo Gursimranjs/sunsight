@@ -1,78 +1,143 @@
 {
  "fixture": true,
- "note": "MADE-UP FIXTURE DATA for development only. Not real geometry or terrain.",
+ "note": "MADE-UP FIXTURE DATA for development only. Not real validation results. Follows the validation/summary.json schema (lane B P17).",
+ "generated_utc": "2026-11-14T18:00:00Z",
  "checks": [
   {
    "id": "ephemeris_horizons",
-   "title": "ephemeris horizons",
-   "value": null,
-   "unit": "",
-   "pass_mark": "fixture",
-   "status": "not run",
-   "explanation": "Fixture placeholder; no check has been run."
+   "title": "Sun and Earth positions vs JPL Horizons (fixture)",
+   "what": "Made-up: Sun and Earth azimuth and elevation compared at 3 sites and 20 times.",
+   "value": 2.6e-05,
+   "unit": "deg",
+   "value_label": "largest difference",
+   "pass_mark": "≤ 0.001°",
+   "status": "pass",
+   "explanation": "Fixture text: the largest difference is well inside the pass mark.",
+   "data": "validation/fixture_ephemeris_horizons.csv",
+   "rows": 4
   },
   {
    "id": "sunlight_pgda",
-   "title": "sunlight pgda",
-   "value": null,
-   "unit": "",
-   "pass_mark": "fixture",
-   "status": "not run",
-   "explanation": "Fixture placeholder; no check has been run."
+   "title": "Sunlight share vs NASA PGDA maps (fixture)",
+   "what": "Made-up: our sunlit share against the PGDA illumination map at random points.",
+   "value": 3.4,
+   "unit": "percentage points",
+   "value_label": "mean difference",
+   "pass_mark": "within 2 percentage points",
+   "status": "fail",
+   "explanation": "Fixture text for a failing check: the likely cause is the coarser terrain in the reference map near steep crater walls.",
+   "data": "validation/fixture_sunlight_pgda.csv",
+   "rows": 3,
+   "source": "https://pgda.gsfc.nasa.gov/products/69",
+   "spread_points": 3.1,
+   "timing_s": 2.5
   },
   {
    "id": "earth_pgda",
-   "title": "earth pgda",
-   "value": null,
-   "unit": "",
-   "pass_mark": "fixture",
-   "status": "not run",
-   "explanation": "Fixture placeholder; no check has been run."
+   "title": "Earth visibility vs NASA PGDA maps (fixture)",
+   "what": "Made-up: Earth-in-view share against the PGDA Earth-visibility map.",
+   "value": 1.2,
+   "unit": "percentage points",
+   "value_label": "mean difference",
+   "pass_mark": "within 2 percentage points",
+   "status": "partial",
+   "explanation": "Fixture text for a partial result: the mean passes, two outliers are not yet explained.",
+   "data": null,
+   "rows": 0
   },
   {
    "id": "glaser_ridge",
-   "title": "glaser ridge",
+   "title": "Shackleton ridge vs Gläser et al. 2014 (fixture)",
+   "what": "Made-up: best ridge point's sunlit share at 2 m and 10 m against the published study.",
    "value": null,
-   "unit": "",
-   "pass_mark": "fixture",
+   "unit": "percentage points",
+   "value_label": "largest gap",
+   "pass_mark": "within 2 percentage points at both heights",
    "status": "not run",
-   "explanation": "Fixture placeholder; no check has been run."
+   "explanation": "Fixture text: this check has not been run.",
+   "data": null,
+   "rows": 0
   },
   {
    "id": "eclipses",
-   "title": "eclipses",
-   "value": null,
+   "title": "Eclipses vs NASA eclipse tables (fixture)",
+   "what": "Made-up: Sun share during the listed totality of the three total eclipses.",
+   "value": 0,
    "unit": "",
-   "pass_mark": "fixture",
-   "status": "not run",
-   "explanation": "Fixture placeholder; no check has been run."
+   "value_label": "largest Sun share during totality",
+   "pass_mark": "0 at every site",
+   "status": "pass",
+   "explanation": "Fixture text: the Sun is fully hidden throughout totality.",
+   "data": "validation/fixture_eclipses.csv",
+   "rows": 3
   },
   {
    "id": "station_geometry",
-   "title": "station geometry",
-   "value": null,
-   "unit": "",
-   "pass_mark": "fixture",
-   "status": "not run",
-   "explanation": "Fixture placeholder; no check has been run."
+   "title": "Moon elevation at the stations vs JPL Horizons (fixture)",
+   "what": "Made-up: Moon elevation at Goldstone, Madrid and Canberra, 20 times each.",
+   "value": 0.004,
+   "unit": "deg",
+   "value_label": "largest difference",
+   "pass_mark": "≤ 0.01°",
+   "status": "pass",
+   "explanation": "Fixture text: inside the pass mark.",
+   "data": null,
+   "rows": 0
   },
   {
    "id": "physics_sanity",
-   "title": "physics sanity",
-   "value": null,
-   "unit": "",
-   "pass_mark": "fixture",
-   "status": "not run",
-   "explanation": "Fixture placeholder; no check has been run."
+   "title": "Physics sanity tests (fixture)",
+   "what": "Made-up: seasons, lunar day, Earth's wobble and synthetic terrain tests.",
+   "value": 12,
+   "unit": "of 12 pass",
+   "value_label": "tests",
+   "pass_mark": "all pass",
+   "status": "pass",
+   "explanation": "Fixture text: every sanity test passes.",
+   "data": null,
+   "rows": 0
   },
   {
    "id": "known_places",
-   "title": "known places",
-   "value": null,
-   "unit": "",
-   "pass_mark": "fixture",
-   "status": "not run",
-   "explanation": "Fixture placeholder; no check has been run."
+   "title": "Known places (fixture)",
+   "what": "Made-up: shadowed crater floors and well-lit ridges.",
+   "value": 1.5,
+   "unit": "%",
+   "value_label": "Shackleton floor sunlit share",
+   "pass_mark": "about 0% on the floor",
+   "status": "pass",
+   "explanation": "Fixture text: the floor is almost never lit.",
+   "data": null,
+   "rows": 0
   }
- ]
+ ],
+ "limits": [
+  "Fixture limit: terrain maps cannot see boulders or small craters.",
+  "Fixture limit: Earth contact is geometry, not signal strength."
+ ],
+ "sensitivity": {
+  "point": {
+   "lat_deg": -89.45,
+   "lon_deg": -137.3,
+   "label": "fixture point (made-up)"
+  },
+  "data": "validation/fixture_sensitivity.csv",
+  "rows": [
+   {
+    "change": "Baseline (fixture)",
+    "lit_pct": 80.0,
+    "delta_points": 0.0
+   },
+   {
+    "change": "Any part of the disc counts (fixture)",
+    "lit_pct": 84.5,
+    "delta_points": 4.5
+   },
+   {
+    "change": "Coarser grid (fixture)",
+    "lit_pct": 65.0,
+    "delta_points": -15.0
+   }
+  ]
+ }
 }

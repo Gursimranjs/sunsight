@@ -16,6 +16,8 @@ export interface AppData {
   fixtureFiles: Set<string>;
   region(id: string): Promise<MaskSet>;
   missGrid(id: string): Promise<MaskSet>;
+  /** Record that a file loaded later (validation, terrain) is fixture data, so the banner shows. */
+  markFixture(name: string): void;
 }
 
 export async function loadAppData(onFixture: () => void): Promise<AppData> {
@@ -43,15 +45,26 @@ export async function loadAppData(onFixture: () => void): Promise<AppData> {
     manifest, eph, table, sites: s.sites, engine: new Engine(table), fixtureFiles,
     region: (id) => get('regions', id),
     missGrid: (id) => get('miss', id),
+    markFixture: (name) => { if (!fixtureFiles.has(name)) { fixtureFiles.add(name); onFixture(); } },
   };
 }
 
 /** Coordinates and horizon mask for a curated site (loads its region file when it has one). */
 export async function resolveForSite(data: AppData, site: Site, observer_height_m: number): Promise<Resolved> {
-  if (!site.region_id) return resolveSite(site, null, observer_height_m);
-  try {
-    return resolveSite(site, await data.region(site.region_id), observer_height_m);
-  } catch {
-    return { ...resolveSite(site, null, observer_height_m), horizonLabel: 'Terrain file missing: smooth horizon used' };
+  const missing = { ...resolveSite(site, null, observer_height_m), horizonLabel: 'Terrain file missing: smooth horizon used' };
+  if (site.region_id) {
+    try {
+      return resolveSite(site, await data.region(site.region_id), observer_height_m);
+    } catch {
+      if (!site.miss_target_id) return missing;
+    }
   }
+  if (site.miss_target_id && (data.manifest.files.miss ?? []).some((r) => r.id === site.miss_target_id)) {
+    try {
+      return resolveSite(site, null, observer_height_m, await data.missGrid(site.miss_target_id));
+    } catch {
+      return missing;
+    }
+  }
+  return site.region_id ? missing : resolveSite(site, null, observer_height_m);
 }

@@ -141,9 +141,9 @@ export function MissView({ data, site, scn, onSite }: Props) {
 
       <h3 class="chart-title">Pass/fail map around the target</h3>
       <div ref={ref}>
-        <svg width={size} height={H} viewBox={`0 0 ${size} ${H}`} data-testid="miss-map" role="img"
+        <svg width={size} height={H} viewBox={`0 0 ${size} ${H}`} data-testid="miss-map" role="group"
           aria-label={a ? `Map of ${pts.length} landing points. ${a.passes.filter(Boolean).length} pass, ${a.passes.filter((x) => !x).length} fail.` : 'Map of landing points, computing.'}
-          onPointerDown={onDown} onPointerMove={onMove} onPointerUp={() => (dragging.current = false)} style={{ touchAction: 'none', cursor: 'pointer' }}>
+          onPointerDown={onDown} onPointerMove={onMove} onPointerUp={() => (dragging.current = false)} style={{ touchAction: 'none', cursor: 'pointer', height: 'auto' }}>
           <rect x={pad} y={12} width={plot} height={plot} fill="#05070b" />
           <g class="axis">
             {ticks.map((t) => (
@@ -171,15 +171,15 @@ export function MissView({ data, site, scn, onSite }: Props) {
               : <Cross key={p.id} x={x} y={y} r={dotR * 0.8} col="var(--nogo)" />;
           })}
           <g stroke="var(--fg)" stroke-width="2"><line x1={cx - 9} x2={cx + 9} y1={cy} y2={cy} /><line x1={cx} x2={cx} y1={cy - 9} y2={cy + 9} /></g>
-          <g tabIndex={0} role="slider" aria-label="Landing pin" aria-valuetext={where(pinP)} onKeyDown={onKey} data-testid="miss-pin" class="pin">
+          <g tabindex={0} role="slider" aria-valuemin={0} aria-valuemax={pts.length - 1} aria-valuenow={pinI} aria-label="Landing pin" aria-valuetext={where(pinP)} onKeyDown={onKey} data-testid="miss-pin" class="pin">
             <circle cx={X(pinP.east_m ?? 0)} cy={Y(pinP.north_m ?? 0)} r={dotR + 6} fill="none" stroke="#fff" stroke-width="3" />
             <path d={`M${X(pinP.east_m ?? 0)},${Y(pinP.north_m ?? 0) - dotR - 6} l-7,-16 a8,8 0 1,1 14,0 z`} fill="#fff" stroke="#000" />
           </g>
         </svg>
       </div>
       <ul class="legend">
-        <li><svg width="14" height="14" style={{ display: 'inline', verticalAlign: '-2px' }}><circle cx="7" cy="7" r="6" fill="var(--go)" /></svg> Passes every rule (go or marginal)</li>
-        <li><svg width="14" height="14" style={{ display: 'inline', verticalAlign: '-2px' }}><g stroke="var(--nogo)" stroke-width="3"><line x1="2" y1="2" x2="12" y2="12" /><line x1="2" y1="12" x2="12" y2="2" /></g></svg> Fails a rule (no-go)</li>
+        <li><svg aria-hidden="true" width="14" height="14" style={{ display: 'inline', verticalAlign: '-2px' }}><circle cx="7" cy="7" r="6" fill="var(--go)" /></svg> Passes every rule (go or marginal)</li>
+        <li><svg aria-hidden="true" width="14" height="14" style={{ display: 'inline', verticalAlign: '-2px' }}><g stroke="var(--nogo)" stroke-width="3"><line x1="2" y1="2" x2="12" y2="12" /><line x1="2" y1="12" x2="12" y2="2" /></g></svg> Fails a rule (no-go)</li>
         <li>+ Target. Drag the white pin, or focus it and use the arrow keys.</li>
       </ul>
       {a && (
@@ -189,7 +189,7 @@ export function MissView({ data, site, scn, onSite }: Props) {
       )}
 
       {a && (
-        <div class="scroll-x" style={{ marginTop: 10 }}>
+        <div class="scroll-x" style={{ marginTop: 10 }} tabIndex={0} role="region" aria-label="Shares by miss radius (scrolls sideways)">
           <table data-testid="miss-shares">
             <caption class="small muted" style={{ textAlign: 'left' }}>Share of landing points that meet the rules, by miss radius</caption>
             <thead><tr><th>Within</th><th>Points</th><th>Pass</th><th>Share</th><th>Miss-tolerant (≥{formatPct(MISS_TOLERANT_SHARE)})</th></tr></thead>

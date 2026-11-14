@@ -79,7 +79,7 @@ export function Timeline({ series, metrics, rules, start_s, stay_s, t_off_s, onT
         <rect x={PAD_L} y={TOP} width={plotW} height={ROW_H} fill="var(--panel2)" />
         <rect x={PAD_L} y={conY0 - ROW_H} width={plotW} height={ROW_H} fill="var(--panel2)" />
         <text x={PAD_L - 8} y={TOP + ROW_H / 2 - 4} text-anchor="end">Sunlight</text>
-        <text x={PAD_L - 8} y={TOP + ROW_H / 2 + 13} text-anchor="end" class="small" style={{ fontSize: '12px', fill: 'var(--muted)' }}>% of disc</text>
+        <text x={PAD_L - 8} y={TOP + ROW_H / 2 + 14} text-anchor="end" class="small" style={{ fontSize: '14px', fill: 'var(--muted)' }}>% of disc</text>
         <text x={PAD_L - 8} y={conY0 - ROW_H / 2 + 5} text-anchor="end">Contact</text>
         <path d={d} fill="var(--sun)" />
         <line x1={PAD_L} x2={PAD_L + plotW} y1={thrY} y2={thrY} stroke="var(--fg)" stroke-dasharray="4 4" stroke-width="1" />
