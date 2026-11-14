@@ -29,8 +29,13 @@ export function manifest(): Promise<Manifest> {
   return loadManifest(fileFetcher, DATA);
 }
 
+/** The made-up fixture manifest, always (even once real data exists), for tests with fixed answers. */
+export function fixtureManifest(): Manifest {
+  return readJson<Manifest>('fixture_manifest.json');
+}
+
 export async function fixtureTable(): Promise<Table> {
-  const m = await manifest();
+  const m = fixtureManifest();
   const eph = decodeEphemeris(readJson<EphemerisMeta>(m.files.ephemeris.meta), readBuf(m.files.ephemeris.bin));
   return { data: eph.data, rows: eph.meta.row_count, step_s: eph.meta.step_s };
 }

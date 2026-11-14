@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { decodeMasks } from '../../src/data/loaders';
 import * as L from '../../src/engine/light';
-import { fixtureTable, manifest, PY, readBuf, readJson } from './helpers';
+import { fixtureManifest, fixtureTable, PY, readBuf, readJson } from './helpers';
 
 const TOL: number = PY.tolerance;
 
@@ -40,7 +40,7 @@ describe('parity with the Python reference on fixture data', () => {
 
   it('windows: smooth horizon, region mask and earth contact mode', async () => {
     const t = await fixtureTable();
-    const m = await manifest();
+    const m = fixtureManifest();
     for (const w of PY.windows) {
       const rules = L.makeRules({ ...L.PRESETS[w.preset as L.PresetId], ...(w.rules_over ?? {}) });
       let mask: L.Mask;
