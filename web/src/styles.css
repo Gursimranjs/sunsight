@@ -1,0 +1,6 @@
+/* SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md. */
+:root { color-scheme: dark; --bg: #0b0e14; --fg: #e8ebf2; --muted: #9aa4b5; --warn-bg: #ffd166; --warn-fg: #1a1300; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+.fixture-banner { background: var(--warn-bg); color: var(--warn-fg); font-weight: 700; padding: 8px 16px; text-align: center; }

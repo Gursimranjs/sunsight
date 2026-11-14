@@ -1,0 +1,37 @@
+{
+ "fixture": true,
+ "note": "MADE-UP FIXTURE DATA for development only. Not real geometry or terrain.",
+ "start_utc": "2027-01-01T00:00:00",
+ "step_s": 3600,
+ "row_count": 1440,
+ "columns": [
+  "sun_x_km",
+  "sun_y_km",
+  "sun_z_km",
+  "earth_x_km",
+  "earth_y_km",
+  "earth_z_km",
+  "goldstone_x_km",
+  "goldstone_y_km",
+  "goldstone_z_km",
+  "madrid_x_km",
+  "madrid_y_km",
+  "madrid_z_km",
+  "canberra_x_km",
+  "canberra_y_km",
+  "canberra_z_km",
+  "moon_el_goldstone_deg",
+  "moon_el_madrid_deg",
+  "moon_el_canberra_deg"
+ ],
+ "frame": "MOON_ME",
+ "correction": "LT+S",
+ "observer": "MOON",
+ "stations": {
+  "goldstone": "DSS-14",
+  "madrid": "DSS-63",
+  "canberra": "DSS-43"
+ },
+ "dtype": "float32",
+ "endianness": "little"
+}

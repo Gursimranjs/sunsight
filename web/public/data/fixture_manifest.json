@@ -1,0 +1,91 @@
+{
+ "format_version": 1,
+ "fixture": true,
+ "generated_with": "SunSight pipeline; code written by Claude Code (Anthropic)",
+ "pipeline_version": "0.1.0+02a57df",
+ "build_time_utc": "2026-11-14T16:20:29Z",
+ "kernels": [],
+ "inputs": [],
+ "files": {
+  "ephemeris": {
+   "meta": "ephemeris/fixture_2027_2030.json",
+   "bin": "ephemeris/fixture_2027_2030.bin"
+  },
+  "regions": [
+   {
+    "id": "fixture_ridge",
+    "meta": "regions/fixture_ridge.json",
+    "masks": "regions/fixture_ridge.masks.bin"
+   }
+  ],
+  "miss": [
+   {
+    "id": "fixture_target",
+    "meta": "miss/fixture_target.json",
+    "masks": "miss/fixture_target.masks.bin"
+   }
+  ],
+  "terrain": [
+   {
+    "id": "fixture_target",
+    "meta": "terrain/fixture_target.json",
+    "bin": "terrain/fixture_target.bin"
+   }
+  ],
+  "sites": "fixture_sites.json",
+  "validation": "validation/fixture_summary.json"
+ },
+ "outputs": [
+  {
+   "path": "ephemeris/fixture_2027_2030.bin",
+   "size_bytes": 103680,
+   "sha256": "c54d71e64064d46c339632fb9772a5ce990f5d9490d444cc56b0e343b0900d76"
+  },
+  {
+   "path": "ephemeris/fixture_2027_2030.json",
+   "size_bytes": 732,
+   "sha256": "20ddf80d3a02c1c516bd6a59e98bc5fe7fd3d4962679b7015999effb38860f95"
+  },
+  {
+   "path": "fixture_sites.json",
+   "size_bytes": 999,
+   "sha256": "fb26785b1227805c84f37af78d94b9cbd30b3aea962432144acd4d9dfe1c4582"
+  },
+  {
+   "path": "miss/fixture_target.json",
+   "size_bytes": 16681,
+   "sha256": "2b593efb8a83df3ec99870c50a8153f0ecf6c4fcacb8c2783cfc219f9c9367fe"
+  },
+  {
+   "path": "miss/fixture_target.masks.bin",
+   "size_bytes": 466560,
+   "sha256": "6ca4d8c52eadc75ea26318c5e4c78581834088ce242e1588d7c2359d41d197ca"
+  },
+  {
+   "path": "regions/fixture_ridge.json",
+   "size_bytes": 1553,
+   "sha256": "35690000e9434c8f38ed12cf86b0cbfbb3560ccefdef4a3ff40f40dfb7d4fd93"
+  },
+  {
+   "path": "regions/fixture_ridge.masks.bin",
+   "size_bytes": 51840,
+   "sha256": "53d0cc2e8b2a45aad5bf97e8a05c584c8dd967943f0274f0096fba8b48a15909"
+  },
+  {
+   "path": "terrain/fixture_target.bin",
+   "size_bytes": 524288,
+   "sha256": "67cb496e8c289688fffc31870cf94a32f4037318f2446a858a26a239785a202d"
+  },
+  {
+   "path": "terrain/fixture_target.json",
+   "size_bytes": 322,
+   "sha256": "6f376374fc1f1e8171bb5c846178b10909451d720d0484d81d0a6ba5e2f388e0"
+  },
+  {
+   "path": "validation/fixture_summary.json",
+   "size_bytes": 1816,
+   "sha256": "a15407ecb6d33f1b7e7bda438089698ea2246f219567074d59fe4966863f70ee"
+  }
+ ],
+ "note": "MADE-UP FIXTURE DATA for development only. Not real geometry or terrain."
+}

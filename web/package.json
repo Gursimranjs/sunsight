@@ -1,0 +1,26 @@
+{
+  "name": "sunsight-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "SunSight web app. SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "build:release": "node scripts/check-release.mjs && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "preact": "10.26.9"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "2.10.1",
+    "typescript": "5.8.3",
+    "vite": "6.3.5",
+    "vitest": "3.2.4"
+  }
+}

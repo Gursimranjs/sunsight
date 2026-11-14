@@ -1,0 +1,87 @@
+{
+ "fixture": true,
+ "note": "MADE-UP FIXTURE DATA for development only. Not real geometry or terrain.",
+ "id": "fixture_ridge",
+ "name": "Fixture ridge (made-up)",
+ "observer_heights_m": [
+  2.0,
+  10.0
+ ],
+ "bin_count": 1440,
+ "scale_deg": 0.001,
+ "spacing_m": 300.0,
+ "points": [
+  {
+   "id": "p0",
+   "lat_deg": -89.4,
+   "lon_deg": -137.0,
+   "map_x_m": -12000.0,
+   "map_y_m": 11000.0,
+   "height_m": 1500.0
+  },
+  {
+   "id": "p1",
+   "lat_deg": -89.4,
+   "lon_deg": -136.5,
+   "map_x_m": -11700.0,
+   "map_y_m": 11000.0,
+   "height_m": 1540.0
+  },
+  {
+   "id": "p2",
+   "lat_deg": -89.4,
+   "lon_deg": -136.0,
+   "map_x_m": -11400.0,
+   "map_y_m": 11000.0,
+   "height_m": 1580.0
+  },
+  {
+   "id": "p3",
+   "lat_deg": -89.41000000000001,
+   "lon_deg": -137.0,
+   "map_x_m": -12000.0,
+   "map_y_m": 11300.0,
+   "height_m": 1620.0
+  },
+  {
+   "id": "p4",
+   "lat_deg": -89.41000000000001,
+   "lon_deg": -136.5,
+   "map_x_m": -11700.0,
+   "map_y_m": 11300.0,
+   "height_m": 1660.0
+  },
+  {
+   "id": "p5",
+   "lat_deg": -89.41000000000001,
+   "lon_deg": -136.0,
+   "map_x_m": -11400.0,
+   "map_y_m": 11300.0,
+   "height_m": 1700.0
+  },
+  {
+   "id": "p6",
+   "lat_deg": -89.42,
+   "lon_deg": -137.0,
+   "map_x_m": -12000.0,
+   "map_y_m": 11600.0,
+   "height_m": 1740.0
+  },
+  {
+   "id": "p7",
+   "lat_deg": -89.42,
+   "lon_deg": -136.5,
+   "map_x_m": -11700.0,
+   "map_y_m": 11600.0,
+   "height_m": 1780.0
+  },
+  {
+   "id": "p8",
+   "lat_deg": -89.42,
+   "lon_deg": -136.0,
+   "map_x_m": -11400.0,
+   "map_y_m": 11600.0,
+   "height_m": 1820.0
+  }
+ ]
+}
