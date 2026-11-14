@@ -1,0 +1,176 @@
+{
+ "generated_utc": "2026-11-14T17:24:54Z",
+ "checks": [
+  {
+   "id": "ephemeris_horizons",
+   "title": "Sun and Earth positions vs JPL Horizons",
+   "what": "Azimuth and elevation of the Sun and Earth's centre from 3 lunar sites at 20 random times in 2027-2030: our interpolated table vs JPL Horizons (airless, apparent).",
+   "value": 2.572079103124736e-05,
+   "unit": "deg",
+   "value_label": "largest difference (elevation, or azimuth x cos elevation)",
+   "pass_mark": "\u2264 0.001\u00b0",
+   "status": "pass",
+   "explanation": "Sun to 2e-6\u00b0, Earth to 3e-5\u00b0. The Earth residual is the expected second-order aberration term of a Moon-centred table, (v/c)(R/d) \u2264 2.9e-5\u00b0 (DECISIONS #20).",
+   "data": "validation/ephemeris_horizons.csv",
+   "rows": 120
+  },
+  {
+   "id": "sunlight_pgda",
+   "title": "Average sunlight vs NASA Goddard's maps (PGDA)",
+   "what": "Average visible fraction of the Sun's disc, hourly over 18.6 years, surface observer on PGDA's own 60 m nodes, horizon from other nodes only, our 2023 terrain averaged to those nodes; 200 random reference pixels in the Shackleton hero region; vs AVGVISIB_85S_060M_201608.",
+   "value": -2.3187271561550955,
+   "unit": "points",
+   "value_label": "mean difference (ours - PGDA)",
+   "pass_mark": "mean within \u00b12 points; outliers explained",
+   "status": "fail",
+   "explanation": "Mean difference -2.32 points, spread 3.70 points over 200 pixels. Largest: pixel 113 (+27.1, PGDA 0%), pixel 110 (-12.3, PGDA 38%), pixel 59 (-11.5, PGDA 20%), pixel 198 (+11.4, PGDA 0%), pixel 139 (-11.2, PGDA 39%). The PDS label also describes the values as the share of time sunlit by any fraction of the disc; read that way the mean difference is -1.10 points. Our bin rule (review note 001, obstacles widened by up to 0.25\u00b0) changes the mean by -0.13 points on these pixels (measured by rerunning without widening); it stays in the shipped engine because it never under-reads a peak. PGDA used the 2016 60 m elevation map and we use the 2023 maps averaged to 60 m, so part of the scatter is real terrain change. The label does not give the period start (we use 2009-07-13) or the observer height (we use the surface). The largest differences sit where the horizon is steep, so small terrain differences move them most.",
+   "spread_points": 3.6993892323948203,
+   "source": "https://pgda.gsfc.nasa.gov/products/69",
+   "data": "validation/pgda_points.csv",
+   "rows": 200,
+   "timing_s": 3.7
+  },
+  {
+   "id": "earth_pgda",
+   "title": "Earth visibility vs NASA Goddard's maps (PGDA)",
+   "what": "Share of hourly steps over 18.6 years with any part of Earth's disc above the terrain (PGDA's rule), same nodes and settings; vs AVGVISIB_85S_060M_201608_EARTH.",
+   "value": 0.22702795684679722,
+   "unit": "points",
+   "value_label": "mean difference (ours - PGDA)",
+   "pass_mark": "mean within \u00b12 points; outliers explained",
+   "status": "pass",
+   "explanation": "Mean difference +0.23 points, spread 5.54 points over 200 pixels. Largest: pixel 113 (+56.0, PGDA 0%), pixel 198 (+45.2, PGDA 0%), pixel 8 (+14.5, PGDA 39%), pixel 52 (+13.4, PGDA 4%), pixel 25 (-13.1, PGDA 21%). PGDA used the 2016 60 m elevation map and we use the 2023 maps averaged to 60 m, so part of the scatter is real terrain change. The label does not give the period start (we use 2009-07-13) or the observer height (we use the surface). The largest differences sit where the horizon is steep, so small terrain differences move them most.",
+   "spread_points": 5.538913277953929,
+   "source": "https://pgda.gsfc.nasa.gov/products/69",
+   "data": "validation/pgda_points.csv",
+   "rows": 200,
+   "timing_s": 3.7
+  },
+  {
+   "id": "glaser_ridge",
+   "title": "Best point on the connecting ridge vs Gl\u00e4ser et al. (2014)",
+   "what": "Highest share of hours lit over 18.6 years on LROC's connecting-ridge terrain-model extent (196 points, then a 25 m search around the two best), at 2 m and 10 m; vs 92.27% and 95.65% (Gl\u00e4ser et al. 2014, 19 years, 20 m terrain).",
+   "value": 5.973403681147161,
+   "unit": "points",
+   "value_label": "largest gap to the published value (half-disc rule)",
+   "pass_mark": "within 2 points at both heights, or the gap explained",
+   "status": "partial",
+   "explanation": "Half the disc visible (our 'lit' rule): 86.32% at 2 m (-5.95), 89.68% at 10 m (-5.97). Any part of the disc visible, same points: 90.73% (-1.54) and 93.62% (-2.03). Gl\u00e4ser's exact definition of 'sunlit' was not checked (the paper was not accessible here), so both are shown. The coarse grid alone gave 70.6% and 86.6%: a 2 m observer is very sensitive to standing exactly on the crest. Our bin rule (review note 001) lowers the lit share by only 0.37 and 0.33 points here. Other differences: newer 2023 terrain, an 18.6-year period starting 2009-07-13, and a search limited to two neighbourhoods.",
+   "source": "https://ui.adsabs.harvard.edu/abs/2014Icar..243...78G",
+   "data": "validation/glaser_ridge.csv",
+   "rows": 2
+  },
+  {
+   "id": "eclipses",
+   "title": "Total lunar eclipses: Sun hidden at every site",
+   "what": "Share of the Sun's disc visible (terrain ignored) at all 28 curated sites, every minute through NASA's listed totality of the three total lunar eclipses in 2027-2030.",
+   "value": 0.0008981552130289961,
+   "unit": "fraction",
+   "value_label": "largest visible share of the Sun's disc",
+   "pass_mark": "0 at every site and minute",
+   "status": "fail",
+   "explanation": "1 of 84 site-eclipse pairs show a sliver of the Sun at the edge of NASA's totality: Peak near Cabeus B (LROC Artemis III mosaic centre), 2029 Dec 20: up to 0.09% of the disc; our full cover runs -40.5 to +26.0 min around greatest eclipse vs NASA's \u00b127.0 min. NASA's eclipse predictions enlarge Earth's shadow to allow for its atmosphere; our Earth disc is the bare 6,371 km sphere, so our geometric totality is about a minute shorter at some sites.",
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html",
+   "data": "validation/eclipses.csv",
+   "rows": 84
+  },
+  {
+   "id": "station_geometry",
+   "title": "Moon's elevation at Goldstone, Madrid and Canberra vs JPL Horizons",
+   "what": "Elevation of the Moon above each Deep Space Network complex's horizon at 20 times each.",
+   "value": 0.0005896201434865134,
+   "unit": "deg",
+   "value_label": "largest difference, SPICE geometry",
+   "pass_mark": "\u2264 0.01\u00b0",
+   "status": "pass",
+   "explanation": "Geometry agrees to 5.9e-04\u00b0. The app interpolates the hourly column; where the 10\u00b0 contact rule decides (0-20\u00b0 up) that adds at most 3.9e-03\u00b0. Near a station's zenith interpolation is poor (up to 0.25\u00b0), which never affects the contact rule. Horizons' Earth-orientation data are predictions after 2027-02-08.",
+   "data": "validation/station_geometry.csv",
+   "rows": 60
+  },
+  {
+   "id": "physics_sanity",
+   "title": "Physics sanity tests",
+   "what": "Seasons, lunar day, Earth's wobble, apparent sizes from the 2027-2030 table, plus the synthetic-terrain, light and frame test suites (smooth-Moon dip, walls, 90\u00b0 rotation, far spike, MOON_ME vs MOON_PA, SPICE agreement).",
+   "value": 10.0,
+   "unit": "of 10 pass",
+   "value_label": "checks passed",
+   "pass_mark": "all pass",
+   "status": "pass",
+   "explanation": "All pass. Measured: Sun centre at the pole stays within about \u00b11.6\u00b0: 1.587 deg; Sun's seasonal cycle at the pole: 346.836 days; Sun's azimuth makes a full circle: 29.530 days; Earth's elevation at the pole: swing: 6.853 deg (half range); Earth's elevation at the pole: period: 27.217 days; Sun's apparent width: 0.523 deg; Sun's apparent width: 0.543 deg; Earth's apparent width: 1.795 deg; Earth's apparent width: 2.046 deg.",
+   "data": "validation/physics_sanity.csv",
+   "rows": 10
+  },
+  {
+   "id": "known_places",
+   "title": "Known places: shadowed floors and lit ridges",
+   "what": "Shackleton's floor, the Shackleton end of the connecting ridge, and every Shackleton-region point that NASA's permanent-shadow map (LPSR_85S_060M) marks as shadowed.",
+   "value": 99.08466819221968,
+   "unit": "%",
+   "value_label": "PGDA shadowed points we also find never lit",
+   "pass_mark": "floor ~0%; ridge in the top 10%; \u2265 90% agreement on permanent shadow",
+   "status": "pass",
+   "explanation": "Floor point lit 0.00% of 18.6 years; ridge/rim point 39.1% (top 3.7%); 433 of 437 PGDA permanently shadowed points are never lit in our run.",
+   "data": "validation/known_places.csv",
+   "rows": 3
+  }
+ ],
+ "limits": [
+  "Terrain maps cannot see boulders or craters smaller than a few pixels (20 m map; 10 m near miss-test targets).",
+  "Earth contact is geometry only: line of sight and elevation, not signal strength or data rate.",
+  "The Deep Space Network is a reference choice; commercial landers often use other stations.",
+  "Sites outside the south polar terrain grids use a smooth horizon and say so.",
+  "NASA's terrain error maps are not yet folded into error bars.",
+  "The miss-test share treats every point in the circle as equally likely; it is not a landing probability.",
+  "Horizon bins are widened by up to 0.25\u00b0 so no peak is missed (review note 001); this biases sunlight slightly low."
+ ],
+ "sensitivity": {
+  "point": {
+   "lat_deg": -89.4732928,
+   "lon_deg": -137.31654,
+   "label": "best 2 m point found on the connecting ridge (check 4)"
+  },
+  "data": "validation/sensitivity.csv",
+  "rows": [
+   {
+    "change": "Baseline: shipped engine, 2 m, half the disc, 18.6 years from 2009-07-13",
+    "lit_pct": 86.32112213042865,
+    "delta_points": 0.0
+   },
+   {
+    "change": "Near-field rays start 1 pixel out (baseline 0.5)",
+    "lit_pct": 86.32112213042865,
+    "delta_points": 0.0
+   },
+   {
+    "change": "Near-field rays start 2 pixels out",
+    "lit_pct": 86.32112213042865,
+    "delta_points": 0.0
+   },
+   {
+    "change": "Bin rule: nearest-bin filling (\u00b10.125\u00b0) instead of review note 001's \u00b10.25\u00b0",
+    "lit_pct": 86.51125135697069,
+    "delta_points": 0.1901292265420409
+   },
+   {
+    "change": "Bin rule: no widening at all",
+    "lit_pct": 86.6909541420572,
+    "delta_points": 0.36983201162854584
+   },
+   {
+    "change": "Threshold: any part of the disc counts as lit",
+    "lit_pct": 90.72721362551903,
+    "delta_points": 4.406091495090379
+   },
+   {
+    "change": "Time span: 2027-2030 (the app's table) instead of 18.6 years",
+    "lit_pct": 86.48186173853524,
+    "delta_points": 0.1607396081065957
+   },
+   {
+    "change": "Grid: best point of the ~240 m validation grid instead of this refined point",
+    "lit_pct": 70.5937552,
+    "delta_points": -15.727366930428644
+   }
+  ]
+ }
+}

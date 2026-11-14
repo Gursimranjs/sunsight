@@ -1,0 +1,18 @@
+{
+ "site_id": "haworth",
+ "size": 512,
+ "spacing_m": 20.0,
+ "center": {
+  "lat_deg": -86.6999993,
+  "lon_deg": -23.700024,
+  "map_x_m": -40232.9,
+  "map_y_m": 91653.0
+ },
+ "row_order": "decreasing map y",
+ "col_order": "increasing map x",
+ "map_note": "Map +y points from the south pole toward 0 deg longitude; +x toward 90 deg E.",
+ "dtype": "int16",
+ "units": "m above the 1737.4 km sphere",
+ "source": "LDEM_80S_20MPP_ADJ.TIF",
+ "note": "For the illustrative 3D view only; numbers come from the horizon masks."
+}

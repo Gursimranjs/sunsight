@@ -93,3 +93,19 @@ def test_ridge_ranks_among_the_best(region):
         )
         assert d_km < 0.5
         assert rank_pct <= 10.0
+
+
+ALL_REGIONS = sorted((DATA_OUT / "regions").glob("*.json")) if (DATA_OUT / "regions").exists() else []
+
+
+@pytest.mark.parametrize("path", ALL_REGIONS, ids=lambda p: p.stem)
+def test_every_region_contract_size_and_timing(path):
+    """P16: masks for every region; each region's compressed mask file under 3 MB; built in under 10 minutes."""
+    meta = json.loads(path.read_text())
+    n = len(meta["points"])
+    raw = (path.parent / f"{path.stem}.masks.bin").stat().st_size
+    dz = (path.parent / f"{path.stem}.masks.dz").stat().st_size
+    assert raw == n * 2 * BIN_COUNT * 2
+    assert dz < 3_000_000, f"{path.stem}: {dz} bytes compressed"
+    assert meta["timing_s"]["read"] + meta["timing_s"]["masks"] < 600.0
+    assert all(math.isfinite(p["height_m"]) for p in meta["points"])
