@@ -2,8 +2,8 @@
  "format_version": 2,
  "fixture": true,
  "generated_with": "SunSight pipeline; code written by Claude Code (Anthropic)",
- "pipeline_version": "0.1.0+fc2226d",
- "build_time_utc": "2026-11-14T17:01:51Z",
+ "pipeline_version": "0.1.0+ab1619f",
+ "build_time_utc": "2026-11-14T17:37:57Z",
  "kernels": [],
  "inputs": [],
  "files": {
@@ -84,8 +84,8 @@
   },
   {
    "path": "validation/fixture_summary.json",
-   "size_bytes": 1816,
-   "sha256": "a15407ecb6d33f1b7e7bda438089698ea2246f219567074d59fe4966863f70ee"
+   "size_bytes": 4548,
+   "sha256": "a47e5fea9fd031dbf578a8ad6939e1c71a59f5954bfe00100c83092dd9d54a05"
   }
  ],
  "note": "MADE-UP FIXTURE DATA for development only. Not real geometry or terrain."

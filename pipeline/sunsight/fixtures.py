@@ -271,36 +271,10 @@ def main() -> None:
     files["sites"] = "fixture_sites.json"
 
     # Validation summary.
-    checks = [
-        "ephemeris_horizons",
-        "sunlight_pgda",
-        "earth_pgda",
-        "glaser_ridge",
-        "eclipses",
-        "station_geometry",
-        "physics_sanity",
-        "known_places",
-    ]
-    (out / "validation").mkdir(parents=True, exist_ok=True)
-    write_json(
-        out / "validation" / "fixture_summary.json",
-        {
-            "fixture": True,
-            "note": NOTE,
-            "checks": [
-                {
-                    "id": c_id,
-                    "title": c_id.replace("_", " "),
-                    "value": None,
-                    "unit": "",
-                    "pass_mark": "fixture",
-                    "status": "not run",
-                    "explanation": "Fixture placeholder; no check has been run.",
-                }
-                for c_id in checks
-            ],
-        },
-    )
+    # The validation fixture (summary in the format of validate.py plus small CSVs) is hand-written by lane B
+    # in web/tests/fixtures/data/validation/ and is kept as is; it is only listed here.
+    if not (out / "validation" / "fixture_summary.json").exists():
+        raise FileNotFoundError("web/tests/fixtures/data/validation/fixture_summary.json is missing")
     files["validation"] = "validation/fixture_summary.json"
 
     manifest = build_manifest(files, inputs=[], kernels=[], fixture=True, root=out)
