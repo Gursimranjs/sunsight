@@ -80,6 +80,12 @@ def main() -> None:
     ]
     if (DATA_OUT / "validation" / "summary.json").exists():
         files["validation"] = "validation/summary.json"
+        summ = json.loads((DATA_OUT / "validation" / "summary.json").read_text())
+        data = sorted(
+            {c["data"] for c in summ["checks"] if c.get("data")}
+            | ({summ["sensitivity"]["data"]} if "sensitivity" in summ else set())
+        )
+        files["validation_data"] = data
     inputs = json.loads(K.LOCK.read_text())["kernels"]
     inputs += terrain_inputs([20, 80, 240] + ([10] if files["miss"] else []))
     gz = DATA_RAW / "gazetteer" / "moon_pts.zip"

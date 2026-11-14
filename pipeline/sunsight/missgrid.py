@@ -103,9 +103,19 @@ def build(site_id: str) -> dict:
         ],
     }
     write_json(out / f"{site_id}.json", meta)
-    # 3D terrain cut centred on the target
+    # 3D terrain cut centred on the target, unless a region with its own cut is centred there already
     cx, cy = D.ll_to_xy(site["lat_deg"], site["lon_deg"], D.R_REF_M)
     tdir = DATA_OUT / "terrain"
+    for reg in json.loads(R.CONFIG.read_text())["regions"]:
+        if (
+            math.hypot(reg["center_x_m"] - cx, reg["center_y_m"] - cy) < 30.0
+            and (tdir / f"{reg['id']}.json").exists()
+        ):
+            print(f"{site_id}: terrain cut of region {reg['id']} is centred here; no separate cut")
+            print(
+                f"{site_id}: {len(offs)} points, near map {near_px} m, read {t_read:.1f} s, masks {t_mask:.1f} s"
+            )
+            return meta
     (tdir / f"{site_id}.bin").write_bytes(R.terrain_cut(cx, cy).tobytes())
     write_json(
         tdir / f"{site_id}.json",
