@@ -109,3 +109,16 @@ def test_dz_files_decode_to_the_raw_masks(manifest_path):
                     decode_masks_dz((root / item["masks_dz"]).read_bytes(), BIN_COUNT)
                     == (root / item["masks"]).read_bytes()
                 )
+
+
+def test_manifest_lists_every_shipped_file():
+    """Every file under web/public/data except the manifest itself is an output with its size and checksum."""
+    path = DATA_OUT / "manifest.json"
+    if not path.exists():
+        pytest.skip("no real manifest")
+    listed = {o["path"] for o in json.loads(path.read_text())["outputs"]}
+    shipped = {
+        str(p.relative_to(DATA_OUT)) for p in DATA_OUT.rglob("*") if p.is_file() and p.name != "manifest.json"
+    }
+    assert shipped - listed == set(), sorted(shipped - listed)
+    assert listed - shipped == set(), sorted(listed - shipped)

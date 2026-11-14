@@ -64,6 +64,8 @@ def build() -> dict:
             "region_id": None,
             "region_point_id": None,
             "miss_target_id": None,
+            "miss_grid_id": None,
+            "miss_point_id": None,
             "terrain_id": None,
             "source_url": s["source_url"],
             "source_org": s["source_org"],
@@ -73,15 +75,26 @@ def build() -> dict:
         for kind, meta in groups:
             pid, d_km = _nearest_point(meta["points"], s["lat_deg"], s["lon_deg"])
             spacing_km = meta.get("spacing_m", 500.0) / 1000.0
-            if d_km <= 0.75 * spacing_km:
-                if kind == "regions" and rec["region_id"] is None:
-                    rec["region_id"], rec["region_point_id"] = meta["id"], pid
-                if kind == "miss" and meta.get("target_site_id") == s["id"]:
+            if d_km > 0.75 * spacing_km:
+                continue
+            if kind == "regions" and rec["region_id"] is None:
+                # Linked only within 0.75 x spacing; the offset is published so the app can say how far the
+                # region point is from the cited coordinates (review: never show a stand-in point silently).
+                rec["region_id"], rec["region_point_id"] = meta["id"], pid
+                rec["region_point_offset_m"] = round(d_km * 1000.0, 1)
+            if kind == "miss":
+                if meta.get("target_site_id") == s["id"]:
                     rec["miss_target_id"] = meta["id"]
-        if (DATA_OUT / "terrain" / f"{s['id']}.json").exists():
+                if rec.get("miss_grid_id") is None:
+                    rec["miss_grid_id"], rec["miss_point_id"] = meta["id"], pid
+                    rec["miss_point_offset_m"] = round(d_km * 1000.0, 1)
+        terrain_dir = DATA_OUT / "terrain"
+        if (terrain_dir / f"{s['id']}.json").exists():
             rec["terrain_id"] = s["id"]
-        elif rec["region_id"] and (DATA_OUT / "terrain" / f"{rec['region_id']}.json").exists():
+        elif rec["region_id"] and (terrain_dir / f"{rec['region_id']}.json").exists():
             rec["terrain_id"] = rec["region_id"]
+        elif rec["miss_grid_id"] and (terrain_dir / f"{rec['miss_grid_id']}.json").exists():
+            rec["terrain_id"] = rec["miss_grid_id"]
         if s["id"] in refined:
             rec["refined"] = refined[s["id"]]
         sites.append(rec)

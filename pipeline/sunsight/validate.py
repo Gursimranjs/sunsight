@@ -70,7 +70,7 @@ def _write_csv(name: str, rows: list[dict]) -> str:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader()
         for r in rows:
-            w.writerow({k: (f"{v:.9g}" if isinstance(v, float) else v) for k, v in r.items()})
+            w.writerow({k: (repr(float(v)) if isinstance(v, float) else v) for k, v in r.items()})
     return f"validation/{name}.csv"
 
 
@@ -118,7 +118,7 @@ def check_ephemeris() -> tuple[dict, dict]:
         "value_label": "largest difference, SPICE geometry",
         "pass_mark": "≤ 0.01°",
         "status": "pass" if geo <= 0.01 and band <= 0.01 else "fail",
-        "explanation": f"Geometry agrees to {geo:.1e}°. The app interpolates the hourly column; where the 10° contact rule decides (0-20° up) that adds at most {band:.1e}°. Near a station's zenith interpolation is poor (up to {outside:.2f}°), which never affects the contact rule. Horizons' Earth-orientation data are predictions after 2027-02-08.",
+        "explanation": f"Geometry agrees to {geo:.1e}°. The app interpolates the hourly column; where the 10° contact rule decides (0-20° up) that adds at most {band:.1e}°. Near a station's zenith or nadir (|elevation| above about 60°) interpolation is poor (up to {outside:.2f}°); the app caps the station rule at 20° so this never decides contact. Horizons' Earth-orientation data are measured to 2026-11-13 and predicted only to 2027-02-08; later times use extrapolated orientation.",
         "data": _write_csv("station_geometry", rows),
         "rows": len(rows),
     }
@@ -446,14 +446,34 @@ def check_pgda() -> tuple[dict, dict]:
             "Share of hourly steps over 18.6 years with any part of Earth's disc above the terrain (PGDA's rule), same nodes and settings; vs AVGVISIB_85S_060M_201608_EARTH.",
         ),
     ):
+        ref_map = sun_map if cid == "sunlight_pgda" else earth_map
         d = 100.0 * (ours - ref)
         mean, spread = float(d.mean()), float(d.std())
         big = np.argsort(-np.abs(d))[:5]
-        status = "pass" if abs(mean) <= 2.0 else "fail"
+        # Measured evidence for each large outlier: is the PGDA pixel itself out of line with its 3x3 neighbours?
+        notes = []
+        isolated = 0
+        for k in big:
+            r0, c0 = picks[int(k)][0], picks[int(k)][1]
+            nb = ref_map[r0 - 1 : r0 + 2, c0 - 1 : c0 + 2].astype(float) * scale
+            med = float(np.median(nb))
+            iso = abs(ref[k] - med) > 0.20
+            isolated += iso
+            notes.append(
+                f"pixel {int(k)} ({d[k]:+.1f}; PGDA {100 * ref[k]:.0f}%, its 3x3 median {100 * med:.0f}%, ours {100 * ours[k]:.0f}%{', isolated in PGDA' if iso else ''})"
+            )
+        all_explained = isolated == len(big)
+        status = ("pass" if all_explained else "partial") if abs(mean) <= 2.0 else "fail"
         expl = (
             f"Mean difference {mean:+.2f} points, spread {spread:.2f} points over {N_RANDOM} pixels. Largest: "
-            + ", ".join(f"pixel {int(k)} ({d[k]:+.1f}, PGDA {100 * ref[k]:.0f}%)" for k in big)
-            + ". "
+            + ", ".join(notes)
+            + f". {isolated} of the {len(big)} largest differences {'sits on a PGDA pixel that differs' if isolated == 1 else 'sit on PGDA pixels that differ'} from {'its' if isolated == 1 else 'their'} own 3x3 neighbourhood median by more than 20 points (isolated values in the 2016 map)"
+            + (
+                "."
+                if all_explained
+                else "; the others are not explained by that test, so the outliers are only partly explained."
+            )
+            + " "
         )
         if alt is not None:
             da = 100.0 * (alt - ref)
@@ -465,8 +485,7 @@ def check_pgda() -> tuple[dict, dict]:
             )
         expl += (
             "PGDA used the 2016 60 m elevation map and we use the 2023 maps averaged to 60 m, so part of the scatter is real "
-            "terrain change. The label does not give the period start (we use 2009-07-13) or the observer height (we use the surface). "
-            "The largest differences sit where the horizon is steep, so small terrain differences move them most."
+            "terrain change. The label does not give the period start (we use 2009-07-13) or the observer height (we use the surface)."
         )
         out.append(
             {
@@ -788,6 +807,13 @@ def check_sensitivity() -> dict:
 # ---------------------------------------------------------------------------------------------------------
 
 
+def _short(label: str) -> str:
+    """Drop a trailing explanatory parenthesis, but keep (min) and (max)."""
+    if label.endswith(("(min)", "(max)")) or " (" not in label:
+        return label
+    return label.rsplit(" (", 1)[0]
+
+
 def _crossings(t_h: np.ndarray, v: np.ndarray) -> np.ndarray:
     s = np.sign(v)
     k = np.where((s[:-1] < 0) & (s[1:] >= 0))[0]
@@ -894,7 +920,7 @@ def check_sanity() -> dict:
             "All pass. " if not fails else "Failed: " + "; ".join(r["check"] for r in fails) + ". "
         )
         + "Measured: "
-        + "; ".join(f"{r['check'].split(' (')[0]}: {r['value']:.3f} {r['unit']}" for r in rows[:-1])
+        + "; ".join(f"{_short(r['check'])}: {r['value']:.3f} {r['unit']}" for r in rows[:-1])
         + ".",
         "data": _write_csv("physics_sanity", rows),
         "rows": len(rows),
@@ -927,19 +953,44 @@ def check_known_places() -> dict:
         if v >= 0.5:  # permanent shadow in PGDA's map
             psr_n += 1
             agree += lit[k] == 0.0
-    rank = 100.0 * (lit > lit[rim]).mean()
+    # The cited ridge/rim coordinate is the centre of its miss grid (the region point p{rim} is a stand-in nearby).
+    mg = json.loads((DATA_OUT / "miss" / "shackleton_ridge_rim.json").read_text())
+    centre = next(i for i, p in enumerate(mg["points"]) if p["east_m"] == 0.0 and p["north_m"] == 0.0)
+    cp = mg["points"][centre]
+    mm = decode_masks(
+        (DATA_OUT / "miss" / "shackleton_ridge_rim.masks.bin").read_bytes(), len(mg["points"]), 2, BIN_COUNT
+    )
+    csf, _ = series_for(
+        mm[centre : centre + 1, 0, :],
+        np.array([cp["lat_deg"]]),
+        np.array([cp["lon_deg"]]),
+        np.array([cp["height_m"]]),
+        2.0,
+        sun_t,
+        earth_t,
+    )
+    cited_lit = float((csf >= 0.5).mean())
+    rank = 100.0 * (lit > cited_lit).mean()
+    floor_off = sites["shackleton_crater"].get("region_point_offset_m", 0.0)
+    rim_off = sites["shackleton_ridge_rim"].get("region_point_offset_m", 0.0)
     rows = [
         {
-            "place": "Shackleton crater floor (USGS Gazetteer centre)",
+            "place": f"Shackleton crater floor (region point {floor_off:.0f} m from the USGS Gazetteer centre)",
             "point": f"p{floor}",
             "our_lit_pct_18_6_years_2m": 100 * lit[floor],
             "expectation": "about 0%",
         },
         {
-            "place": "Shackleton-de Gerlache ridge at Shackleton's rim (LROC)",
+            "place": "Shackleton-de Gerlache ridge at Shackleton's rim, at the LROC coordinates (miss-grid centre, 10 m map)",
+            "point": f"miss grid {cp['id']}",
+            "our_lit_pct_18_6_years_2m": 100 * cited_lit,
+            "expectation": f"among the best; higher than all but {rank:.1f}% of the {n} region points",
+        },
+        {
+            "place": f"Nearest Shackleton-region point to that ridge site ({rim_off:.0f} m away)",
             "point": f"p{rim}",
             "our_lit_pct_18_6_years_2m": 100 * lit[rim],
-            "expectation": f"among the best; top {rank:.1f}% of {n} region points",
+            "expectation": "context: a few hundred metres changes sunlight a lot here",
         },
         {
             "place": "Region points in PGDA permanent shadow (LPSR map)",
@@ -958,7 +1009,7 @@ def check_known_places() -> dict:
         "value_label": "PGDA shadowed points we also find never lit",
         "pass_mark": "floor ~0%; ridge in the top 10%; ≥ 90% agreement on permanent shadow",
         "status": "pass" if ok else "fail",
-        "explanation": f"Floor point lit {100 * lit[floor]:.2f}% of 18.6 years; ridge/rim point {100 * lit[rim]:.1f}% (top {rank:.1f}%); {agree} of {psr_n} PGDA permanently shadowed points are never lit in our run.",
+        "explanation": f"Floor point lit {100 * lit[floor]:.2f}% of 18.6 years; the ridge at LROC's coordinates {100 * cited_lit:.1f}% (above all but {rank:.1f}% of region points; the nearest region point, {rim_off:.0f} m away, only {100 * lit[rim]:.1f}%); {agree} of {psr_n} PGDA permanently shadowed points are never lit in our run.",
         "data": _write_csv("known_places", rows),
         "rows": len(rows),
     }

@@ -95,7 +95,7 @@ def build_manifest(
 
     def collect(v: Any) -> None:
         if isinstance(v, str):
-            if v.endswith((".json", ".bin", ".csv")):
+            if v.endswith((".json", ".bin", ".csv", ".dz")):
                 rels.append(v)
         elif isinstance(v, dict):
             for x in v.values():

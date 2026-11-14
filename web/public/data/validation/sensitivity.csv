@@ -1,11 +1,11 @@
 change,lit_pct,delta_points
-"Baseline: shipped engine, 2 m, half the disc, 18.6 years from 2009-07-13",86.3211221,0
-Near-field rays start 1 pixel out (baseline 0.5),86.3211221,0
-Near-field rays start 2 pixels out,86.3211221,0
-Bin rule: nearest-bin filling (±0.125°) instead of review note 001's ±0.25°,86.5112514,0.190129227
-Bin rule: no widening at all,86.6909541,0.369832012
-Threshold: any part of the disc counts as lit,90.7272136,4.4060915
-Time span: 2027-2030 (the app's table) instead of 18.6 years,86.4818617,0.160739608
-Terrain search stops at 100 km instead of 300 km,89.9992027,3.67808055
-Coarser terrain: 80 m map near the site instead of 20 m,85.094482,-1.22664017
-Grid: best point of the ~240 m validation grid instead of this refined point,70.5937552,-15.7273669
+"Baseline: shipped engine, 2 m, half the disc, 18.6 years from 2009-07-13",86.32112213042865,0.0
+Near-field rays start 1 pixel out (baseline 0.5),86.32112213042865,0.0
+Near-field rays start 2 pixels out,86.32112213042865,0.0
+Bin rule: nearest-bin filling (±0.125°) instead of review note 001's ±0.25°,86.51125135697069,0.1901292265420409
+Bin rule: no widening at all,86.6909541420572,0.36983201162854584
+Threshold: any part of the disc counts as lit,90.72721362551903,4.406091495090379
+Time span: 2027-2030 (the app's table) instead of 18.6 years,86.48186173853524,0.1607396081065957
+Terrain search stops at 100 km instead of 300 km,89.9992026838887,3.678080553460049
+Coarser terrain: 80 m map near the site instead of 20 m,85.09448195918968,-1.2266401712389694
+Grid: best point of the ~240 m validation grid instead of this refined point,70.5937552,-15.727366930428644

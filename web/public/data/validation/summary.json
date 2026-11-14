@@ -1,5 +1,5 @@
 {
- "generated_utc": "2026-11-14T17:31:04Z",
+ "generated_utc": "2026-11-14T17:55:48Z",
  "checks": [
   {
    "id": "ephemeris_horizons",
@@ -23,12 +23,12 @@
    "value_label": "mean difference (ours - PGDA)",
    "pass_mark": "mean within \u00b12 points; outliers explained",
    "status": "fail",
-   "explanation": "Mean difference -2.32 points, spread 3.70 points over 200 pixels. Largest: pixel 113 (+27.1, PGDA 0%), pixel 110 (-12.3, PGDA 38%), pixel 59 (-11.5, PGDA 20%), pixel 198 (+11.4, PGDA 0%), pixel 139 (-11.2, PGDA 39%). The PDS label also describes the values as the share of time sunlit by any fraction of the disc; read that way the mean difference is -1.10 points. Our bin rule (review note 001, obstacles widened by up to 0.25\u00b0) changes the mean by -0.13 points on these pixels (measured by rerunning without widening); it stays in the shipped engine because it never under-reads a peak. PGDA used the 2016 60 m elevation map and we use the 2023 maps averaged to 60 m, so part of the scatter is real terrain change. The label does not give the period start (we use 2009-07-13) or the observer height (we use the surface). The largest differences sit where the horizon is steep, so small terrain differences move them most.",
+   "explanation": "Mean difference -2.32 points, spread 3.70 points over 200 pixels. Largest: pixel 113 (+27.1; PGDA 0%, its 3x3 median 23%, ours 27%, isolated in PGDA), pixel 110 (-12.3; PGDA 38%, its 3x3 median 38%, ours 25%), pixel 59 (-11.5; PGDA 20%, its 3x3 median 23%, ours 8%), pixel 198 (+11.4; PGDA 0%, its 3x3 median 18%, ours 11%), pixel 139 (-11.2; PGDA 39%, its 3x3 median 40%, ours 28%). 1 of the 5 largest differences sit on PGDA pixels that differ from their own 3x3 neighbourhood median by more than 20 points (isolated values in the 2016 map); the others are not explained by that test, so the outliers are only partly explained. The PDS label also describes the values as the share of time sunlit by any fraction of the disc; read that way the mean difference is -1.10 points. Our bin rule (review note 001, obstacles widened by up to 0.25\u00b0) changes the mean by -0.13 points on these pixels (measured by rerunning without widening); it stays in the shipped engine because it never under-reads a peak. PGDA used the 2016 60 m elevation map and we use the 2023 maps averaged to 60 m, so part of the scatter is real terrain change. The label does not give the period start (we use 2009-07-13) or the observer height (we use the surface).",
    "spread_points": 3.6993892323948203,
    "source": "https://pgda.gsfc.nasa.gov/products/69",
    "data": "validation/pgda_points.csv",
    "rows": 200,
-   "timing_s": 3.7
+   "timing_s": 3.2
   },
   {
    "id": "earth_pgda",
@@ -38,13 +38,13 @@
    "unit": "points",
    "value_label": "mean difference (ours - PGDA)",
    "pass_mark": "mean within \u00b12 points; outliers explained",
-   "status": "pass",
-   "explanation": "Mean difference +0.23 points, spread 5.54 points over 200 pixels. Largest: pixel 113 (+56.0, PGDA 0%), pixel 198 (+45.2, PGDA 0%), pixel 8 (+14.5, PGDA 39%), pixel 52 (+13.4, PGDA 4%), pixel 25 (-13.1, PGDA 21%). PGDA used the 2016 60 m elevation map and we use the 2023 maps averaged to 60 m, so part of the scatter is real terrain change. The label does not give the period start (we use 2009-07-13) or the observer height (we use the surface). The largest differences sit where the horizon is steep, so small terrain differences move them most.",
+   "status": "partial",
+   "explanation": "Mean difference +0.23 points, spread 5.54 points over 200 pixels. Largest: pixel 113 (+56.0; PGDA 0%, its 3x3 median 43%, ours 56%, isolated in PGDA), pixel 198 (+45.2; PGDA 0%, its 3x3 median 45%, ours 45%, isolated in PGDA), pixel 8 (+14.5; PGDA 39%, its 3x3 median 39%, ours 54%), pixel 52 (+13.4; PGDA 4%, its 3x3 median 4%, ours 17%), pixel 25 (-13.1; PGDA 21%, its 3x3 median 21%, ours 8%). 2 of the 5 largest differences sit on PGDA pixels that differ from their own 3x3 neighbourhood median by more than 20 points (isolated values in the 2016 map); the others are not explained by that test, so the outliers are only partly explained. PGDA used the 2016 60 m elevation map and we use the 2023 maps averaged to 60 m, so part of the scatter is real terrain change. The label does not give the period start (we use 2009-07-13) or the observer height (we use the surface).",
    "spread_points": 5.538913277953929,
    "source": "https://pgda.gsfc.nasa.gov/products/69",
    "data": "validation/pgda_points.csv",
    "rows": 200,
-   "timing_s": 3.7
+   "timing_s": 3.2
   },
   {
    "id": "glaser_ridge",
@@ -83,7 +83,7 @@
    "value_label": "largest difference, SPICE geometry",
    "pass_mark": "\u2264 0.01\u00b0",
    "status": "pass",
-   "explanation": "Geometry agrees to 5.9e-04\u00b0. The app interpolates the hourly column; where the 10\u00b0 contact rule decides (0-20\u00b0 up) that adds at most 3.9e-03\u00b0. Near a station's zenith interpolation is poor (up to 0.25\u00b0), which never affects the contact rule. Horizons' Earth-orientation data are predictions after 2027-02-08.",
+   "explanation": "Geometry agrees to 5.9e-04\u00b0. The app interpolates the hourly column; where the 10\u00b0 contact rule decides (0-20\u00b0 up) that adds at most 3.9e-03\u00b0. Near a station's zenith or nadir (|elevation| above about 60\u00b0) interpolation is poor (up to 0.25\u00b0); the app caps the station rule at 20\u00b0 so this never decides contact. Horizons' Earth-orientation data are measured to 2026-11-13 and predicted only to 2027-02-08; later times use extrapolated orientation.",
    "data": "validation/station_geometry.csv",
    "rows": 60
   },
@@ -96,7 +96,7 @@
    "value_label": "checks passed",
    "pass_mark": "all pass",
    "status": "pass",
-   "explanation": "All pass. Measured: Sun centre at the pole stays within about \u00b11.6\u00b0: 1.587 deg; Sun's seasonal cycle at the pole: 346.836 days; Sun's azimuth makes a full circle: 29.530 days; Earth's elevation at the pole: swing: 6.853 deg (half range); Earth's elevation at the pole: period: 27.217 days; Sun's apparent width: 0.523 deg; Sun's apparent width: 0.543 deg; Earth's apparent width: 1.795 deg; Earth's apparent width: 2.046 deg.",
+   "explanation": "All pass. Measured: Sun centre at the pole stays within about \u00b11.6\u00b0: 1.587 deg; Sun's seasonal cycle at the pole: 346.836 days; Sun's azimuth makes a full circle: 29.530 days; Earth's elevation at the pole: swing: 6.853 deg (half range); Earth's elevation at the pole: period: 27.217 days; Sun's apparent width (min): 0.523 deg; Sun's apparent width (max): 0.543 deg; Earth's apparent width (min): 1.795 deg; Earth's apparent width (max): 2.046 deg.",
    "data": "validation/physics_sanity.csv",
    "rows": 10
   },
@@ -109,9 +109,9 @@
    "value_label": "PGDA shadowed points we also find never lit",
    "pass_mark": "floor ~0%; ridge in the top 10%; \u2265 90% agreement on permanent shadow",
    "status": "pass",
-   "explanation": "Floor point lit 0.00% of 18.6 years; ridge/rim point 39.1% (top 3.7%); 433 of 437 PGDA permanently shadowed points are never lit in our run.",
+   "explanation": "Floor point lit 0.00% of 18.6 years; the ridge at LROC's coordinates 73.6% (above all but 0.0% of region points; the nearest region point, 298 m away, only 39.1%); 433 of 437 PGDA permanently shadowed points are never lit in our run.",
    "data": "validation/known_places.csv",
-   "rows": 3
+   "rows": 4
   }
  ],
  "limits": [

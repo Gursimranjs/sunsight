@@ -2,8 +2,8 @@
  "format_version": 2,
  "fixture": false,
  "generated_with": "SunSight pipeline; code written by Claude Code (Anthropic)",
- "pipeline_version": "0.1.0+47bb76d",
- "build_time_utc": "2026-11-14T17:31:12Z",
+ "pipeline_version": "0.1.0+39279ce",
+ "build_time_utc": "2026-11-14T17:57:37Z",
  "kernels": [
   "naif0012.tls",
   "pck00011.tpc",
@@ -194,11 +194,6 @@
   ],
   "terrain": [
    {
-    "id": "a3_malapert_massif",
-    "meta": "terrain/a3_malapert_massif.json",
-    "bin": "terrain/a3_malapert_massif.bin"
-   },
-   {
     "id": "de_gerlache_rim",
     "meta": "terrain/de_gerlache_rim.json",
     "bin": "terrain/de_gerlache_rim.bin"
@@ -249,7 +244,17 @@
     "bin": "terrain/shackleton_ridge_rim.bin"
    }
   ],
-  "validation": "validation/summary.json"
+  "validation": "validation/summary.json",
+  "validation_data": [
+   "validation/eclipses.csv",
+   "validation/ephemeris_horizons.csv",
+   "validation/glaser_ridge.csv",
+   "validation/known_places.csv",
+   "validation/pgda_points.csv",
+   "validation/physics_sanity.csv",
+   "validation/sensitivity.csv",
+   "validation/station_geometry.csv"
+  ]
  },
  "outputs": [
   {
@@ -273,6 +278,11 @@
    "sha256": "4d42c9a36d4862282f7c4d8a8cadda64fb01750b9934829ac3f2a53a98ac6759"
   },
   {
+   "path": "miss/a3_malapert_massif.masks.dz",
+   "size_bytes": 655245,
+   "sha256": "4c3207c2e27c212318fd71fc1f64f74f332d59b219d7949b0a819a4ea7a1a63c"
+  },
+  {
    "path": "miss/im2_athena_target.json",
    "size_bytes": 62105,
    "sha256": "9bed4b4c31fd22e53e37fe2202be2f2861ee29e95f8ecba17e8d56056335f485"
@@ -281,6 +291,11 @@
    "path": "miss/im2_athena_target.masks.bin",
    "size_bytes": 1825920,
    "sha256": "82fe74916f9fa5f18141425dc16c99d76ca23ed54b9258da951a3fac3f9ed8a2"
+  },
+  {
+   "path": "miss/im2_athena_target.masks.dz",
+   "size_bytes": 635168,
+   "sha256": "e575af40bf03d66cbda405bbfb26846e0b28ffdc8948868e1a3340720d9e59c4"
   },
   {
    "path": "miss/shackleton_ridge_rim.json",
@@ -293,6 +308,11 @@
    "sha256": "032a8f30173942f794e9cda3f06a8c1a5b600da9abb304f6b47279f5a34db222"
   },
   {
+   "path": "miss/shackleton_ridge_rim.masks.dz",
+   "size_bytes": 682033,
+   "sha256": "91fc792b7bc7ed78b05712ba6b5f2d5b62d5d9d50ff4055bfbaea3e0eae5bb6b"
+  },
+  {
    "path": "regions/de_gerlache_rim.json",
    "size_bytes": 144022,
    "sha256": "13d767f148ecd38d48b7d50356c919fb81cb37159c1434b94475f7879c36d61c"
@@ -301,6 +321,11 @@
    "path": "regions/de_gerlache_rim.masks.bin",
    "size_bytes": 5535360,
    "sha256": "e1c646c59d3450a3ce60917f2a558fbbde88eb4424909e1900352459d94b3c8b"
+  },
+  {
+   "path": "regions/de_gerlache_rim.masks.dz",
+   "size_bytes": 2225848,
+   "sha256": "c260fd2fa7ad973e45defd1d318d19927d19d87c01dcc271b799d5b0fa73178e"
   },
   {
    "path": "regions/haworth.json",
@@ -313,6 +338,11 @@
    "sha256": "24dcce06b60b4f31a92c48f5725ba89103ae116e20eedb439a8544f59b1e0427"
   },
   {
+   "path": "regions/haworth.masks.dz",
+   "size_bytes": 2160124,
+   "sha256": "e3e3550b0f423dc21730cbbb6df87a087e0973fc6d81f442c5baf64df2aadfbf"
+  },
+  {
    "path": "regions/malapert_massif.json",
    "size_bytes": 142531,
    "sha256": "b1562990eda0a40b5ebdd23fdb3e42b7c988fc7c8e086ff4cc2addc5400484f9"
@@ -321,6 +351,11 @@
    "path": "regions/malapert_massif.masks.bin",
    "size_bytes": 5535360,
    "sha256": "9b688bd34ed5f4f15dc1349a373de50e626829c5d2960c2b3f7d866545d1288f"
+  },
+  {
+   "path": "regions/malapert_massif.masks.dz",
+   "size_bytes": 2185489,
+   "sha256": "c989cba3e3a3c890d14477c4968275596a8fa2e7b5d3dc204aec1558f925aa75"
   },
   {
    "path": "regions/mons_mouton_plateau.json",
@@ -333,6 +368,11 @@
    "sha256": "56cd4064517c967c61cf783003bdcd610ece2f919905d4255d346984a99bd8af"
   },
   {
+   "path": "regions/mons_mouton_plateau.masks.dz",
+   "size_bytes": 1993812,
+   "sha256": "52206884572ee8854d095898c622a93b6d9b8a0ddaa04e87bda7cce799612488"
+  },
+  {
    "path": "regions/nobile_rim1_mons_mouton.json",
    "size_bytes": 143708,
    "sha256": "deffc74e98dfaf49093bddcd21d9354ce9214f0de37f4fcff6894b24c9eae3c1"
@@ -341,6 +381,11 @@
    "path": "regions/nobile_rim1_mons_mouton.masks.bin",
    "size_bytes": 5535360,
    "sha256": "3095b7fa9d4b078f67d2617ec95c589861b8f0b6069626c1077898821380bcc2"
+  },
+  {
+   "path": "regions/nobile_rim1_mons_mouton.masks.dz",
+   "size_bytes": 2186167,
+   "sha256": "4dcd40f33909e81ee7ae52b3d800e1471aed7264dd87b9cd8a5f4f1370b2010c"
   },
   {
    "path": "regions/nobile_rim2.json",
@@ -353,6 +398,11 @@
    "sha256": "c43751fb3fa89de17c00d4cbb0bb7e312a19acf9ee5b12870f02b8a0dccc9cb0"
   },
   {
+   "path": "regions/nobile_rim2.masks.dz",
+   "size_bytes": 2087123,
+   "sha256": "ace327bef7d58be8a13242e11f8980a010b6583260c7e11df9cd37ce12cf18ff"
+  },
+  {
    "path": "regions/peak_near_cabeus_b.json",
    "size_bytes": 145635,
    "sha256": "2b01c3aff7c3bd526aa0baef8304ecd9b25058bf4c569f3e30dccd2f09554649"
@@ -361,6 +411,11 @@
    "path": "regions/peak_near_cabeus_b.masks.bin",
    "size_bytes": 5535360,
    "sha256": "93143e7a29b19a8c5a1a8c20f72db01267845f3d4736bb840dd659d9f17209b6"
+  },
+  {
+   "path": "regions/peak_near_cabeus_b.masks.dz",
+   "size_bytes": 2123704,
+   "sha256": "846c9988467dbcae794fafac2dc8a7e0f1492922c94cdfc2500ad8550453c6d5"
   },
   {
    "path": "regions/shackleton.json",
@@ -373,19 +428,14 @@
    "sha256": "5cd0d873dd612ae4c761b6d71272df08c9c97f70dddc8cc4ed8d84eb1cb22f67"
   },
   {
+   "path": "regions/shackleton.masks.dz",
+   "size_bytes": 2284312,
+   "sha256": "6bb913bd68e3eaa4bc138129383552009aaaaaa6882ba405cf405b63cdb40599"
+  },
+  {
    "path": "sites.json",
-   "size_bytes": 19933,
-   "sha256": "a3418771a8af10eec6a9f6f97b5cb34bd852bbbbecc11da42aa271210374cfb8"
-  },
-  {
-   "path": "terrain/a3_malapert_massif.bin",
-   "size_bytes": 524288,
-   "sha256": "c7a5f0db1698db9b03068751a0942a546c6d169e52c935319af8ebe2cf28fe6b"
-  },
-  {
-   "path": "terrain/a3_malapert_massif.json",
-   "size_bytes": 514,
-   "sha256": "ae7563608898d3022c39269272049c27ce32e90260017c9ea475666ebca38fb1"
+   "size_bytes": 21871,
+   "sha256": "3be9b183f0a3632befd10eb6fbb0b2761ace44009a9a830f08959c3066a710ce"
   },
   {
    "path": "terrain/de_gerlache_rim.bin",
@@ -488,9 +538,49 @@
    "sha256": "035d4c3d2534e72ba22209bf16d7a3a74b2bfa571307b18eeb5a20c2fafd0b1d"
   },
   {
+   "path": "validation/eclipses.csv",
+   "size_bytes": 4703,
+   "sha256": "3e2b0c370b6c47da19095a55d1da9bc758b9147efe4cac36e68a2bd0af6e7ac3"
+  },
+  {
+   "path": "validation/ephemeris_horizons.csv",
+   "size_bytes": 20484,
+   "sha256": "3dfa36060506950d68a1a24130ba228bfba8e278348bc25b6a583be19a5b7c38"
+  },
+  {
+   "path": "validation/glaser_ridge.csv",
+   "size_bytes": 511,
+   "sha256": "c68f9b069c11af86c04c8cb4c3770b0f69a6ffa14c0d541f5aa04e471ae87de9"
+  },
+  {
+   "path": "validation/known_places.csv",
+   "size_bytes": 622,
+   "sha256": "20232c1ff71796f8228c7370e2e76b37730e8a384bfb98f05f9ec68198abe076"
+  },
+  {
+   "path": "validation/pgda_points.csv",
+   "size_bytes": 27019,
+   "sha256": "d9f0977934c2e102e6a4f507bcc3d58c6a6a8451d909d6fdbae483bbf518309c"
+  },
+  {
+   "path": "validation/physics_sanity.csv",
+   "size_bytes": 885,
+   "sha256": "1ca875a6463a97b2ee7b0c33840e3108ceea3aa76b1c8eb556f901e0165342dd"
+  },
+  {
+   "path": "validation/sensitivity.csv",
+   "size_bytes": 913,
+   "sha256": "e33a211efab78e0acc1e6dff688cfdab74667e27b3c5033a2151ecee5ba580f9"
+  },
+  {
+   "path": "validation/station_geometry.csv",
+   "size_bytes": 7472,
+   "sha256": "2d12200eadf038ccb1c58ac8ee3f0043548093b33070d94d1c588a8af429ed4d"
+  },
+  {
    "path": "validation/summary.json",
-   "size_bytes": 11005,
-   "sha256": "c8b8c842e7a6de01702536b0be281a81711e1072540f041b713d1a61061e090c"
+   "size_bytes": 11914,
+   "sha256": "3e59900f4234abcfa8c965a97b2c84f5e7135691f78b94009f6f56b0614038d3"
   }
  ]
 }
