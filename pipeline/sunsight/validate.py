@@ -50,6 +50,19 @@ ECLIPSES = [  # NASA lunar eclipse table 2021-2030 (TD of greatest eclipse, dura
 ECLIPSE_URL = "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
 
 
+def ensure_illum() -> None:
+    """Download the three PGDA 69 maps used for validation (the plain TIFs; the COG links were broken on
+    2026-11-14). Each file must start with a TIFF signature."""
+    ILLUM.mkdir(parents=True, exist_ok=True)
+    for p in (PGDA_SUN, PGDA_EARTH, PGDA_LPSR):
+        if p.exists() and p.read_bytes()[:2] in (b"II", b"MM"):
+            continue
+        url = "https://pgda.gsfc.nasa.gov/data/MoonIllumination/" + p.name
+        subprocess.run(["curl", "-sSfL", "--retry", "3", "-o", str(p), url], check=True)
+        if p.read_bytes()[:2] not in (b"II", b"MM"):
+            raise RuntimeError(f"{url} did not return a TIFF")
+
+
 def _write_csv(name: str, rows: list[dict]) -> str:
     OUT.mkdir(parents=True, exist_ok=True)
     path = OUT / f"{name}.csv"
