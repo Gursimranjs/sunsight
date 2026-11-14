@@ -46,6 +46,8 @@ def build() -> dict:
             for p in sorted(d.glob("*.json")):
                 if not p.name.startswith("fixture_"):
                     groups.append((kind, json.loads(p.read_text())))
+    rp = REPO_ROOT / "pipeline" / "data" / "refined_points.json"
+    refined = json.loads(rp.read_text())["points"] if rp.exists() else {}
     sites = []
     for s in cur["sites"]:
         polar = s["lat_deg"] <= -80.0
@@ -80,6 +82,8 @@ def build() -> dict:
             rec["terrain_id"] = s["id"]
         elif rec["region_id"] and (DATA_OUT / "terrain" / f"{rec['region_id']}.json").exists():
             rec["terrain_id"] = rec["region_id"]
+        if s["id"] in refined:
+            rec["refined"] = refined[s["id"]]
         sites.append(rec)
     out = {
         "note": "Coordinates copied from the cited pages; east-positive longitudes. See pipeline/data/curated_sites.json.",
