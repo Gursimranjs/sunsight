@@ -263,3 +263,28 @@ The brief also cites a NASA news release ("more than 1,300 feet (400 meters)") a
 **Honesty points built in**: step 3 says a 20 m crater is at the limit of the 20 m terrain map and draws it over 20 m cells; step 4 says the table covers 2027–2030 only, so SunSight cannot replay March 2025, and that it does not model a tipped lander; step 5 shows the real `miss/im2_athena_target` grid for a start date the user picks inside 2027–2030, with a boxed "Future date: … not the 2025 landing" label; if the grid is not in the manifest it says the map is not available (no fixture fallback). Credits link LROC images 1401 and 1408 (NASA/GSFC/Arizona State University) and SpacePolicyOnline; no images are reproduced.
 
 **Verification (phone)**: Playwright, 375 × 812, touch, real data: tapped Next through all five steps; no horizontal page scroll on any step (`scrollWidth == 375`), no console errors; step 5 ran the 317-point grid (2027-03-01 start, robotic preset: 0 % pass at every radius, the real answer for that date, each point's reason is a > 300 h dark spell).
+
+## End-to-end and accessibility tests (Playwright + axe)
+
+**Generated files**: `web/playwright.config.ts`, `web/tests/e2e/helpers.ts`, `web/tests/e2e/journeys.spec.ts`, `web/tests/e2e/quality.spec.ts`; `tsconfig.json` now type-checks `tests/e2e` and the config. Dev dependencies, exact: `@playwright/test@1.64.1`, `@axe-core/playwright@4.14.0`, and `playwright-core@1.64.1` (pinned so axe's peer dependency does not pull a second, newer core; with two cores the `Page` types clash). Browser: `npx playwright install chromium` (user cache). `make e2e` (unchanged: `cd web && npm run build && npx playwright test`) builds, starts `vite preview` on port 4183 (`SUNSIGHT_E2E_PORT` to change; base `/sunsight/`) and runs 23 tests in ~17 s on the laptop. Not part of `make check`.
+
+**What runs, on the shipped real data**
+
+| Test | Checks |
+| --- | --- |
+| load | verdict and reason render, no fixture banner, **no console errors** |
+| journey (a) date → sites | set the start date (URL follows), open Compare, pick Malapert massif, Shackleton ridge and Apollo 11, each row shows its name and a GO / MARGINAL / NO-GO badge, takeaway shows |
+| journey (b) site → dates | calendar (7 days) for all sites, click the Shackleton ridge cell for 2027-02-04, the report card opens with that site and date in the URL and the same verdict word as the cell |
+| journey (c) miss test | Malapert massif grid on 2027-10-13, crew preset (a mixed map: 184 / 317 pass, found by scanning 2027 with the engine); the pin starts on the target, a keyboard sweep reaches a point whose verdict word differs, then a mouse drag moves it to the north-west and the verdict line follows. Skips itself if no miss grid ships |
+| miss-tolerant calendar | the ◎ rows appear with "n of m points within 250 m pass" |
+| axe × 7 views | report, sky, miss, compare/calendar, 3D, story, validation: WCAG 2.0/2.1 A and AA tags, **0 findings of any impact on every view** after the fixes below |
+| 375 px × 7 views | `scrollWidth ≤ clientWidth` on every view |
+| 3D lazy load | no `Scene3D` script request on first load (network idle), requested when the tab opens; the illustrative label text is exact |
+| 3D controls | fps readout appears, astronaut button works, the 3D card's slider moves the shared time in the URL |
+| no WebGL | with `getContext('webgl*')` returning null: "3D view unavailable", the verdict still shows, no console errors |
+| Athena story on a phone | 375 × 812 touch: all five steps by tapping Next, no horizontal scroll, future-date label, miss table (or the "not available" note) |
+
+**Bugs found and fixed by these tests**
+
+1. **The miss-test landing pin could not get keyboard focus** (P15): Preact writes `tabIndex` on an SVG element as a case-sensitive `tabIndex` attribute, which SVG ignores, so arrow keys never reached it. Now `tabindex`, plus `aria-valuemin/max/now` for the slider role.
+2. Once focusable, axe flagged it as **nested-interactive** inside the map's `role="img"`; the map is now `role="group"` with the same label.
