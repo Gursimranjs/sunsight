@@ -1,0 +1,48 @@
+{
+ "start_utc": "2027-01-01T00:00:00",
+ "step_s": 3600,
+ "row_count": 35064,
+ "columns": [
+  "sun_x_km",
+  "sun_y_km",
+  "sun_z_km",
+  "earth_x_km",
+  "earth_y_km",
+  "earth_z_km",
+  "goldstone_x_km",
+  "goldstone_y_km",
+  "goldstone_z_km",
+  "madrid_x_km",
+  "madrid_y_km",
+  "madrid_z_km",
+  "canberra_x_km",
+  "canberra_y_km",
+  "canberra_z_km",
+  "moon_el_goldstone_deg",
+  "moon_el_madrid_deg",
+  "moon_el_canberra_deg"
+ ],
+ "frame": "MOON_ME",
+ "correction": "LT+S",
+ "observer": "MOON",
+ "stations": {
+  "goldstone": "DSS-14",
+  "madrid": "DSS-63",
+  "canberra": "DSS-43"
+ },
+ "station_elevation": "Moon's apparent elevation in each station's _TOPO frame, no refraction",
+ "time_scale": "UTC; each row is a whole UTC hour, converted to ET with naif0012.tls",
+ "dtype": "float32",
+ "endianness": "little",
+ "kernels": [
+  "naif0012.tls",
+  "pck00011.tpc",
+  "de440s.bsp",
+  "moon_pa_de440_200625.bpc",
+  "moon_de440_250416.tf",
+  "moon_assoc_me.tf",
+  "earth_2026_260806_2126_predict.bpc",
+  "earthstns_itrf93_260814.bsp",
+  "earth_topo_260814.tf"
+ ]
+}
