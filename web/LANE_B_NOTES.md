@@ -323,3 +323,71 @@ The brief also cites a NASA news release ("more than 1,300 feet (400 meters)") a
 - First-load JavaScript: entry 111.5 kB (**39.2 kB gzip**) + engine worker 9.5 kB (3.8 kB gzip) = **43.0 kB gzip**; CSS 9.1 kB (2.7 kB gzip). Three.js (543 kB, 135 kB gzip) is lazy. `npm run size` (`web/scripts/bundle-size.mjs`) prints these and fails above a 60 kB gzip budget; not wired into `make check` (needs a build).
 - First load to verdict on screen (`vite preview` of the build, cache off, Chromium, measured with CDP throttling): local 0.11 s; **25 Mbit/s + 40 ms: 1.9 s**; 10 Mbit/s + 60 ms: 3.5 s. 3.22 MB transferred, of which the 2.52 MB ephemeris table is most (Float32, gzips only to 2.37 MB) and the default site's miss grid (0.64 MB `.masks.dz`) next. The 3 s target holds on a typical laptop connection, not on a slow one; the lever would be a shorter or quantised first table (lane A's format), not the JS.
 - Service worker: **not added** (optional). It is not trivial to do safely here: it must cache data per region on demand under the `/sunsight/` base path and must never serve a stale `manifest.json` after a data release; a mistake would show old numbers with no visible sign. Left for a person to decide.
+
+---
+
+# Review fixes (pre-freeze)
+
+Branch `review-fixes-web`, one commit per finding group. Each fix has a vitest unit test written first.
+
+## 1. Site resolution (blocker)
+
+**Change**: `resolveSite` / `resolveForSite` now follow (a) miss-grid point → (b) region point → (c) miss-grid centre → (d) smooth horizon, using the new optional `sites.json` fields from lane A. `Resolved` gained `maskKey` (which mask was used, with the stored height) for the freshness key of finding 2. The new fields are typed as optional on `Site`. Test: `web/tests/unit/resolve_priority.test.ts`; `resolve_miss.test.ts` (files without the new fields) still passes unchanged. The fixture sites file was not changed (tests add the fields to copies of the fixture sites).
+
+| Decision | Value | Reason |
+| --- | --- | --- |
+| Miss-grid point used when | `miss_grid_id` set and `miss_point_offset_m ≤ 40` (missing offset = 0) | As specified; at the Shackleton ridge the region point p472 is 298 m away (38.9 % lit at 2 m vs 73.4 % at the cited point) |
+| `miss_point_id` missing or not in the grid | Grid point nearest the site's coordinates | Still the closest mask we have |
+| Label (a) | "Terrain horizon from the miss-test grid (10 m map), point gN" + " (N m from the cited site)" when the offset ≥ 1 m (rounded to 1 m) | As specified; "10 m" is read from the grid's `terrain.near_field` file name (`…_10MPP_…`) and defaults to 10 |
+| Label (b) | "Terrain horizon from region "X", nearest region point pN, D m from the cited site, observer H m" when `region_point_offset_m ≥ 1`, else the old label | Keeps the "Terrain horizon from region" prefix |
+| Grid-centre fallback (c) | Only when `miss_grid_id` is absent | As specified; a site whose grid point is > 40 m away and has no region gets the smooth horizon |
+| A grid named in `sites.json` but not in the manifest | Skipped silently (falls to the region) | Same as the existing rule for `miss_target_id` |
+| Load failure | Falls through to the next option; the smooth horizon is labelled "Terrain file missing" only if a load failed and nothing with terrain is left | Keeps the app usable and honest |
+
+**Real data** (after merging main `cdaf002`+, same test file): Shackleton ridge → grid point g158 ("…point g158", no distance), Shackleton crater → "nearest region point p338, 214 m from the cited site", Athena's resting place → g274 in the Athena grid ("(29 m from the cited site)"), Malapert massif → its grid g158 at 10 m, Haworth → region p480 short label, Apollo 11 → smooth horizon. Note: the Athena *target* now reads "…miss-test grid (10 m map), point g158" instead of the old "(target point)" label, because lane A gave it `miss_grid_id`.
+
+## 2. Stale results (two findings)
+
+**Change**: new `web/src/state/freshness.ts`. The resolved place is stored with the request it answers (`placeRequestKey`: site id, or `custom` + lat/lon, plus the observer height); `currentPlace` returns null in the same render when the request on screen differs, so after a site switch or an observer-height edit the hero shows "Computing…", the Sun elevation shows "—", and the ShareBar/export is hidden until the matching answer arrives. The window key (`windowKey`) is request + `maskKey` (point id and stored height, or the smooth-horizon dip) + point + dates + rules, so an answer computed with the old mask can never count as fresh. While computing, the old charts stay dimmed with `aria-busy` and a visible "Updating: the charts below are from the previous inputs." line. Compare got the same treatment: its resolved places are tagged with the site ids and height, and its key includes each place's `maskKey`. Test: `web/tests/unit/freshness.test.ts`.
+
+| Decision | Value | Reason |
+| --- | --- | --- |
+| Any observer-height edit makes the place stale | Yes, even 2 m → 3 m (same stored mask) | Simple and safe; re-resolving costs a cache lookup |
+| Old charts while computing | Kept, dimmed, `aria-busy`, with a visible note; verdict, countdowns, Sun elevation and export cleared | Avoids a jumping layout without passing old numbers off as current |
+
+## 3, 4 and 8. URL and rule hardening
+
+**Changes** (test: `web/tests/unit/url_hardening.test.ts`)
+
+- **Hostile preset (3)**: `decodeScenario` accepts a preset only if it is an own key of `PRESETS` (`Object.prototype.hasOwnProperty.call`). `?preset=constructor`, `__proto__`, `toString`, `hasOwnProperty`, `valueOf` now fall back to the robotic preset, and encoding the result no longer throws.
+- **Station-elevation cap (4)**: `MAX_MOON_EL_DEG = 20` and `clampMoonElDeg` in `state/scenario.ts`; applied in the rules editor (input `min=0 max=20`, label "°, 0–20", value clamped on change), in `decodeScenario` (`moon_el_deg`) and in `clampScenario` (via `clampRules`, so every path into the scenario is covered). A non-number falls back to the default 10°.
+- **Duplicate compare slots (8)**: `uniqueCompareIds` (first three distinct non-empty ids, in order) is used by `decodeScenario` for `cmp=` and by the Compare view for its slots and its default list, so React/Preact keys (site ids) are unique. It also closes a hole: picking slot 3 while slot 2 was empty used to store `undefined` in the list.
+
+## 5. Credits
+
+**Change**: `web/src/views/sourceCredits.ts` (pure: `siteCredit`, `dataCredits`, `TERRAIN_CREDIT`, `safeHttpUrl`) and `web/src/views/Credits.tsx` (`SiteSource`, `TerrainCredit`, `AboutData`). The verdict card ends with "Site coordinates: <source_org>." linked to `source_url`, with `notes` as the link's `title` (and in screen-reader text); for a site with `refined`, the line adds "Best-lit point nearby computed by SunSight (<refined.method>); not a cited figure." An "About the data" card above the footer lists: LOLA south polar terrain maps, PGDA product 90 (Barker et al. 2023) → https://pgda.gsfc.nasa.gov/products/90; NAIF SPICE kernels, NASA JPL → https://naif.jpl.nasa.gov/; LROC, NASA/GSFC/Arizona State University (only when a site cites an LROC page; no general link, each site card links its own page); PGDA product 69 → https://pgda.gsfc.nasa.gov/products/69 and JPL Horizons → https://ssd.jpl.nasa.gov/horizons/ for validation. The miss and 3D tabs show the terrain credit line under the view. Test: `web/tests/unit/credits.test.ts` (including: every shipped site gets a source line with an http(s) link).
+
+| Decision | Value | Reason |
+| --- | --- | --- |
+| Links | Plain `<a href rel="noopener">`, same tab | As specified; the URL keeps the scenario, so Back returns to the same view |
+| Unsafe or missing `source_url` | Not linked (only http/https); org falls back to the link's host name; no line if neither exists | Data files must not inject `javascript:` links |
+| With fixture data loaded | "About the data" says the numbers on screen are made up and do not come from these sources | Honest; the fixture banner is also shown |
+| File name | `sourceCredits.ts`, not `credits.ts` | `credits.ts` and `Credits.tsx` clash on case-insensitive disks (same issue as `storyNumbers.ts`) |
+
+## 6. Tooltips with fixed numbers
+
+**Change**: the glossary moved to `web/src/views/glossary.ts`. `lit`, `contact`, `grazing`, `battery` and `score` are built from the rules in force (lit threshold, station elevation, grazing angle, contact mode, load, depth of discharge, efficiency, weights); `Term` reads the rules from a `RulesContext` that the App provides with `scn.rules`. The Athena story's grid caption now uses `litRuleText(scn.rules)` instead of "at least half". Glossary lookups use own keys only. Test: `web/tests/unit/glossary.test.ts` (default numbers, edited numbers, contact mode `earth`).
+
+| Decision | Value | Reason |
+| --- | --- | --- |
+| Lit threshold wording | "at least 50% of the Sun’s disc" (was "half") | A number that follows the rule; "half" only fits 50 % |
+| Contact mode `earth` | Contact tip says any part of Earth in view and that the station check is off; grazing tip says contact is never graded grazing under this rule | Matches `sample_at` in `light.ts` (earth mode returns clear or blocked only) |
+| Text left fixed | Pipeline facts in the story (e.g. "2 m observer" for the 2027–2030 lit shares), the 2 m astronaut camera, the timeline's "half height" bar for grazing | They describe a pipeline run or a drawing, not a rule |
+
+## End-to-end checks for the review fixes
+
+`web/tests/e2e/review_fixes.spec.ts` (built app, shipped data): the Shackleton ridge reads "…miss-test grid (10 m map), point g158" with its LROC source link (`rel="noopener"`) and the computed-point text; "About the data" has the PGDA 90, NAIF, LROC, PGDA 69 and Horizons entries; the Shackleton crater label says "nearest region point p338, 214 m from the cited site"; `?preset=constructor`, `__proto__` and `toString` load with a verdict and rewrite the URL to `preset=robotic`; a MutationObserver on the verdict card during a site switch (Shackleton ridge → Apollo 11) records every state, and no state shows Apollo 11's name with another verdict reason or Sun elevation; `moon_el_deg=45` becomes 20, the input has `min=0 max=20` and typing 35 gives 20; `cmp=apollo_11,apollo_11,apollo_12` gives two rows; the miss and 3D tabs show the terrain credit. No existing e2e test depended on the old behaviour; all 38 old tests still pass unchanged (47 in total).
+
+## 7. Footer timing
+
+**Change**: `Engine` keeps `lastWindowMs`, set only by window jobs (worker and main-thread paths), and a new `windowTimed()` returns each window answer with its own job time. The App stores that time with the answer it shows, so the footer's "Scored N ten-minute steps in X ms" is the time of exactly the shown window, even when Compare (which also runs window jobs) or a calendar or miss job finished later. Test: `web/tests/unit/engine_timing_split.test.ts`.

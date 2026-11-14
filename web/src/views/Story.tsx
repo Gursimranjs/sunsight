@@ -7,6 +7,7 @@ import type { Site } from '../data/types';
 import { formatUtc, fromInputUtc, toInputUtc } from '../format';
 import type { AppData } from '../state/data';
 import { tableRange, type Scenario } from '../state/scenario';
+import { litRuleText } from './glossary';
 import { missJob } from './missGeometry';
 import { MissView } from './MissView';
 import { athenaMiss, ATHENA_TARGET_ID, litRange, missRange, roundingHalfStep, type AthenaMiss } from './storyNumbers';
@@ -114,7 +115,7 @@ function MissContrast({ data, scn, update }: Props) {
       {list && (
         <div class="scroll-x" tabIndex={0} role="region" aria-label="Sunlight at both targets (scrolls sideways)">
           <table data-testid="story-contrast">
-            <caption class="small muted" style={{ textAlign: 'left' }}>Lit = at least half the Sun’s disc above the terrain; observer {scn.rules.observer_height_m} m; each point uses its own terrain horizon.</caption>
+            <caption class="small muted" style={{ textAlign: 'left' }}>Lit = {litRuleText(scn.rules)}; observer {scn.rules.observer_height_m} m; each point uses its own terrain horizon.</caption>
             <thead><tr><th scope="col">Target</th><th scope="col">At the target</th><th scope="col">Within 250 m</th><th scope="col">Within 500 m</th></tr></thead>
             <tbody>
               {list.map(({ site, r250, r500 }) => (

@@ -2,7 +2,7 @@
 // Start date, stay length, preset and every rule, editable.
 import { makeRules, PRESET_LABELS, PRESETS, type PresetId, type Rules } from '../engine/light';
 import { formatUtc, fromInputUtc, toInputUtc } from '../format';
-import type { Scenario } from '../state/scenario';
+import { clampMoonElDeg, MAX_MOON_EL_DEG, type Scenario } from '../state/scenario';
 
 interface Props {
   scn: Scenario;
@@ -11,11 +11,11 @@ interface Props {
   onChange: (patch: Partial<Scenario>) => void;
 }
 
-function Num({ label, value, step = 'any', min, onSet, unit }: { label: string; value: number; step?: string | number; min?: number; unit?: string; onSet: (v: number) => void }) {
+function Num({ label, value, step = 'any', min, max, onSet, unit }: { label: string; value: number; step?: string | number; min?: number; max?: number; unit?: string; onSet: (v: number) => void }) {
   return (
     <label class="field">
       <span>{label}{unit ? ` (${unit})` : ''}</span>
-      <input type="number" inputMode="decimal" step={step} min={min} value={Number(value.toFixed(4))}
+      <input type="number" inputMode="decimal" step={step} min={min} max={max} value={Number(value.toFixed(4))}
         onChange={(e) => { const v = Number((e.target as HTMLInputElement).value); if (Number.isFinite(v)) onSet(v); }} />
     </label>
   );
@@ -60,7 +60,8 @@ export function ScenarioControls({ scn, epochMs, rangeS, onChange }: Props) {
           <Num label="Longest darkness allowed" unit="h" value={scn.rules.max_dark_s / 3600} min={0} onSet={(v) => setRules({ max_dark_s: Math.max(0, v) * 3600 })} />
           <Num label="Longest contact gap allowed" unit="h" value={scn.rules.max_gap_s / 3600} min={0} onSet={(v) => setRules({ max_gap_s: Math.max(0, v) * 3600 })} />
           <Num label="Lit when this much disc is visible" unit="%" value={scn.rules.lit_threshold * 100} min={1} onSet={(v) => setRules({ lit_threshold: Math.min(100, Math.max(1, v)) / 100 })} />
-          <Num label="Moon at least this high at the station" unit="°" value={scn.rules.min_moon_el_deg} onSet={(v) => setRules({ min_moon_el_deg: v })} />
+          <Num label="Moon at least this high at the station" unit="°, 0–20" value={scn.rules.min_moon_el_deg} min={0} max={MAX_MOON_EL_DEG}
+            onSet={(v) => setRules({ min_moon_el_deg: clampMoonElDeg(v) })} />
           <Num label="Grazing below" unit="° above terrain" value={scn.rules.grazing_deg} min={0} onSet={(v) => setRules({ grazing_deg: Math.max(0, v) })} />
           <label class="field">
             <span>Contact rule</span>

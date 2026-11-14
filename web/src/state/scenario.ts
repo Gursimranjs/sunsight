@@ -55,8 +55,29 @@ export function clampWindow(start_s: number, stay_s: number, meta: Pick<Ephemeri
   return { start_s: start, stay_s: stay };
 }
 
+/** First three distinct, non-empty site ids, in order (compare slots are keyed by site id). */
+export function uniqueCompareIds(ids: (string | null | undefined)[]): string[] {
+  return [...new Set(ids.filter((x): x is string => typeof x === 'string' && x !== ''))].slice(0, 3);
+}
+
+/**
+ * Upper limit of the "Moon at least this high at the station" rule (DECISIONS #24): the station
+ * elevation column is trusted to 0.01° only while the Moon is 0-20° above the station.
+ */
+export const MAX_MOON_EL_DEG = 20;
+
+/** Clamp the Moon-elevation-at-station rule to [0, 20]°; a non-number falls back to the default. */
+export function clampMoonElDeg(v: number): number {
+  return Number.isFinite(v) ? Math.min(MAX_MOON_EL_DEG, Math.max(0, v)) : makeRules().min_moon_el_deg;
+}
+
+/** Rules with every enforced limit applied. */
+export function clampRules(r: Rules): Rules {
+  return { ...r, min_moon_el_deg: clampMoonElDeg(r.min_moon_el_deg) };
+}
+
 export function clampScenario(s: Scenario, meta: Pick<EphemerisMeta, 'row_count' | 'step_s'>): Scenario {
   const w = clampWindow(s.start_s, s.stay_s, meta);
   const t_off_s = Math.max(0, Math.min(Number.isFinite(s.t_off_s) ? s.t_off_s : 0, w.stay_s));
-  return { ...s, ...w, t_off_s, rules: { ...s.rules, stay_s: w.stay_s } };
+  return { ...s, ...w, t_off_s, rules: { ...clampRules(s.rules), stay_s: w.stay_s } };
 }

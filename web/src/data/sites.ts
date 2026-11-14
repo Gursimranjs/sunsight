@@ -98,60 +98,100 @@ export interface Resolved {
   /** Plain-words description of the horizon used. */
   horizonLabel: string;
   pointId: string | null;
+  /**
+   * Identity of the mask actually used: "miss:<grid>/<point>@<stored height m>",
+   * "region:<region>/<point>@<stored height m>" or "smooth:<dip deg>". Freshness keys include it.
+   */
+  maskKey: string;
 }
 
 export const NO_TERRAIN_LABEL = 'No terrain: smooth horizon';
 
 /** Anywhere mode: a smooth Moon with the horizon dip for this observer height. Ground height 0 m. */
 export function resolveCustom(lat_deg: number, lon_deg: number, observer_height_m: number): Resolved {
+  const dip_deg = smooth_horizon_deg(observer_height_m);
   return {
     lat_deg, lon_deg, h_m: 0,
-    mask: flat_mask(smooth_horizon_deg(observer_height_m)),
-    terrain: false, horizonLabel: NO_TERRAIN_LABEL, pointId: null,
+    mask: flat_mask(dip_deg),
+    terrain: false, horizonLabel: NO_TERRAIN_LABEL, pointId: null, maskKey: `smooth:${dip_deg}`,
   };
 }
 
-/**
- * A curated site. With a region, use the point named by site.region_point_id if present, else the
- * nearest region point by great-circle distance, and that point's own coordinates and height (the
- * mask was computed there). Without a region, the smooth horizon at the site's coordinates and height.
- */
 export const MISS_CENTRE_LABEL = 'Terrain horizon from the miss-test grid (target point)';
+
+/** A site uses its miss-grid point only when that point lies within this distance of the cited coordinates. */
+export const MISS_POINT_MAX_OFFSET_M = 40;
 
 /** Index of the miss grid's centre point (east 0 m, north 0 m), or -1. */
 export function missCentreIndex(grid: MaskSet): number {
   return grid.meta.points.findIndex((p) => (p.east_m ?? NaN) === 0 && (p.north_m ?? NaN) === 0);
 }
 
+const finiteOr0 = (x: unknown): number => (typeof x === 'number' && Number.isFinite(x) ? x : 0);
+const str = (x: unknown): string | null => (typeof x === 'string' && x !== '' ? x : null);
+
+/** The miss grid this site is evaluated in (sites.json `miss_grid_id`), when its point is within 40 m. */
+export function siteMissGridId(site: Site): string | null {
+  const id = str(site.miss_grid_id);
+  return id && finiteOr0(site.miss_point_offset_m) <= MISS_POINT_MAX_OFFSET_M ? id : null;
+}
+
+/** "10 m map" from the grid's near-field terrain file name (e.g. LDEM_83S_10MPP_ADJ.TIF); 10 m when not stated. */
+function nearFieldMapLabel(grid: MaskSet): string {
+  const t = grid.meta.terrain as { near_field?: unknown } | undefined;
+  const m = typeof t?.near_field === 'string' ? /_(\d+)MPP/i.exec(t.near_field) : null;
+  return `${m ? Number(m[1]) : 10} m map`;
+}
+
+const fromCited = (offset_m: number) => `${Math.round(offset_m)} m from the cited site`;
+const sameId = (set: MaskSet, id: string) => set.meta.id === undefined || set.meta.id === id;
+
+function fromPoint(set: MaskSet, kind: 'miss' | 'region', i: number, observer_height_m: number, label: (p: MaskPoint, stored_m: number) => string): Resolved {
+  const p = set.meta.points[i];
+  const hi = heightIndex(set.meta.observer_heights_m, observer_height_m);
+  const stored_m = set.meta.observer_heights_m[hi];
+  return {
+    lat_deg: p.lat_deg, lon_deg: p.lon_deg, h_m: p.height_m,
+    mask: maskOf(set, i, hi), terrain: true, horizonLabel: label(p, stored_m), pointId: p.id,
+    maskKey: `${kind}:${set.meta.id}/${p.id}@${stored_m}`,
+  };
+}
+
 /**
- * Where to evaluate a curated site. Priority: its region point; else the centre point of its
- * miss-test grid (sites with a miss_target_id but no region, such as Athena's target); else the
- * smooth horizon at the site's own coordinates.
+ * Where to evaluate a curated site. Priority:
+ * (a) `miss_grid_id` with `miss_point_offset_m` <= 40 m (a missing offset counts as 0): that grid point
+ *     (`miss_point_id`, else the grid point nearest the site);
+ * (b) the region point (`region_point_id`, else the nearest), labelled with `region_point_offset_m` when >= 1 m;
+ * (c) `miss_target_id` and no `miss_grid_id`: the centre point of that grid;
+ * (d) the smooth horizon at the site's own coordinates and height.
+ * Every terrain option uses the point's own coordinates and height (the mask was computed there).
+ * `missGrid` is the grid named by `miss_grid_id` for (a), or by `miss_target_id` for (c).
  */
 export function resolveSite(site: Site, region: MaskSet | null, observer_height_m: number, missGrid: MaskSet | null = null): Resolved {
-  if (!(site.region_id && region) && site.miss_target_id && missGrid) {
-    const i = missCentreIndex(missGrid);
-    if (i >= 0) {
-      const p = missGrid.meta.points[i];
-      const hi = heightIndex(missGrid.meta.observer_heights_m, observer_height_m);
-      return {
-        lat_deg: p.lat_deg, lon_deg: p.lon_deg, h_m: p.height_m,
-        mask: maskOf(missGrid, i, hi), terrain: true, horizonLabel: MISS_CENTRE_LABEL, pointId: p.id,
-      };
-    }
+  const gridId = siteMissGridId(site);
+  if (gridId && missGrid && sameId(missGrid, gridId)) {
+    const pts = missGrid.meta.points;
+    const pid = str(site.miss_point_id);
+    const named = pid ? pts.findIndex((p) => p.id === pid) : -1;
+    const i = named >= 0 ? named : nearestPoint(pts, site.lat_deg, site.lon_deg);
+    const offset_m = finiteOr0(site.miss_point_offset_m);
+    const map = nearFieldMapLabel(missGrid);
+    return fromPoint(missGrid, 'miss', i, observer_height_m, (p) =>
+      `Terrain horizon from the miss-test grid (${map}), point ${p.id}${offset_m >= 1 ? ` (${fromCited(offset_m)})` : ''}`);
   }
   if (site.region_id && region) {
     const pts = region.meta.points;
     const named = typeof site.region_point_id === 'string' ? pts.findIndex((p) => p.id === site.region_point_id) : -1;
     const i = named >= 0 ? named : nearestPoint(pts, site.lat_deg, site.lon_deg);
-    const hi = heightIndex(region.meta.observer_heights_m, observer_height_m);
-    const p = pts[i];
-    return {
-      lat_deg: p.lat_deg, lon_deg: p.lon_deg, h_m: p.height_m,
-      mask: maskOf(region, i, hi), terrain: true,
-      horizonLabel: `Terrain horizon from region "${region.meta.name ?? region.meta.id}", point ${p.id}, observer ${region.meta.observer_heights_m[hi]} m`,
-      pointId: p.id,
-    };
+    const offset_m = finiteOr0(site.region_point_offset_m);
+    const name = region.meta.name ?? region.meta.id;
+    return fromPoint(region, 'region', i, observer_height_m, (p, stored_m) => (offset_m >= 1
+      ? `Terrain horizon from region "${name}", nearest region point ${p.id}, ${fromCited(offset_m)}, observer ${stored_m} m`
+      : `Terrain horizon from region "${name}", point ${p.id}, observer ${stored_m} m`));
+  }
+  if (site.miss_target_id && !str(site.miss_grid_id) && missGrid && sameId(missGrid, site.miss_target_id)) {
+    const i = missCentreIndex(missGrid);
+    if (i >= 0) return fromPoint(missGrid, 'miss', i, observer_height_m, () => MISS_CENTRE_LABEL);
   }
   return { ...resolveCustom(site.lat_deg, site.lon_deg, observer_height_m), h_m: site.height_m };
 }
