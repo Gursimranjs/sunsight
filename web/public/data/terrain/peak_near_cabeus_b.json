@@ -1,0 +1,18 @@
+{
+ "site_id": "peak_near_cabeus_b",
+ "size": 512,
+ "spacing_m": 20.0,
+ "center": {
+  "lat_deg": -83.6000013,
+  "lon_deg": -68.8000085,
+  "map_x_m": -181123.9,
+  "map_y_m": 70253.3
+ },
+ "row_order": "decreasing map y",
+ "col_order": "increasing map x",
+ "map_note": "Map +y points from the south pole toward 0 deg longitude; +x toward 90 deg E.",
+ "dtype": "int16",
+ "units": "m above the 1737.4 km sphere",
+ "source": "LDEM_80S_20MPP_ADJ.TIF",
+ "note": "For the illustrative 3D view only; numbers come from the horizon masks."
+}

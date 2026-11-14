@@ -1,0 +1,18 @@
+{
+ "site_id": "nobile_rim1_mons_mouton",
+ "size": 512,
+ "spacing_m": 20.0,
+ "center": {
+  "lat_deg": -85.4,
+  "lon_deg": 35.300006,
+  "map_x_m": 80647.2,
+  "map_y_m": 113902.1
+ },
+ "row_order": "decreasing map y",
+ "col_order": "increasing map x",
+ "map_note": "Map +y points from the south pole toward 0 deg longitude; +x toward 90 deg E.",
+ "dtype": "int16",
+ "units": "m above the 1737.4 km sphere",
+ "source": "LDEM_80S_20MPP_ADJ.TIF",
+ "note": "For the illustrative 3D view only; numbers come from the horizon masks."
+}
