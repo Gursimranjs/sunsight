@@ -149,6 +149,7 @@ test('Athena story works on a phone from start to finish', async ({ browser }) =
     await expect(page.getByTestId(`story-step-${i}`)).toBeVisible();
     const [sw, cw] = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]);
     expect(sw).toBeLessThanOrEqual(cw);
+    if (i === 3) await expect(page.getByTestId('story-limit')).toContainText('would not have shown that spot going dark');
     if (i < 5) await page.getByTestId('story-next').tap();
   }
   await expect(page.getByTestId('story-future-label')).toContainText('2027-01-16');

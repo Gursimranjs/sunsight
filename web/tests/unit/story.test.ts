@@ -3,7 +3,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { Site } from '../../src/data/types';
-import { athenaMiss, ATHENA_ACTUAL_ID, ATHENA_TARGET_ID, missRange, roundingHalfStep } from '../../src/views/storyNumbers';
+import { loadMaskSet } from '../../src/data/sites';
+import { runMiss } from '../../src/engine/compute';
+import * as L from '../../src/engine/light';
+import { missJob } from '../../src/views/missGeometry';
+import { athenaMiss, ATHENA_ACTUAL_ID, ATHENA_TARGET_ID, litRange, missRange, roundingHalfStep } from '../../src/views/storyNumbers';
+import { DATA, fileFetcher, fixtureManifest, fixtureTable } from './helpers';
 
 const sites = (JSON.parse(readFileSync(new URL('../../public/data/sites.json', import.meta.url), 'utf8')) as { sites: Site[] }).sites;
 const R_M = 1737400;
@@ -55,6 +60,31 @@ describe('Athena story numbers', () => {
     }
     expect(Math.abs(r.min_m - lo)).toBeLessThan(1);
     expect(Math.abs(r.max_m - hi)).toBeLessThan(1e-6);
+  });
+
+  it('lit range inside a radius equals a direct scan of the fixture miss grid', async () => {
+    const t = await fixtureTable();
+    const set = await loadMaskSet(fixtureManifest(), 'miss', 'fixture_target', fileFetcher, DATA);
+    const rules = L.makeRules({ ...L.PRESETS.robotic, stay_s: 3 * 86400, max_gap_s: 1e9 });
+    const job = missJob(set, 6 * 86400, 9 * 86400, rules);
+    const a = runMiss(t, job);
+    expect(a.lit_share.length).toBe(set.meta.points.length);
+    for (const r of [100, 250, 500]) {
+      const g = litRange(a.lit_share, job.east_m, job.north_m, r)!;
+      const inside = set.meta.points.map((p, i) => [Math.hypot(p.east_m!, p.north_m!), i] as const).filter(([d]) => d <= r + 1e-9);
+      const vals = inside.map(([, i]) => {
+        const p = set.meta.points[i];
+        const hi = 0;
+        const nb = set.meta.bin_count, nh = set.meta.observer_heights_m.length;
+        const mask = set.masks.subarray((i * nh + hi) * nb, (i * nh + hi + 1) * nb);
+        return L.window_compute(t, p.lat_deg, p.lon_deg, p.height_m, mask, 6 * 86400, 9 * 86400, rules).metrics.lit_share;
+      });
+      expect(g.min).toBe(Math.min(...vals));
+      expect(g.max).toBe(Math.max(...vals));
+      expect(g.n).toBe(vals.length);
+      const c = set.meta.points.findIndex((p) => p.east_m === 0 && p.north_m === 0);
+      expect(g.at_target).toBe(a.lit_share[c]);
+    }
   });
 
   it('returns null when either site is missing', () => {

@@ -60,6 +60,8 @@ export interface MissAnswer {
   verdicts: VerdictKind[];
   reasons: string[];
   passes: boolean[];
+  /** Share of the stay each point is lit (metrics.lit_share), for the story's lit ranges. */
+  lit_share: number[];
   /** miss_share at each radius in radii_m. */
   shares: number[];
 }
@@ -70,16 +72,18 @@ export const passes = (v: VerdictKind) => v !== 'no-go';
 export function runMiss(table: Table, job: MissJob, progress?: (done: number, total: number) => void): MissAnswer {
   const verdicts: VerdictKind[] = [];
   const reasons: string[] = [];
+  const lit_share: number[] = [];
   job.places.forEach((p, i) => {
     const mask = job.masks.subarray(i * BIN_COUNT, (i + 1) * BIN_COUNT);
     const m = window_compute(table, p.lat_deg, p.lon_deg, p.h_m, mask, job.start_s, job.end_s, job.rules).metrics;
     const v = verdict(m, job.rules);
     verdicts.push(v.verdict);
     reasons.push(v.reason);
+    lit_share.push(m.lit_share);
     if (progress && i % 16 === 15) progress(i + 1, job.places.length);
   });
   const ok = verdicts.map(passes);
-  return { verdicts, reasons, passes: ok, shares: job.radii_m.map((r) => miss_share(ok, job.east_m, job.north_m, r)) };
+  return { verdicts, reasons, passes: ok, lit_share, shares: job.radii_m.map((r) => miss_share(ok, job.east_m, job.north_m, r)) };
 }
 
 /** Days x sites: a verdict and score for a stay starting on each day. */

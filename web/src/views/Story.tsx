@@ -2,12 +2,14 @@
 // Guided Athena story: five short steps, built for a 375 px phone. Facts come only from the cited
 // sources (LROC images 1401 and 1408, SpacePolicyOnline); distances are computed here from the
 // cited coordinates.
-import { useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
+import type { Site } from '../data/types';
 import { formatUtc, fromInputUtc, toInputUtc } from '../format';
 import type { AppData } from '../state/data';
 import { tableRange, type Scenario } from '../state/scenario';
+import { missJob } from './missGeometry';
 import { MissView } from './MissView';
-import { athenaMiss, ATHENA_TARGET_ID, missRange, roundingHalfStep, type AthenaMiss } from './storyNumbers';
+import { athenaMiss, ATHENA_TARGET_ID, litRange, missRange, roundingHalfStep, type AthenaMiss } from './storyNumbers';
 
 const SPO_URL = 'https://spacepolicyonline.com/news/im-2-mission-ends-one-day-after-lunar-landing/';
 const STEPS = ['The target', 'The miss', 'The shadow', 'The lost power', 'What SunSight shows'] as const;
@@ -56,19 +58,95 @@ function MissMap({ m }: { m: AthenaMiss }) {
   );
 }
 
-/** A 20 m crater drawn over 20 m terrain-map pixels. */
+/** A 20 m crater drawn over the 10 m terrain-map cells used near the target. */
 function PixelPicture() {
-  const px = 60, n = 4, o = 10;
+  const px = 40, n = 6, o = 10;
   return (
     <svg viewBox={`0 0 ${n * px + 2 * o} ${n * px + 2 * o}`} width="100%" style={{ maxWidth: 260 }} role="img" data-testid="story-pixels"
-      aria-label="Four by four grid of 20 metre terrain-map cells with a 20 metre crater drawn on it: the crater is only one cell across.">
+      aria-label="Grid of 10 metre terrain-map cells with a 20 metre crater drawn on it: the crater is only two cells across.">
       {Array.from({ length: n * n }, (_, i) => (
         <rect key={i} x={o + (i % n) * px} y={o + Math.floor(i / n) * px} width={px} height={px} fill="var(--panel2)" stroke="var(--muted)" />
       ))}
-      <circle cx={o + 1.6 * px} cy={o + 1.6 * px} r={px / 2} fill="none" stroke="var(--oi-orange)" stroke-width="3" />
-      <text x={o + 1.6 * px} y={o + 1.6 * px + 5} text-anchor="middle">20 m</text>
-      <text x={o + 3.5 * px} y={o + 3.5 * px + 5} text-anchor="middle" style={{ fill: 'var(--muted)' }}>1 cell</text>
+      <circle cx={o + 2.5 * px} cy={o + 2.5 * px} r={px} fill="none" stroke="var(--oi-orange)" stroke-width="3" />
+      <text x={o + 2.5 * px} y={o + 2.5 * px + 5} text-anchor="middle">20 m</text>
+      <text x={o + 5.5 * px} y={o + 5.5 * px + 5} text-anchor="middle" style={{ fill: 'var(--muted)' }}>10 m</text>
     </svg>
+  );
+}
+
+const RIDGE_ID = 'shackleton_ridge_rim';
+const pct = (x: number) => `${(100 * x).toFixed(1)}%`;
+
+/**
+ * Athena's target next to the Shackleton ridge: lit share at the target and its range within 250 m
+ * and 500 m, computed live for the chosen stay, then either pass/fail map.
+ */
+function MissContrast({ data, scn, update }: Props) {
+  const grids = new Set((data.manifest.files.miss ?? []).map((r) => r.id));
+  const sites = [ATHENA_TARGET_ID, RIDGE_ID]
+    .map((id) => data.sites.find((s) => s.id === id))
+    .filter((s): s is Site => !!s && !!s.miss_target_id && grids.has(s.miss_target_id));
+  const [rows, setRows] = useState<{ key: string; list: { site: Site; r250: ReturnType<typeof litRange>; r500: ReturnType<typeof litRange> }[] } | null>(null);
+  const [show, setShow] = useState(sites[0]?.id ?? '');
+  const key = JSON.stringify([sites.map((s) => s.id), scn.start_s, scn.stay_s, scn.rules]);
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      const list = [];
+      for (const site of sites) {
+        const set = await data.missGrid(site.miss_target_id!);
+        const job = missJob(set, scn.start_s, scn.start_s + scn.stay_s, scn.rules);
+        const a = await data.engine.miss(job);
+        list.push({ site, r250: litRange(a.lit_share, job.east_m, job.north_m, 250), r500: litRange(a.lit_share, job.east_m, job.north_m, 500) });
+        if (!live) return;
+      }
+      if (live) setRows({ key, list });
+    })().catch(() => {});
+    return () => { live = false; };
+  }, [key]);
+  const list = rows && rows.key === key ? rows.list : null;
+  const shown = sites.find((s) => s.id === show) ?? sites[0];
+  const spread = (r: ReturnType<typeof litRange>) => (r ? 100 * (r.max - r.min) : NaN);
+  return (
+    <>
+      <h3 class="chart-title">Share of the stay in sunlight, at the target and anywhere within the miss</h3>
+      {!list && <p>Testing every landing point around both targets…</p>}
+      {list && (
+        <div class="scroll-x" tabIndex={0} role="region" aria-label="Sunlight at both targets (scrolls sideways)">
+          <table data-testid="story-contrast">
+            <caption class="small muted" style={{ textAlign: 'left' }}>Lit = at least half the Sun’s disc above the terrain; observer {scn.rules.observer_height_m} m; each point uses its own terrain horizon.</caption>
+            <thead><tr><th scope="col">Target</th><th scope="col">At the target</th><th scope="col">Within 250 m</th><th scope="col">Within 500 m</th></tr></thead>
+            <tbody>
+              {list.map(({ site, r250, r500 }) => (
+                <tr key={site.id}>
+                  <th scope="row">{site.id === ATHENA_TARGET_ID ? 'Athena’s target' : 'Shackleton ridge'}</th>
+                  <td>{r250 ? pct(r250.at_target) : '—'}</td>
+                  <td>{r250 ? `${pct(r250.min)} to ${pct(r250.max)}` : '—'}</td>
+                  <td>{r500 ? `${pct(r500.min)} to ${pct(r500.max)}` : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {list && list.length === 2 && (
+        <p class="takeaway" data-testid="story-contrast-takeaway">
+          For this stay, a 250 m miss changes the sunlight by up to {spread(list[0].r250).toFixed(1)} points around Athena’s target and by up to {spread(list[1].r250).toFixed(1)} points on the Shackleton ridge.
+        </p>
+      )}
+      <p class="small">Over all of 2027–2030 (hourly, 2 m observer; SunSight pipeline run): Athena’s target is lit 44.4% of the time and anywhere within 250 m 43.1–44.5%, so at map scale the ground there is evenly lit. On the Shackleton ridge the target is lit 73.4%, but within 250 m it ranges from 22.7% to 85.1%: there a 250 m miss can cost most of the sunlight. That is what the miss test is for.</p>
+      {sites.length > 1 && (
+        <div class="btnrow" role="group" aria-label="Map to show">
+          {sites.map((s) => (
+            <button key={s.id} type="button" aria-pressed={s.id === shown?.id} onClick={() => setShow(s.id)}>
+              Map: {s.id === ATHENA_TARGET_ID ? 'Athena’s target' : 'Shackleton ridge'}
+            </button>
+          ))}
+        </div>
+      )}
+      {shown && <MissView key={shown.id} data={data} site={shown} scn={scn} onSite={(id) => update({ site_id: id })} />}
+      {shown && <button type="button" class="primary" onClick={() => update({ site_id: shown.id, view: 'miss' })}>Open this in the full miss test</button>}
+    </>
   );
 }
 
@@ -123,7 +201,7 @@ export function Story({ data, scn, update }: Props) {
         <div data-testid="story-step-3">
           <p>LROC reports that Athena came down too fast and <q>ended up on its side within a 20-meter diameter crater</q> (<Src href="https://lroc.im-ldi.com/images/1408">LROC image 1408</Src>). Sunlight could not reach into that crater (<Src href={SPO_URL}>SpacePolicyOnline</Src>).</p>
           <PixelPicture />
-          <p><strong>An honest limit:</strong> SunSight’s terrain map has one height every 20 m, so a crater 20 m across is right at the edge of what it can show. Its horizons would not capture the walls of a crater that small; finer maps would be needed.</p>
+          <p data-testid="story-limit"><strong>An honest limit:</strong> near the target SunSight’s terrain map (NASA’s LOLA 10 m map) has one height every 10 m, so a crater 20 m across spans only two cells: too few to capture its walls. SunSight cannot see Athena’s crater, so it would <strong>not</strong> have shown that spot going dark. Hazards smaller than the map are exactly why a landing needs a margin.</p>
         </div>
       )}
 
@@ -142,7 +220,7 @@ export function Story({ data, scn, update }: Props) {
 
       {step === 4 && (
         <div data-testid="story-step-5">
-          <p>A planner can ask SunSight: if a lander misses this target by a few hundred metres, how much of the ground nearby still gets enough sunlight and Earth contact? The map below answers that for <strong>Athena’s target</strong> on a <strong>future</strong> date.</p>
+          <p>SunSight cannot see Athena’s crater. What it can show is how much the sunlight changes if a lander misses its target by a few hundred metres, on a <strong>future</strong> date you choose.</p>
           <label class="field" style={{ marginBottom: 8 }}>
             <span>Future start date (UTC, within 2027–2030)</span>
             <input type="datetime-local" step={3600} data-testid="story-date"
@@ -153,13 +231,8 @@ export function Story({ data, scn, update }: Props) {
                 if (Number.isFinite(ms)) update({ start_s: (ms - data.eph.start_ms) / 1000, t_off_s: 0 });
               }} />
           </label>
-          <p class="future-label" data-testid="story-future-label">Future date: a stay starting {formatUtc(startMs)}, not the 2025 landing.</p>
-          {hasGrid ? (
-            <>
-              <MissView data={data} site={target} scn={scn} onSite={(id) => update({ site_id: id })} />
-              <button type="button" class="primary" onClick={() => update({ site_id: target.id, view: 'miss' })}>Open this in the full miss test</button>
-            </>
-          ) : (
+          <p class="future-label" data-testid="story-future-label">Future date: a {Number((scn.stay_s / 86400).toFixed(2))}-day stay starting {formatUtc(startMs)}, not the 2025 landing.</p>
+          {hasGrid ? <MissContrast data={data} scn={scn} update={update} /> : (
             <p data-testid="story-no-grid"><strong>The miss-test grid for Athena’s target is not available in this build</strong>, so this step cannot show the map yet.</p>
           )}
         </div>

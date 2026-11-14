@@ -56,3 +56,16 @@ export function roundingHalfStep(lat_deg: number, decimals: number): { ns_m: num
   const half_deg = 0.5 * 10 ** -decimals;
   return { ns_m: half_deg * D * R_M, ew_m: half_deg * D * R_M * Math.cos(lat_deg * D) };
 }
+
+/** Lit share at the target point (east 0, north 0) and its smallest and largest value within radius_m. */
+export function litRange(lit: ArrayLike<number>, east_m: ArrayLike<number>, north_m: ArrayLike<number>, radius_m: number): { at_target: number; min: number; max: number; n: number } | null {
+  let min = Infinity, max = -Infinity, n = 0, at = NaN;
+  for (let i = 0; i < lit.length; i++) {
+    if (east_m[i] === 0 && north_m[i] === 0) at = lit[i];
+    if (Math.hypot(east_m[i], north_m[i]) > radius_m + 1e-9) continue;
+    n++;
+    if (lit[i] < min) min = lit[i];
+    if (lit[i] > max) max = lit[i];
+  }
+  return n ? { at_target: at, min, max, n } : null;
+}
