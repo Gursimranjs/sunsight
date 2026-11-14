@@ -5,7 +5,7 @@ import { decodeEphemeris, loadManifest } from '../../src/data/loaders';
 import type { EphemerisMeta, Manifest } from '../../src/data/types';
 import type { Table } from '../../src/engine/light';
 
-export const DATA = new URL('../../public/data/', import.meta.url).pathname;
+export const DATA = new URL('../fixtures/data/', import.meta.url).pathname;
 
 export function fileFetcher(url: string): Promise<Response> {
   try {

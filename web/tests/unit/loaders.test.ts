@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { EPHEMERIS_COLUMNS } from '../../src/data/contracts';
 import { decodeEphemeris, loadManifest, parseUtcMs } from '../../src/data/loaders';
 
-const DATA = new URL('../../public/data/', import.meta.url).pathname;
+const DATA = new URL('../fixtures/data/', import.meta.url).pathname;
 
 function fileFetcher(url: string): Promise<Response> {
   try {

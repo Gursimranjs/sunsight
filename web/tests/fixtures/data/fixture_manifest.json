@@ -2,8 +2,8 @@
  "format_version": 1,
  "fixture": true,
  "generated_with": "SunSight pipeline; code written by Claude Code (Anthropic)",
- "pipeline_version": "0.1.0+02a57df",
- "build_time_utc": "2026-11-14T16:20:29Z",
+ "pipeline_version": "0.1.0+cda23b0",
+ "build_time_utc": "2026-11-14T16:54:57Z",
  "kernels": [],
  "inputs": [],
  "files": {

@@ -14,12 +14,12 @@ import numpy as np
 
 from .contracts import (
     BIN_COUNT,
-    DATA_OUT,
     EPHEMERIS_COLUMNS,
     EPHEMERIS_CORRECTION,
     EPHEMERIS_FRAME,
     EPHEMERIS_START_UTC,
     EPHEMERIS_STEP_S,
+    FIXTURE_OUT,
     MASK_SCALE_DEG,
     OBSERVER_HEIGHTS_M,
     STATIONS,
@@ -66,7 +66,7 @@ def fixture_mask(az_deg: np.ndarray, base_deg: float, phase_deg: float, bump_deg
 
 
 def main() -> None:
-    out = DATA_OUT
+    out = FIXTURE_OUT
     files: dict = {}
 
     # Ephemeris.
@@ -300,7 +300,7 @@ def main() -> None:
     )
     files["validation"] = "validation/fixture_summary.json"
 
-    manifest = build_manifest(files, inputs=[], kernels=[], fixture=True)
+    manifest = build_manifest(files, inputs=[], kernels=[], fixture=True, root=out)
     manifest["note"] = NOTE
     write_json(out / "fixture_manifest.json", manifest)
     print(f"Wrote fixture data to {out}")

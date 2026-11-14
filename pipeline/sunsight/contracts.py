@@ -13,6 +13,7 @@ GENERATED_WITH = "SunSight pipeline; code written by Claude Code (Anthropic)"
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DATA_OUT = REPO_ROOT / "web" / "public" / "data"
+FIXTURE_OUT = REPO_ROOT / "web" / "tests" / "fixtures" / "data"  # made-up data, never shipped
 DATA_RAW = REPO_ROOT / "data_raw"
 
 # Physical constants used by the function contracts.
