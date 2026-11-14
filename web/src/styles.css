@@ -105,6 +105,16 @@ table { border-collapse: collapse; font-size: 15px; }
 th, td { padding: 4px 8px; border-bottom: 1px solid var(--line); text-align: left; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+/* Calendar heatmap: verdict by symbol and colour */
+table.calendar { border-collapse: separate; border-spacing: 2px; }
+table.calendar th { white-space: nowrap; font-weight: 600; }
+table.calendar td { padding: 0; border: none; }
+table.calendar td button { width: 2.25rem; height: 2.25rem; min-height: 0; padding: 0; border-radius: 4px; font-weight: 800; color: #000; border: 1px solid transparent; }
+td.cal.go button { background: var(--go); }
+td.cal.marginal button { background: var(--marginal); }
+td.cal.no-go button { background: var(--nogo); }
+table.calendar td button:hover { border-color: #fff; }
+
 @media (max-width: 600px) {
   .verdict { grid-template-columns: 1fr; }
   .sun-el { text-align: left; }

@@ -7,6 +7,7 @@ import { local_frame, sample_at, site_vector } from './engine/light';
 import { formatDeg } from './format';
 import { loadAppData, type AppData } from './state/data';
 import { clampScenario, defaultScenario, tableRange, VIEWS, type Scenario } from './state/scenario';
+import { Compare } from './views/Compare';
 import { MissView } from './views/MissView';
 import { Panorama } from './views/Panorama';
 import { MetricTiles, VerdictHero } from './views/ReportCard';
@@ -148,11 +149,13 @@ export function App() {
           </div>
         )}
         {scn.view === 'compare' && (
-          <div role="tabpanel" class="card"><p>This view is coming in a later package.</p></div>
+          <div role="tabpanel" aria-label="Compare and calendar">
+            <Compare data={data} scn={scn} update={update} />
+          </div>
         )}
         <footer class="small muted" style={{ marginTop: 24 }}>
           {fresh && <>Scored {shown!.metrics.n_samples} ten-minute steps in {data.engine.lastMs.toFixed(0)} ms. </>}
-          Sun and Earth positions from {data.manifest.fixture ? 'made-up fixture data' : 'NASA/JPL SPICE kernels'}; see the validation page for checks.
+          Sun and Earth positions from {data.manifest.fixture ? 'made-up fixture data' : 'NASA/JPL SPICE kernels'}. All maths runs in your browser; no data leaves it.
         </footer>
       </main>
     </>

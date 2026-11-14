@@ -1,7 +1,7 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // Loaded data shared by every view, with caches for region and miss-grid files.
 import { loadEphemeris, loadManifest, loadSites } from '../data/loaders';
-import { loadMaskSet, type MaskSet } from '../data/sites';
+import { loadMaskSet, resolveSite, type MaskSet, type Resolved } from '../data/sites';
 import type { Ephemeris, Manifest, Site } from '../data/types';
 import { Engine } from '../engine/client';
 import type { Table } from '../engine/light';
@@ -44,4 +44,14 @@ export async function loadAppData(onFixture: () => void): Promise<AppData> {
     region: (id) => get('regions', id),
     missGrid: (id) => get('miss', id),
   };
+}
+
+/** Coordinates and horizon mask for a curated site (loads its region file when it has one). */
+export async function resolveForSite(data: AppData, site: Site, observer_height_m: number): Promise<Resolved> {
+  if (!site.region_id) return resolveSite(site, null, observer_height_m);
+  try {
+    return resolveSite(site, await data.region(site.region_id), observer_height_m);
+  } catch {
+    return { ...resolveSite(site, null, observer_height_m), horizonLabel: 'Terrain file missing: smooth horizon used' };
+  }
 }
