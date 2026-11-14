@@ -30,3 +30,5 @@ The build agent appends one row per package.
 | P17 (pipeline) | 2026-11-14 10:25 MST | Validation runner, sensitivity and refinement runs and tests; validation CSVs and summary (computed) | `pipeline/sunsight/validate.py`, `pipeline/tests/test_validate.py`, `pipeline/data/refined_points.json`, `web/public/data/validation/` |
 | P15, P17 page, P18, P19, P21 | 2026-11-14 10:37 MST | Miss-tolerant calendar, validation page, Three.js 3D view, guided Athena story, Playwright journeys and axe checks, accessibility fixes, first-load budget script (lane B2 subagent; details in `web/LANE_B_NOTES.md`) | `web/src/`, `web/tests/`, `web/scripts/` |
 | Facts | 2026-11-14 10:35 MST | Facts sheet renderer and miss-grid statistics | `pipeline/sunsight/{facts,factsheet}.py`, `docs/submission/FACTS.md`, `docs/submission/facts_numbers.json` |
+
+Note on commit trailers: three merge commits made by the lane B2 subagent when it merged `main` into its branch (`50b446b`, `a315f69`, `935d6b3`, all "Merge branch 'main' into lane-b2") lack the co-author trailer. Their content is covered by the trailer-bearing commits around them; the published history is left unchanged.

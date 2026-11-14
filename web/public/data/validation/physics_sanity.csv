@@ -1,11 +1,11 @@
 check,value,unit,pass_mark,status
-Sun centre at the pole stays within about ±1.6° (flat terrain),1.58737107,deg,≤ 1.6,pass
-Sun's seasonal cycle at the pole (sub-solar latitude period),346.835655,days,about 346.6,pass
-Sun's azimuth makes a full circle (lunar day),29.5297929,days,about 29.53,pass
-Earth's elevation at the pole: swing,6.85272011,deg (half range),about 6.7,pass
-Earth's elevation at the pole: period,27.2173056,days,about 27.2,pass
-Sun's apparent width (min),0.52281596,deg,≥ 0.52,pass
-Sun's apparent width (max),0.54341387,deg,≤ 0.545,pass
-Earth's apparent width (min),1.79495244,deg,"≈ 1.8 (1.794 at the 407,000 km envelope)",pass
-Earth's apparent width (max),2.04646195,deg,≤ 2.05,pass
-"Synthetic terrain, light maths and frame tests (74 passed in 16.20s)",0,failures,0,pass
+Sun centre at the pole stays within about ±1.6° (flat terrain),1.587371073492342,deg,≤ 1.6,pass
+Sun's seasonal cycle at the pole (sub-solar latitude period),346.83565510802515,days,about 346.6,pass
+Sun's azimuth makes a full circle (lunar day),29.529792869169572,days,about 29.53,pass
+Earth's elevation at the pole: swing,6.852720108307743,deg (half range),about 6.7,pass
+Earth's elevation at the pole: period,27.217305588888873,days,about 27.2,pass
+Sun's apparent width (min),0.522815959995477,deg,≥ 0.52,pass
+Sun's apparent width (max),0.5434138701447224,deg,≤ 0.545,pass
+Earth's apparent width (min),1.7949524422434535,deg,"≈ 1.8 (1.794 at the 407,000 km envelope)",pass
+Earth's apparent width (max),2.046461950192928,deg,≤ 2.05,pass
+"Synthetic terrain, light maths and frame tests (74 passed in 14.62s)",0.0,failures,0,pass
