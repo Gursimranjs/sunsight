@@ -28,3 +28,6 @@ test-results/
 
 # local tool venv (uv)
 .tools/
+
+# agent worktrees and local settings
+.claude/
