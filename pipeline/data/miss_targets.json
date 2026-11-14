@@ -1,0 +1,10 @@
+{
+ "note": "SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md. Each target is a site id in pipeline/data/curated_sites.json; the grid is centred on its cited coordinates.",
+ "spacing_m": 50.0,
+ "radius_m": 500.0,
+ "targets": [
+  {"site_id": "im2_athena_target", "why": "Athena (IM-2) target; the lander came down a few hundred metres away"},
+  {"site_id": "shackleton_ridge_rim", "why": "The Shackleton end of the connecting ridge, among the best-lit ground"},
+  {"site_id": "a3_malapert_massif", "why": "Artemis III candidate region (LROC mosaic centre)"}
+ ]
+}

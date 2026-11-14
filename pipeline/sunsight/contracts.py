@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-FORMAT_VERSION = 1
+FORMAT_VERSION = 2  # v2: masks also ship as .masks.dz (delta + byte planes + gzip)
 GENERATED_WITH = "SunSight pipeline; code written by Claude Code (Anthropic)"
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

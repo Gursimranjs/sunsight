@@ -26,7 +26,7 @@ from .contracts import (
     TERRAIN_SIZE,
     TERRAIN_SPACING_M,
 )
-from .export import build_manifest, encode_masks, write_json
+from .export import build_manifest, encode_masks, encode_masks_dz, write_json
 
 FIXTURE_ROWS = 24 * 60  # 60 days, hourly
 NOTE = "MADE-UP FIXTURE DATA for development only. Not real geometry or terrain."
@@ -117,7 +117,9 @@ def main() -> None:
             masks.append([m2, m2 - 0.12])
             k += 1
     (out / "regions").mkdir(parents=True, exist_ok=True)
-    (out / "regions" / "fixture_ridge.masks.bin").write_bytes(encode_masks(np.array(masks)))
+    raw = encode_masks(np.array(masks))
+    (out / "regions" / "fixture_ridge.masks.bin").write_bytes(raw)
+    (out / "regions" / "fixture_ridge.masks.dz").write_bytes(encode_masks_dz(raw, BIN_COUNT))
     write_json(
         out / "regions" / "fixture_ridge.json",
         {
@@ -137,6 +139,7 @@ def main() -> None:
             "id": "fixture_ridge",
             "meta": "regions/fixture_ridge.json",
             "masks": "regions/fixture_ridge.masks.bin",
+            "masks_dz": "regions/fixture_ridge.masks.dz",
         }
     ]
 
