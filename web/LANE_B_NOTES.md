@@ -199,3 +199,21 @@ Checked the files lane A has merged on `main` (no `manifest.json` yet): `sites.j
 | Controls | Checkbox "Miss test on", radius 100/250/500 m (default 250), required share in % (default 90, any 1–100) | DECISIONS #13 default, "adjustable" in the plan |
 | Cost | Only points inside the radius are sent to the worker (5 / 21 / 81 on the fixture; ~80 at 250 m on a 50 m grid) | 80 points × 14 days × ~3 ms ≈ 3–4 s with progress shown |
 | Miss-test state in the URL | Not stored | Kept local to the calendar card; easy to add later |
+
+## P17 Validation page (UI)
+
+**Generated files**: `web/src/data/validation.ts` (schema normaliser, loader, CSV parser, value formatting), `web/src/views/Validation.tsx`, a "Validation" tab (`view=validation` in the URL), `markFixture()` on `AppData` (late-loaded fixture files raise the banner), styles; test `web/tests/unit/validation.test.ts`. Fixture: `web/tests/fixtures/data/validation/fixture_summary.json` **rewritten to the agreed schema** (8 made-up checks covering pass / fail / partial / not run, flagged `"fixture": true`, titles end "(fixture)") plus three fixture CSVs (`fixture_ephemeris_horizons.csv`, `fixture_sunlight_pgda.csv`, `fixture_eclipses.csv`). **Lane A:** `pipeline/sunsight/fixtures.py` still writes the older placeholder shape; if it is rerun it will overwrite this file (the app copes, see below), so please update it to the schema or stop it writing this file. The fixture manifest's checksum for this file is now stale (nothing checks it).
+
+**Verification**
+
+- Unit tests: the fixture summary loads through the fixture manifest; every check has a title, pass mark, explanation and one of the four statuses, and a finite number unless "not run"; counts add up; a manifest without `files.validation`, or naming a file that 404s, gives `missing`; the old placeholder shape normalises (unknown status → "not run", empty explanation → "No explanation was recorded"); value formatting (2.6e-5 deg → "0.000026°", "%" and free-text units); CSV parsing with quoted commas, doubled quotes and CRLF; every CSV the fixture names exists and has the stated row count.
+- Browser: fixture dev server, 1200 px and 375 px: every check card shows status (shape + word + coloured edge), the number with unit and its label, pass mark, explanation ("Why it fails:" for a fail), a download link and the first ≤ 5 CSV rows; limits list at the end; no horizontal page scroll at 375 px (wide CSV tables scroll inside their own box). Real data (no validation file in the manifest yet): "Validation not run yet" with an honest sentence.
+
+**Decisions and assumptions**
+
+| Decision | Value | Reason |
+| --- | --- | --- |
+| Status display | pass ✓ green circle, fail ✕ vermillion square, partial ! yellow triangle, not run – grey square, plus the word and a coloured card edge | Never colour alone; same shapes as the verdicts |
+| Missing or unreadable file | "Validation not run yet" (unreadable adds the error) | Honest; no placeholder numbers |
+| CSV preview | First 5 rows, fetched when the page opens; download link to the same file under `data/` | "A small table is enough"; same-origin file |
+| Missing fields | Filled with visible defaults ("not stated", "no number yet") | A partial file from the pipeline should still render |

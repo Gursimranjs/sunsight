@@ -1,0 +1,5 @@
+site,utc,body,az_diff_deg,el_diff_deg
+fixture_a,2027-01-01T00:00:00Z,sun,1.1e-05,2.6e-05
+fixture_a,2027-01-01T00:00:00Z,earth,8.0e-06,-4.0e-06
+fixture_b,2027-03-01T12:00:00Z,sun,-2.0e-06,1.5e-05
+"fixture, quoted",2027-06-01T00:00:00Z,earth,3.0e-06,9.0e-06

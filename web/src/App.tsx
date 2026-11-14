@@ -16,6 +16,7 @@ import { MetricTiles, VerdictHero } from './views/ReportCard';
 import { ScenarioControls, TimeBar } from './views/RulesEditor';
 import { SitePicker } from './views/SitePicker';
 import { Timeline } from './views/Timeline';
+import { ValidationView } from './views/Validation';
 
 export function App() {
   const [data, setData] = useState<AppData | null>(null);
@@ -171,6 +172,11 @@ export function App() {
         {scn.view === 'compare' && (
           <div role="tabpanel" aria-label="Compare and calendar">
             <Compare data={data} scn={scn} update={update} />
+          </div>
+        )}
+        {scn.view === 'validation' && (
+          <div role="tabpanel" aria-label="Validation">
+            <ValidationView data={data} />
           </div>
         )}
         <footer class="small muted" style={{ marginTop: 24 }}>

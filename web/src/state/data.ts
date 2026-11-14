@@ -16,6 +16,8 @@ export interface AppData {
   fixtureFiles: Set<string>;
   region(id: string): Promise<MaskSet>;
   missGrid(id: string): Promise<MaskSet>;
+  /** Record that a file loaded later (validation, terrain) is fixture data, so the banner shows. */
+  markFixture(name: string): void;
 }
 
 export async function loadAppData(onFixture: () => void): Promise<AppData> {
@@ -43,6 +45,7 @@ export async function loadAppData(onFixture: () => void): Promise<AppData> {
     manifest, eph, table, sites: s.sites, engine: new Engine(table), fixtureFiles,
     region: (id) => get('regions', id),
     missGrid: (id) => get('miss', id),
+    markFixture: (name) => { if (!fixtureFiles.has(name)) { fixtureFiles.add(name); onFixture(); } },
   };
 }
 

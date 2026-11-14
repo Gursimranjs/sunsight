@@ -130,3 +130,17 @@ td.cal.miss button { outline: 2px dashed #000; outline-offset: -5px; }
   .controls > .field { flex: 1 1 40%; }
   .controls > .field input { width: 100%; }
 }
+
+/* Validation page */
+.vbadge.notrun .sym { background: var(--muted); border-radius: 2px; }
+.vcheck { border-left: 8px solid var(--line); }
+.vcheck.go { border-left-color: var(--go); }
+.vcheck.no-go { border-left-color: var(--nogo); }
+.vcheck.marginal { border-left-color: var(--marginal); }
+.check-nums { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 4px 0; }
+.check-nums div { min-width: 9rem; }
+.check-nums dt { font-size: 14px; color: var(--muted); }
+.check-nums dd { margin: 0; font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+table.csv-head { font-size: 14px; font-variant-numeric: tabular-nums; }
+table.csv-head caption { text-align: left; caption-side: top; padding-bottom: 2px; }
+table.csv-head th { white-space: nowrap; }
