@@ -175,3 +175,27 @@ Checked the files lane A has merged on `main` (no `manifest.json` yet): `sites.j
 - On the fixture, the loader first asks for `manifest.json`, gets a 404 and falls back to `fixture_manifest.json`; the browser logs that 404 as a console error. It disappears once lane A ships `manifest.json`.
 - Accessible names: form controls are wrapped in `<label>` elements; worth an axe run in P21.
 - The "<30 s outsider" and "explain the miss map in 10 s" checks need people.
+
+---
+
+# Lane B, second builder (branch `lane-b2`)
+
+## P15 leftover: miss-tolerant calendar
+
+**Generated files**: `MissCalendarJob`/`runMissCalendar` in `web/src/engine/compute.ts` (plus worker, protocol and `Engine.missCalendar`), `missCalendarJob` in `web/src/views/missGeometry.ts`, calendar controls in `web/src/views/Compare.tsx`, styles; test `web/tests/unit/miss_calendar.test.ts`. `web/vite.config.ts` gained a dev-server-only plugin: `SUNSIGHT_FIXTURE=1 npx vite` answers `/data/*` from `web/tests/fixtures/data/` so the fixture miss grid can be viewed in a browser without putting fixtures in `public/data` (builds are unaffected; `apply: 'serve'`).
+
+**Verification**
+
+- Unit test: on the fixture grid, for radii 100/250/500 m × required shares 50/75/90 % × 8 start days, every day's `n_inside`, `n_pass`, `share` and `tolerant` equal a direct computation (`window_compute` + `verdict` at each point inside the radius). The share also equals the miss view's `runMiss` share for the same window (< 1e-12), and the `Engine` client path gives the same answer.
+- Browser (fixture dev server, fixture target, 3-day robotic stays, gap limit 1,000 h, 250 m, 90 %): 2027-01-07 reads 15 of 21 (71 %, not tolerant), equal to the P15 reference case; 2027-01-09 to 01-16 are tolerant (19–21 of 21); the ◎ row is outlined so the mode is visible without colour.
+
+**Decisions and assumptions**
+
+| Decision | Value | Reason |
+| --- | --- | --- |
+| Which rows use the grid | Only sites with `miss_target_id`; other rows keep the single-point verdict and the note says so | A grid exists only for named targets |
+| Good date with the miss test on | `n_pass / n_inside ≥ required share` over grid points with `hypot(east, north) ≤ r + 1e-9`; a point passes when its verdict is not no-go | Same inside test and pass rule as `miss_share` and the miss view |
+| The site's own single-point verdict | Not combined; the grid (which contains the target point with its own terrain mask) decides | The single point of a target without a region uses a smooth horizon, the grid has real terrain |
+| Controls | Checkbox "Miss test on", radius 100/250/500 m (default 250), required share in % (default 90, any 1–100) | DECISIONS #13 default, "adjustable" in the plan |
+| Cost | Only points inside the radius are sent to the worker (5 / 21 / 81 on the fixture; ~80 at 250 m on a 50 m grid) | 80 points × 14 days × ~3 ms ≈ 3–4 s with progress shown |
+| Miss-test state in the URL | Not stored | Kept local to the calendar card; easy to add later |

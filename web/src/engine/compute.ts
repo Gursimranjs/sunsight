@@ -108,3 +108,40 @@ export function runCalendar(table: Table, job: CalendarJob, progress?: (done: nu
   }
   return { cells };
 }
+
+/**
+ * Miss-tolerant calendar for one miss-test target: for each start day, the share of grid points
+ * inside the miss radius that pass (go or marginal). A day is tolerant when share >= min_share.
+ * The job carries only the points inside the radius; the others cannot change the share.
+ */
+export interface MissCalendarJob {
+  places: Place[];
+  /** Masks in degrees, places.length x BIN_COUNT, for the chosen observer height. */
+  masks: Float64Array;
+  day_starts_s: number[];
+  stay_s: number;
+  rules: Rules;
+  radius_m: number;
+  min_share: number;
+}
+export interface MissCalendarDay { n_inside: number; n_pass: number; share: number; tolerant: boolean }
+export interface MissCalendarAnswer { days: MissCalendarDay[] }
+
+export function runMissCalendar(table: Table, job: MissCalendarJob, progress?: (done: number, total: number) => void): MissCalendarAnswer {
+  const n = job.places.length;
+  const total = n * job.day_starts_s.length;
+  let done = 0;
+  const days = job.day_starts_s.map((d) => {
+    let n_pass = 0;
+    job.places.forEach((p, i) => {
+      const mask = job.masks.subarray(i * BIN_COUNT, (i + 1) * BIN_COUNT);
+      const m = window_compute(table, p.lat_deg, p.lon_deg, p.h_m, mask, d, d + job.stay_s, job.rules).metrics;
+      if (passes(verdict(m, job.rules).verdict)) n_pass++;
+      done++;
+      if (progress && done % 16 === 0) progress(done, total);
+    });
+    const share = n ? n_pass / n : NaN;
+    return { n_inside: n, n_pass, share, tolerant: n > 0 && share >= job.min_share };
+  });
+  return { days };
+}

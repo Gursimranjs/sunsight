@@ -115,6 +115,11 @@ td.cal.marginal button { background: var(--marginal); }
 td.cal.no-go button { background: var(--nogo); }
 table.calendar td button:hover { border-color: #fff; }
 
+/* Checkbox field and miss-tolerant calendar cells (outlined so the mode shows without colour) */
+.check { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; font-size: 15px; font-weight: 600; color: var(--fg); }
+.check input { width: 22px; height: 22px; accent-color: var(--oi-orange); }
+td.cal.miss button { outline: 2px dashed #000; outline-offset: -5px; }
+
 @media (max-width: 600px) {
   .verdict { grid-template-columns: 1fr; }
   .sun-el { text-align: left; }
