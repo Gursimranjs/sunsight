@@ -172,3 +172,6 @@ table.csv-head th { white-space: nowrap; }
 canvas:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
 /* Form fields keep their ring even when focus sits on a built-in part (e.g. the date picker button). */
 input:focus, input:focus-within, select:focus, textarea:focus { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+table.sens td.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.refined { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--line); }

@@ -19,12 +19,27 @@ export interface ValidationCheck {
   /** Path under data/ of the check's CSV, or null. */
   data: string | null;
   rows: number;
+  /** Link to the reference used, if given. */
+  source: string | null;
+  /** Spread (standard deviation) of the differences, in points, if given. */
+  spread_points: number | null;
+  /** Run time of the check in seconds, if given. */
+  timing_s: number | null;
+}
+
+export interface SensitivityRow { change: string; lit_pct: number; delta_points: number }
+export interface Sensitivity {
+  point: { lat_deg: number; lon_deg: number; label: string } | null;
+  data: string | null;
+  /** First row is the baseline (delta 0). */
+  rows: SensitivityRow[];
 }
 
 export interface ValidationSummary {
   generated_utc: string | null;
   checks: ValidationCheck[];
   limits: string[];
+  sensitivity: Sensitivity | null;
 }
 
 export type ValidationLoad =
@@ -41,6 +56,22 @@ export const STATUS_INFO: Record<CheckStatus, { sym: string; label: string; cls:
 };
 
 const str = (x: unknown, dflt = '') => (typeof x === 'string' ? x : dflt);
+const num = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : null);
+
+function normalizeSensitivity(raw: unknown): Sensitivity | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const rows = (Array.isArray(r.rows) ? r.rows : [])
+    .map((x) => (x ?? {}) as Record<string, unknown>)
+    .filter((x) => typeof x.change === 'string' && num(x.lit_pct) !== null)
+    .map((x) => ({ change: x.change as string, lit_pct: x.lit_pct as number, delta_points: num(x.delta_points) ?? 0 }));
+  if (!rows.length) return null;
+  const pt = (r.point ?? null) as Record<string, unknown> | null;
+  const point = pt && num(pt.lat_deg) !== null && num(pt.lon_deg) !== null
+    ? { lat_deg: pt.lat_deg as number, lon_deg: pt.lon_deg as number, label: str(pt.label) }
+    : null;
+  return { point, data: typeof r.data === 'string' && r.data ? r.data : null, rows };
+}
 
 /** Turn whatever JSON arrived into the schema, with honest defaults for anything missing. */
 export function normalizeSummary(raw: unknown): ValidationSummary {
@@ -49,6 +80,7 @@ export function normalizeSummary(raw: unknown): ValidationSummary {
   return {
     generated_utc: typeof r.generated_utc === 'string' ? r.generated_utc : null,
     limits: Array.isArray(r.limits) ? r.limits.filter((x): x is string => typeof x === 'string') : [],
+    sensitivity: normalizeSensitivity(r.sensitivity),
     checks: checks.map((c0, i) => {
       const c = (c0 ?? {}) as Record<string, unknown>;
       const status = (str(c.status) in STATUS_INFO ? c.status : 'not run') as CheckStatus;
@@ -65,6 +97,9 @@ export function normalizeSummary(raw: unknown): ValidationSummary {
         explanation: str(c.explanation) || 'No explanation was recorded for this check.',
         data: typeof c.data === 'string' && c.data ? c.data : null,
         rows: typeof c.rows === 'number' ? c.rows : 0,
+        source: typeof c.source === 'string' && /^https?:\/\//.test(c.source) ? c.source : null,
+        spread_points: num(c.spread_points),
+        timing_s: num(c.timing_s),
       };
     }),
   };

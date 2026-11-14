@@ -43,9 +43,42 @@ interface HeroProps {
   countdowns: Countdowns | null;
   epochMs: number;
   nowMs: number;
+  /** Extra line about the site (e.g. the computed best-lit point nearby). */
+  siteNote?: preact.ComponentChildren;
 }
 
-export function VerdictHero({ verdict, busy, placeName, horizonLabel, terrain, sunElDeg, sunVisible, countdowns, epochMs, nowMs }: HeroProps) {
+/** Pipeline-computed best-lit point near a curated site (sites.json `refined`). Computed, not cited. */
+export interface Refined {
+  offset_m: number;
+  lit_10m_pct: number;
+  nominal_lit_10m_pct: number;
+  min_lit_10m_pct_within_radius: number;
+  method: string;
+}
+
+export function asRefined(x: unknown): Refined | null {
+  const r = x as Partial<Refined> | null | undefined;
+  if (!r || typeof r !== 'object') return null;
+  const ok = ['offset_m', 'lit_10m_pct', 'nominal_lit_10m_pct', 'min_lit_10m_pct_within_radius'].every((k) => Number.isFinite((r as Record<string, unknown>)[k]));
+  return ok ? { ...(r as Refined), method: typeof r.method === 'string' ? r.method : '' } : null;
+}
+
+/** "Best-lit point within 300 m (computed): 170 m away, 86.0% vs 85.7% at the cited point; as low as 32.0% within 300 m." */
+export function refinedText(r: Refined): string {
+  const radius_m = Number(/within (\d+) m/.exec(r.method)?.[1] ?? 300);
+  return `Best-lit point within ${radius_m} m (computed): ${Math.round(r.offset_m)} m away, ${r.lit_10m_pct.toFixed(1)}% vs ${r.nominal_lit_10m_pct.toFixed(1)}% at the cited point; as low as ${r.min_lit_10m_pct_within_radius.toFixed(1)}% within ${radius_m} m.`;
+}
+
+export function RefinedNote({ r }: { r: Refined }) {
+  return (
+    <p class="small refined" data-testid="refined-note">
+      {refinedText(r)}{' '}
+      <Term tip={`How: ${r.method}. Shares of hours lit over 18.6 years at a 10 m mast, computed by SunSight's pipeline; not a cited figure.`}>(how?)</Term>
+    </p>
+  );
+}
+
+export function VerdictHero({ verdict, busy, placeName, horizonLabel, terrain, sunElDeg, sunVisible, countdowns, epochMs, nowMs, siteNote }: HeroProps) {
   const v = verdict?.verdict;
   return (
     <section class={`card verdict ${v ?? ''}`} aria-live="polite" aria-busy={busy} data-testid="verdict">
@@ -74,6 +107,7 @@ export function VerdictHero({ verdict, busy, placeName, horizonLabel, terrain, s
           <li><span class="cd-k">Contact:</span> {cdText(countdowns.contact, 'Contact loss', 'Contact back', epochMs, '')}</li>
         </ul>
       )}
+      {siteNote && <div style={{ gridColumn: '1 / -1' }}>{siteNote}</div>}
     </section>
   );
 }

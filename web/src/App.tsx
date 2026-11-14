@@ -12,7 +12,7 @@ import { ShareBar } from './views/ShareBar';
 import { Compare } from './views/Compare';
 import { MissView } from './views/MissView';
 import { Panorama } from './views/Panorama';
-import { MetricTiles, VerdictHero } from './views/ReportCard';
+import { asRefined, MetricTiles, RefinedNote, VerdictHero } from './views/ReportCard';
 import { ScenarioControls, TimeBar } from './views/RulesEditor';
 import { SitePicker } from './views/SitePicker';
 import { Timeline } from './views/Timeline';
@@ -117,6 +117,7 @@ export function App() {
           countdowns={cds}
           epochMs={epochMs}
           nowMs={epochMs + t_s * 1000}
+          siteNote={site && asRefined(site.refined) ? <RefinedNote r={asRefined(site.refined)!} /> : undefined}
         />
         <section class="controls" aria-label="Scenario">
           <SitePicker

@@ -1,6 +1,7 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // P17 (UI): the validation summary loads, every check has a number with unit, a pass mark, a status
 // and an explanation; CSVs parse; a missing file is reported honestly.
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   checkCounts, formatCheckValue, loadValidation, normalizeSummary, parseCsv, STATUS_INFO, type ValidationCheck,
@@ -47,7 +48,7 @@ describe('validation summary', () => {
 
   it('formats values with their unit', () => {
     const c = (value: number | null, unit: string): ValidationCheck => ({
-      id: 'a', title: 'a', what: '', value, unit, value_label: '', pass_mark: '', status: 'pass', explanation: '', data: null, rows: 0,
+      id: 'a', title: 'a', what: '', value, unit, value_label: '', pass_mark: '', status: 'pass', explanation: '', data: null, rows: 0, source: null, spread_points: null, timing_s: null,
     });
     expect(formatCheckValue(c(2.6e-5, 'deg'))).toBe('0.000026°');
     expect(formatCheckValue(c(0.004, 'deg'))).toBe('0.004°');
@@ -76,5 +77,38 @@ describe('validation summary', () => {
       expect(res.ok).toBe(true);
       expect(parseCsv(await res.text(), 100).total).toBe(c.rows);
     }
+  });
+});
+
+describe('validation extras: source, spread, timing, sensitivity', () => {
+  it('reads them from the fixture, baseline first', () => {
+    const s = normalizeSummary(readJson('validation/fixture_summary.json'));
+    const c = s.checks.find((x) => x.id === 'sunlight_pgda')!;
+    expect(c.source).toBe('https://pgda.gsfc.nasa.gov/products/69');
+    expect(c.spread_points).toBe(3.1);
+    expect(c.timing_s).toBe(2.5);
+    expect(s.checks.find((x) => x.id === 'eclipses')!.source).toBeNull();
+    expect(s.sensitivity!.rows[0].delta_points).toBe(0);
+    expect(s.sensitivity!.rows.length).toBe(3);
+    expect(s.sensitivity!.point!.label).toMatch(/fixture/);
+  });
+
+  it('drops a malformed sensitivity block and non-http sources', () => {
+    const s = normalizeSummary({ checks: [{ id: 'a', source: 'javascript:alert(1)' }], sensitivity: { rows: [{ change: 1 }] } });
+    expect(s.sensitivity).toBeNull();
+    expect(s.checks[0].source).toBeNull();
+  });
+
+  it('the shipped real summary (if present) parses with every field the page shows', () => {
+    const path = new URL('../../public/data/validation/summary.json', import.meta.url).pathname;
+    let raw: unknown;
+    try { raw = JSON.parse(readFileSync(path, 'utf8')); } catch { return; }
+    const s = normalizeSummary(raw);
+    expect(s.checks.length).toBe(8);
+    for (const c of s.checks) {
+      expect(c.explanation).not.toMatch(/No explanation/);
+      expect(c.pass_mark).not.toBe('not stated');
+    }
+    if (s.sensitivity) expect(s.sensitivity.rows[0].delta_points).toBe(0);
   });
 });
