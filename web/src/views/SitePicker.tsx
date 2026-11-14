@@ -36,7 +36,7 @@ export function SitePicker({ sites, siteId, lat_deg, lon_deg, onSite, onCustom }
           }}
         >
           {groupSites(sites).map((g) => (
-            <optgroup key={g.category} label={categoryLabel(g.category)}>
+            <optgroup key={g.category} label={categoryLabel(g.category, g.sites)}>
               {g.sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </optgroup>
           ))}

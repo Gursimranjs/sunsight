@@ -144,6 +144,8 @@ export function groupSites(sites: Site[]): { category: string; sites: Site[] }[]
 const CATEGORY_LABELS: Record<string, string> = {
   artemis: 'Artemis III candidate regions',
   artemis_iii: 'Artemis III candidate regions',
+  artemis_region: 'Artemis III candidate regions',
+  polar_feature: 'South polar features',
   moon_base: 'Moon Base targets',
   apollo: 'Apollo landings',
   clps: 'Commercial (CLPS) missions',
@@ -152,8 +154,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   fixture: 'Fixture sites (made-up)',
 };
 
-export function categoryLabel(c: string): string {
-  return CATEGORY_LABELS[c] ?? c.replace(/_/g, ' ').replace(/^./, (x) => x.toUpperCase());
+/** Label for a category: the sites file's own `category_label` if any, else ours, else the id tidied. */
+export function categoryLabel(c: string, sites: Site[] = []): string {
+  const own = sites.find((s) => s.category === c && typeof s.category_label === 'string')?.category_label as string | undefined;
+  return own ?? CATEGORY_LABELS[c] ?? c.replace(/_/g, ' ').replace(/^./, (x) => x.toUpperCase());
 }
 
 export function validLatLon(lat_deg: number, lon_deg: number): boolean {

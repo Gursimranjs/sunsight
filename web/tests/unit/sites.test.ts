@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadSites } from '../../src/data/loaders';
 import {
-  groupSites, heightIndex, loadMaskSet, maskOf, nearestPoint, NO_TERRAIN_LABEL, resolveCustom, resolveSite,
+  categoryLabel, groupSites, heightIndex, loadMaskSet, maskOf, nearestPoint, NO_TERRAIN_LABEL, resolveCustom, resolveSite,
 } from '../../src/data/sites';
 import * as L from '../../src/engine/light';
 import { skyAt, skySeparation } from '../../src/engine/sky';
@@ -16,6 +16,13 @@ describe('site library', () => {
     const groups = groupSites(sites);
     expect(groups.reduce((a, g) => a + g.sites.length, 0)).toBe(sites.length);
     for (const g of groups) for (const s of g.sites) expect(s.category || 'other').toBe(g.category);
+  });
+
+  it('labels categories with the sites file\'s own category_label when present', () => {
+    const s = [{ id: 'a', name: 'A', lat_deg: 0, lon_deg: 0, height_m: 0, category: 'clps', category_label: 'CLPS and commercial landers', region_id: null, miss_target_id: null, terrain_id: null, source_url: null }];
+    expect(categoryLabel('clps', s)).toBe('CLPS and commercial landers');
+    expect(categoryLabel('artemis_region')).toBe('Artemis III candidate regions');
+    expect(categoryLabel('new_kind')).toBe('New kind');
   });
 
   it('region sites use the nearest region point (or the named one) and its terrain mask', async () => {
