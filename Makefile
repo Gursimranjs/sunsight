@@ -6,7 +6,7 @@ REGION ?=
 TARGET ?=
 
 PHONY_EXTRA = check-network
-.PHONY: setup check-network manifest fixtures kernels ephemeris golden masks miss validate web web-release check check-py check-web e2e deploy
+.PHONY: setup check-network manifest capture fixtures kernels ephemeris golden masks miss validate web web-release check check-py check-web e2e deploy
 
 setup:
 	cd pipeline && $(UV) sync
@@ -60,6 +60,9 @@ check-web:
 
 e2e:
 	cd web && npm run build && npx playwright test
+
+capture:
+	cd web && npm run build && npm run capture
 
 deploy: web
 	@echo "CI publishes web/dist to GitHub Pages on every push to main (.github/workflows/deploy.yml)."

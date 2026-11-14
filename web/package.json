@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "e2e": "playwright test",
-    "size": "node scripts/bundle-size.mjs"
+    "size": "node scripts/bundle-size.mjs",
+    "capture": "playwright test -c playwright.capture.config.ts"
   },
   "dependencies": {
     "preact": "10.26.9",
