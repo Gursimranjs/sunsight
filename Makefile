@@ -24,7 +24,7 @@ golden:
 	$(PY) python -m sunsight.golden
 
 masks:
-	$(PY) python -m sunsight.horizon --region $(REGION)
+	$(PY) python -m sunsight.regions --region $(REGION)
 
 miss:
 	$(PY) python -m sunsight.missgrid --target $(TARGET)
