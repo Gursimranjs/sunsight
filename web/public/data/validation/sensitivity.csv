@@ -6,4 +6,6 @@ Bin rule: nearest-bin filling (±0.125°) instead of review note 001's ±0.25°,
 Bin rule: no widening at all,86.6909541,0.369832012
 Threshold: any part of the disc counts as lit,90.7272136,4.4060915
 Time span: 2027-2030 (the app's table) instead of 18.6 years,86.4818617,0.160739608
+Terrain search stops at 100 km instead of 300 km,89.9992027,3.67808055
+Coarser terrain: 80 m map near the site instead of 20 m,85.094482,-1.22664017
 Grid: best point of the ~240 m validation grid instead of this refined point,70.5937552,-15.7273669

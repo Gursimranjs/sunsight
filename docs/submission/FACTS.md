@@ -1,7 +1,7 @@
 <!-- SI-generated: rendered by pipeline/sunsight/factsheet.py (Claude Code, Anthropic) from the shipped data. See SI_USE.md. -->
 # Facts sheet
 
-Verified facts and numbers for the people writing the project page. Rendered 2026-11-14 17:28 UTC from `web/public/data` (manifest built 2026-11-14T17:24:56Z, pipeline 0.1.0+94a1687). Every number below comes from a run in this repository or from the cited source. This is not text to paste; write the page in the team's own words.
+Verified facts and numbers for the people writing the project page. Rendered 2026-11-14 17:31 UTC from `web/public/data` (manifest built 2026-11-14T17:24:56Z, pipeline 0.1.0+94a1687). Every number below comes from a run in this repository or from the cited source. This is not text to paste; write the page in the team's own words.
 
 ## What the data covers
 
@@ -39,6 +39,8 @@ Verified facts and numbers for the people writing the project page. Rendered 202
 | Bin rule: no widening at all | 86.69 | +0.37 |
 | Threshold: any part of the disc counts as lit | 90.73 | +4.41 |
 | Time span: 2027-2030 (the app's table) instead of 18.6 years | 86.48 | +0.16 |
+| Terrain search stops at 100 km instead of 300 km | 90.00 | +3.68 |
+| Coarser terrain: 80 m map near the site instead of 20 m | 85.09 | -1.23 |
 | Grid: best point of the ~240 m validation grid instead of this refined point | 70.59 | -15.73 |
 
 ## The miss test, in numbers (hourly 2027-2030; lit = at least half the Sun's disc above the terrain)

@@ -716,6 +716,27 @@ def sensitivity(lat: float, lon: float, coarse_pct: float) -> list[dict]:
     ):
         v = lit(hz, rule, span)
         rows.append({"change": label, "lit_pct": v, "delta_points": v - base})
+    # Search limited to 100 km (the 240 m ring stops at 100 km instead of 300 km)
+    short = [Hz.Ring(r.grid, r.rmin_km, min(r.rmax_km, 100.0)) for r in rings]
+    m, g = Hz.compute_masks(la, lo, near, short, (2.0, 10.0), 5.0)
+    sf, _ = series_for(m[:, 0, :], la, lo, g, 2.0, sun_t, earth_t)
+    v = float(100.0 * (sf >= 0.5).mean())
+    rows.append(
+        {"change": "Terrain search stops at 100 km instead of 300 km", "lit_pct": v, "delta_points": v - base}
+    )
+    # Coarser terrain: the 80 m map for the near field and out to 20 km
+    near80, rings80 = R.load_terrain(np.array([x]), np.array([y]), 80)
+    rings80 = [Hz.Ring(rings80[1].grid, 5.0, 20.0), *rings80[1:]]
+    m, g = Hz.compute_masks(la, lo, near80, rings80, (2.0, 10.0), 5.0)
+    sf, _ = series_for(m[:, 0, :], la, lo, g, 2.0, sun_t, earth_t)
+    v = float(100.0 * (sf >= 0.5).mean())
+    rows.append(
+        {
+            "change": "Coarser terrain: 80 m map near the site instead of 20 m",
+            "lit_pct": v,
+            "delta_points": v - base,
+        }
+    )
     rows.append(
         {
             "change": "Grid: best point of the ~240 m validation grid instead of this refined point",
