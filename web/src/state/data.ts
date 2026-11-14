@@ -1,7 +1,7 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // Loaded data shared by every view, with caches for region and miss-grid files.
 import { loadEphemeris, loadManifest, loadSites } from '../data/loaders';
-import { loadMaskSet, resolveSite, type MaskSet, type Resolved } from '../data/sites';
+import { loadMaskSet, resolveSite, siteMissGridId, type MaskSet, type Resolved } from '../data/sites';
 import type { Ephemeris, Manifest, Site } from '../data/types';
 import { Engine } from '../engine/client';
 import type { Table } from '../engine/light';
@@ -49,22 +49,31 @@ export async function loadAppData(onFixture: () => void): Promise<AppData> {
   };
 }
 
-/** Coordinates and horizon mask for a curated site (loads its region file when it has one). */
+/**
+ * Coordinates and horizon mask for a curated site, loading its miss grid or region file as needed.
+ * Same priority as `resolveSite`. A file that fails to load falls through to the next option; if
+ * no terrain is left after a failure, the smooth horizon is labelled "Terrain file missing".
+ */
 export async function resolveForSite(data: AppData, site: Site, observer_height_m: number): Promise<Resolved> {
-  const missing = { ...resolveSite(site, null, observer_height_m), horizonLabel: 'Terrain file missing: smooth horizon used' };
+  const listed = (id: string) => (data.manifest.files.miss ?? []).some((r) => r.id === id);
+  let failed = false;
+  const tryLoad = async (load: () => Promise<MaskSet>): Promise<MaskSet | null> => {
+    try { return await load(); } catch { failed = true; return null; }
+  };
+  const gridId = siteMissGridId(site);
+  if (gridId && listed(gridId)) {
+    const grid = await tryLoad(() => data.missGrid(gridId));
+    if (grid) return resolveSite(site, null, observer_height_m, grid);
+  }
   if (site.region_id) {
-    try {
-      return resolveSite(site, await data.region(site.region_id), observer_height_m);
-    } catch {
-      if (!site.miss_target_id) return missing;
-    }
+    const region = await tryLoad(() => data.region(site.region_id!));
+    if (region) return resolveSite(site, region, observer_height_m);
   }
-  if (site.miss_target_id && (data.manifest.files.miss ?? []).some((r) => r.id === site.miss_target_id)) {
-    try {
-      return resolveSite(site, null, observer_height_m, await data.missGrid(site.miss_target_id));
-    } catch {
-      return missing;
-    }
+  const target = site.miss_target_id;
+  if (target && typeof site.miss_grid_id !== 'string' && listed(target)) {
+    const grid = await tryLoad(() => data.missGrid(target));
+    if (grid) return resolveSite(site, null, observer_height_m, grid);
   }
-  return site.region_id ? missing : resolveSite(site, null, observer_height_m);
+  const smooth = resolveSite(site, null, observer_height_m);
+  return failed ? { ...smooth, horizonLabel: 'Terrain file missing: smooth horizon used' } : smooth;
 }

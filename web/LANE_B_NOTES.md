@@ -323,3 +323,23 @@ The brief also cites a NASA news release ("more than 1,300 feet (400 meters)") a
 - First-load JavaScript: entry 111.5 kB (**39.2 kB gzip**) + engine worker 9.5 kB (3.8 kB gzip) = **43.0 kB gzip**; CSS 9.1 kB (2.7 kB gzip). Three.js (543 kB, 135 kB gzip) is lazy. `npm run size` (`web/scripts/bundle-size.mjs`) prints these and fails above a 60 kB gzip budget; not wired into `make check` (needs a build).
 - First load to verdict on screen (`vite preview` of the build, cache off, Chromium, measured with CDP throttling): local 0.11 s; **25 Mbit/s + 40 ms: 1.9 s**; 10 Mbit/s + 60 ms: 3.5 s. 3.22 MB transferred, of which the 2.52 MB ephemeris table is most (Float32, gzips only to 2.37 MB) and the default site's miss grid (0.64 MB `.masks.dz`) next. The 3 s target holds on a typical laptop connection, not on a slow one; the lever would be a shorter or quantised first table (lane A's format), not the JS.
 - Service worker: **not added** (optional). It is not trivial to do safely here: it must cache data per region on demand under the `/sunsight/` base path and must never serve a stale `manifest.json` after a data release; a mistake would show old numbers with no visible sign. Left for a person to decide.
+
+---
+
+# Review fixes (pre-freeze)
+
+Branch `review-fixes-web`, one commit per finding group. Each fix has a vitest unit test written first.
+
+## 1. Site resolution (blocker)
+
+**Change**: `resolveSite` / `resolveForSite` now follow (a) miss-grid point → (b) region point → (c) miss-grid centre → (d) smooth horizon, using the new optional `sites.json` fields from lane A. `Resolved` gained `maskKey` (which mask was used, with the stored height) for the freshness key of finding 2. The new fields are typed as optional on `Site`. Test: `web/tests/unit/resolve_priority.test.ts`; `resolve_miss.test.ts` (files without the new fields) still passes unchanged. The fixture sites file was not changed (tests add the fields to copies of the fixture sites).
+
+| Decision | Value | Reason |
+| --- | --- | --- |
+| Miss-grid point used when | `miss_grid_id` set and `miss_point_offset_m ≤ 40` (missing offset = 0) | As specified; at the Shackleton ridge the region point p472 is 298 m away (38.9 % lit at 2 m vs 73.4 % at the cited point) |
+| `miss_point_id` missing or not in the grid | Grid point nearest the site's coordinates | Still the closest mask we have |
+| Label (a) | "Terrain horizon from the miss-test grid (10 m map), point gN" + " (N m from the cited site)" when the offset ≥ 1 m (rounded to 1 m) | As specified; "10 m" is read from the grid's `terrain.near_field` file name (`…_10MPP_…`) and defaults to 10 |
+| Label (b) | "Terrain horizon from region "X", nearest region point pN, D m from the cited site, observer H m" when `region_point_offset_m ≥ 1`, else the old label | Keeps the "Terrain horizon from region" prefix |
+| Grid-centre fallback (c) | Only when `miss_grid_id` is absent | As specified; a site whose grid point is > 40 m away and has no region gets the smooth horizon |
+| A grid named in `sites.json` but not in the manifest | Skipped silently (falls to the region) | Same as the existing rule for `miss_target_id` |
+| Load failure | Falls through to the next option; the smooth horizon is labelled "Terrain file missing" only if a load failed and nothing with terrain is left | Keeps the app usable and honest |
