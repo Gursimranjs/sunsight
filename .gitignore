@@ -1,0 +1,30 @@
+# raw downloads and caches
+data_raw/
+*.bsp
+*.bpc
+!web/public/data/**
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.numba_cache/
+
+# Node
+node_modules/
+web/dist/
+playwright-report/
+test-results/
+
+# OS and editors
+.DS_Store
+.idea/
+.vscode/
+
+# local leftovers
+.write_test
+
+# local tool venv (uv)
+.tools/
