@@ -84,7 +84,7 @@ export function VerdictHero({ verdict, busy, placeName, horizonLabel, terrain, s
     <section class={`card verdict ${v ?? ''}`} aria-live="polite" aria-busy={busy} data-testid="verdict">
       <div>
         <p class="muted small" style={{ margin: 0 }}>
-          {placeName} · <span data-testid="horizon-label">{terrain ? horizonLabel : <Term tip="smooth">{horizonLabel}</Term>}</span>
+          {placeName} · <span data-testid="horizon-label">{!horizonLabel ? 'Resolving the horizon…' : terrain ? horizonLabel : <Term tip="smooth">{horizonLabel}</Term>}</span>
         </p>
         {verdict ? (
           <>

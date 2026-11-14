@@ -40,3 +40,21 @@ def test_sensitivity_budget_present():
     s = json.loads(PATH.read_text())
     rows = s["sensitivity"]["rows"]
     assert rows[0]["delta_points"] == 0.0 and len(rows) >= 6
+
+
+def test_csv_times_keep_full_precision():
+    """Validation CSVs must let anyone reproduce a comparison: Julian dates keep at least 9 decimals."""
+    import csv
+
+    rows = list(csv.DictReader((DATA_OUT / "validation" / "station_geometry.csv").open()))
+    assert all(len(r["jd_ut"].split(".")[1]) >= 9 for r in rows)
+
+
+def test_manifest_lists_the_pgda_reference_maps():
+    man = json.loads((DATA_OUT / "manifest.json").read_text())
+    names = {i["name"] for i in man["inputs"]}
+    assert {
+        "AVGVISIB_85S_060M_201608.TIF",
+        "AVGVISIB_85S_060M_201608_EARTH.TIF",
+        "LPSR_85S_060M_201608.TIF",
+    } <= names

@@ -1,5 +1,5 @@
 {
- "generated_utc": "2026-11-14T17:55:48Z",
+ "generated_utc": "2026-11-14T18:21:35Z",
  "checks": [
   {
    "id": "ephemeris_horizons",
@@ -23,12 +23,12 @@
    "value_label": "mean difference (ours - PGDA)",
    "pass_mark": "mean within \u00b12 points; outliers explained",
    "status": "fail",
-   "explanation": "Mean difference -2.32 points, spread 3.70 points over 200 pixels. Largest: pixel 113 (+27.1; PGDA 0%, its 3x3 median 23%, ours 27%, isolated in PGDA), pixel 110 (-12.3; PGDA 38%, its 3x3 median 38%, ours 25%), pixel 59 (-11.5; PGDA 20%, its 3x3 median 23%, ours 8%), pixel 198 (+11.4; PGDA 0%, its 3x3 median 18%, ours 11%), pixel 139 (-11.2; PGDA 39%, its 3x3 median 40%, ours 28%). 1 of the 5 largest differences sit on PGDA pixels that differ from their own 3x3 neighbourhood median by more than 20 points (isolated values in the 2016 map); the others are not explained by that test, so the outliers are only partly explained. The PDS label also describes the values as the share of time sunlit by any fraction of the disc; read that way the mean difference is -1.10 points. Our bin rule (review note 001, obstacles widened by up to 0.25\u00b0) changes the mean by -0.13 points on these pixels (measured by rerunning without widening); it stays in the shipped engine because it never under-reads a peak. PGDA used the 2016 60 m elevation map and we use the 2023 maps averaged to 60 m, so part of the scatter is real terrain change. The label does not give the period start (we use 2009-07-13) or the observer height (we use the surface).",
+   "explanation": "Mean difference -2.32 points, spread 3.70 points over 200 pixels. Largest: pixel 113 (+27.1; PGDA 0%, its 3x3 median 23%, ours 27%, isolated in PGDA), pixel 110 (-12.3; PGDA 38%, its 3x3 median 38%, ours 25%), pixel 59 (-11.5; PGDA 20%, its 3x3 median 23%, ours 8%), pixel 198 (+11.4; PGDA 0%, its 3x3 median 18%, ours 11%), pixel 139 (-11.2; PGDA 39%, its 3x3 median 40%, ours 28%). 1 of the 5 largest differences sits on a PGDA pixel that differs from its own 3x3 neighbourhood median by more than 20 points (isolated values in the 2016 map); the others are not explained by that test, so the outliers are only partly explained. The PDS label also describes the values as the share of time sunlit by any fraction of the disc; read that way the mean difference is -1.10 points. Our bin rule (review note 001, obstacles widened by up to 0.25\u00b0) changes the mean by -0.13 points on these pixels (measured by rerunning without widening); it stays in the shipped engine because it never under-reads a peak. PGDA used the 2016 60 m elevation map and we use the 2023 maps averaged to 60 m, so part of the scatter is real terrain change. The label does not give the period start (we use 2009-07-13) or the observer height (we use the surface).",
    "spread_points": 3.6993892323948203,
    "source": "https://pgda.gsfc.nasa.gov/products/69",
    "data": "validation/pgda_points.csv",
    "rows": 200,
-   "timing_s": 3.2
+   "timing_s": 3.3
   },
   {
    "id": "earth_pgda",
@@ -44,7 +44,7 @@
    "source": "https://pgda.gsfc.nasa.gov/products/69",
    "data": "validation/pgda_points.csv",
    "rows": 200,
-   "timing_s": 3.2
+   "timing_s": 3.3
   },
   {
    "id": "glaser_ridge",
