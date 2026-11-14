@@ -10,6 +10,76 @@
    "spacing_m": 500.0,
    "near_map_m": 20,
    "why": "Contains the Shackleton crater floor (USGS Gazetteer centre -89.67, 129.78) and the Shackleton end of the Shackleton-de Gerlache ridge (LROC: -89.684, 196.739E)."
+  },
+  {
+   "id": "peak_near_cabeus_b",
+   "name": "Peak near Cabeus B region",
+   "center_x_m": -181123.9,
+   "center_y_m": 70253.3,
+   "half_m": 7500.0,
+   "spacing_m": 500.0,
+   "near_map_m": 20,
+   "why": "15 x 15 km around the centre of LROC's Artemis III mosaic for this region (https://data.lroc.im-ldi.com/lroc/view_rdr_product/NAC_ROI_CABEUSPKLO2_P836S2912); NASA has not published region centres."
+  },
+  {
+   "id": "mons_mouton_plateau",
+   "name": "Mons Mouton Plateau region",
+   "center_x_m": 88056.9,
+   "center_y_m": 148896.1,
+   "half_m": 7500.0,
+   "spacing_m": 500.0,
+   "near_map_m": 20,
+   "why": "15 x 15 km around the centre of LROC's Artemis III mosaic for this region (https://data.lroc.im-ldi.com/lroc/view_rdr_product/NAC_ROI_MOUTNPLTLO1_P843S0306); NASA has not published region centres."
+  },
+  {
+   "id": "nobile_rim1_mons_mouton",
+   "name": "Nobile Rim 1 and Mons Mouton region",
+   "center_x_m": 80647.2,
+   "center_y_m": 113902.1,
+   "half_m": 7500.0,
+   "spacing_m": 500.0,
+   "near_map_m": 20,
+   "why": "15 x 15 km around the centre of LROC's Artemis III mosaic for this region (https://data.lroc.im-ldi.com/lroc/view_rdr_product/NAC_ROI_MTMOUTONLO1_P854S0353); NASA has not published region centres."
+  },
+  {
+   "id": "malapert_massif",
+   "name": "Malapert Massif region",
+   "center_x_m": 635.3,
+   "center_y_m": 121341.0,
+   "half_m": 7500.0,
+   "spacing_m": 500.0,
+   "near_map_m": 20,
+   "why": "15 x 15 km around the centre of LROC's Artemis III mosaic for this region (https://data.lroc.im-ldi.com/lroc/view_rdr_product/NAC_ROI_MALAPERTLO1_P860S0003); NASA has not published region centres."
+  },
+  {
+   "id": "haworth",
+   "name": "Haworth region",
+   "center_x_m": -40232.9,
+   "center_y_m": 91653.0,
+   "half_m": 7500.0,
+   "spacing_m": 500.0,
+   "near_map_m": 20,
+   "why": "15 x 15 km around the centre of LROC's Artemis III mosaic for this region (https://data.lroc.im-ldi.com/lroc/view_rdr_product/NAC_ROI_HAWORTH_LO1_P867S3363); NASA has not published region centres."
+  },
+  {
+   "id": "nobile_rim2",
+   "name": "Nobile Rim 2 region",
+   "center_x_m": 158200.8,
+   "center_y_m": 96187.6,
+   "half_m": 7500.0,
+   "spacing_m": 500.0,
+   "near_map_m": 20,
+   "why": "15 x 15 km around the centre of LROC's Artemis III mosaic for this region (https://data.lroc.im-ldi.com/lroc/view_rdr_product/NAC_ROI_NOBILE02LO1_P839S0587); NASA has not published region centres."
+  },
+  {
+   "id": "de_gerlache_rim",
+   "name": "de Gerlache Rim region",
+   "center_x_m": -41777.9,
+   "center_y_m": 17992.4,
+   "half_m": 7500.0,
+   "spacing_m": 500.0,
+   "near_map_m": 20,
+   "why": "15 x 15 km around the centre of LROC's Artemis III mosaic for this region (https://data.lroc.im-ldi.com/lroc/view_rdr_product/NAC_ROI_DEGERRIMLO1_P885S2933); NASA has not published region centres."
   }
  ]
 }
