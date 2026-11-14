@@ -345,3 +345,12 @@ Branch `review-fixes-web`, one commit per finding group. Each fix has a vitest u
 | Load failure | Falls through to the next option; the smooth horizon is labelled "Terrain file missing" only if a load failed and nothing with terrain is left | Keeps the app usable and honest |
 
 **Real data** (after merging main `cdaf002`+, same test file): Shackleton ridge → grid point g158 ("…point g158", no distance), Shackleton crater → "nearest region point p338, 214 m from the cited site", Athena's resting place → g274 in the Athena grid ("(29 m from the cited site)"), Malapert massif → its grid g158 at 10 m, Haworth → region p480 short label, Apollo 11 → smooth horizon. Note: the Athena *target* now reads "…miss-test grid (10 m map), point g158" instead of the old "(target point)" label, because lane A gave it `miss_grid_id`.
+
+## 2. Stale results (two findings)
+
+**Change**: new `web/src/state/freshness.ts`. The resolved place is stored with the request it answers (`placeRequestKey`: site id, or `custom` + lat/lon, plus the observer height); `currentPlace` returns null in the same render when the request on screen differs, so after a site switch or an observer-height edit the hero shows "Computing…", the Sun elevation shows "—", and the ShareBar/export is hidden until the matching answer arrives. The window key (`windowKey`) is request + `maskKey` (point id and stored height, or the smooth-horizon dip) + point + dates + rules, so an answer computed with the old mask can never count as fresh. While computing, the old charts stay dimmed with `aria-busy` and a visible "Updating: the charts below are from the previous inputs." line. Compare got the same treatment: its resolved places are tagged with the site ids and height, and its key includes each place's `maskKey`. Test: `web/tests/unit/freshness.test.ts`.
+
+| Decision | Value | Reason |
+| --- | --- | --- |
+| Any observer-height edit makes the place stale | Yes, even 2 m → 3 m (same stored mask) | Simple and safe; re-resolving costs a cache lookup |
+| Old charts while computing | Kept, dimmed, `aria-busy`, with a visible note; verdict, countdowns, Sun elevation and export cleared | Avoids a jumping layout without passing old numbers off as current |

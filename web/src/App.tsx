@@ -1,11 +1,12 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { resolveCustom, type Resolved } from './data/sites';
+import { resolveCustom } from './data/sites';
 import type { WindowAnswer } from './engine/compute';
 import { countdownsAt } from './engine/countdown';
 import { local_frame, sample_at, site_vector } from './engine/light';
 import { formatDeg } from './format';
 import { loadAppData, resolveForSite, type AppData } from './state/data';
+import { currentPlace, freshAnswer, placeRequestKey, windowKey, type TaggedPlace } from './state/freshness';
 import { clampScenario, defaultScenario, tableRange, VIEWS, type Scenario } from './state/scenario';
 import { decodeScenario, encodeScenario } from './state/url';
 import { ShareBar } from './views/ShareBar';
@@ -25,7 +26,7 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [fixtureTick, setFixtureTick] = useState(0);
   const [scn, setScn] = useState<Scenario | null>(null);
-  const [place, setPlace] = useState<Resolved | null>(null);
+  const [tagged, setTagged] = useState<TaggedPlace | null>(null);
   const [result, setResult] = useState<{ key: string; answer: WindowAnswer } | null>(null);
   const [jobError, setJobError] = useState<string | null>(null);
   const reqKey = useRef('');
@@ -52,26 +53,29 @@ export function App() {
   const update = (patch: Partial<Scenario>) => setScn((s) => (s && data ? clampScenario({ ...s, ...patch }, data.eph.meta) : s));
   const site = data && scn?.site_id ? data.sites.find((s) => s.id === scn.site_id) ?? null : null;
 
-  // Resolve the site to coordinates and a horizon mask (loads the region file when needed).
+  // Resolve the site to coordinates and a horizon mask (loads the region file when needed). The
+  // result is tagged with the request it answers; until a matching one arrives, `place` is null.
+  const req = scn ? placeRequestKey(scn) : '';
   useEffect(() => {
     if (!data || !scn) return;
     let live = true;
     const h = scn.rules.observer_height_m;
-    if (!site) setPlace(resolveCustom(scn.lat_deg, scn.lon_deg, h));
-    else resolveForSite(data, site, h).then((r) => live && setPlace(r));
+    if (!site) setTagged({ req, place: resolveCustom(scn.lat_deg, scn.lon_deg, h) });
+    else resolveForSite(data, site, h).then((r) => live && setTagged({ req, place: r }));
     return () => { live = false; };
-  }, [data, site, scn?.lat_deg, scn?.lon_deg, scn?.rules.observer_height_m]);
+  }, [data, req]);
+  const place = currentPlace(tagged, req);
 
-  // Score the window in the worker whenever the place, dates or rules change.
-  const key = place && scn ? JSON.stringify([place.lat_deg, place.lon_deg, place.h_m, place.pointId, place.horizonLabel, scn.start_s, scn.stay_s, scn.rules]) : '';
+  // Score the window in the worker whenever the place, its mask, the dates or the rules change.
+  const key = place && scn ? windowKey(req, place, scn) : '';
   useEffect(() => {
-    if (!data || !place || !scn || !key) return;
     reqKey.current = key;
     setJobError(null);
+    if (!data || !place || !scn || !key) return;
     data.engine
       .window({ place: { lat_deg: place.lat_deg, lon_deg: place.lon_deg, h_m: place.h_m }, mask: place.mask, start_s: scn.start_s, end_s: scn.start_s + scn.stay_s, rules: scn.rules })
       .then((answer) => { if (reqKey.current === key) setResult({ key, answer }); })
-      .catch((e) => setJobError(String(e)));
+      .catch((e) => { if (reqKey.current === key) setJobError(String(e)); });
   }, [key]);
 
   const t_s = scn ? scn.start_s + scn.t_off_s : 0;
@@ -86,9 +90,11 @@ export function App() {
   void fixtureTick;
   const fixture = data.fixtureFiles.size > 0;
   const epochMs = data.eph.start_ms;
-  const answer = result && result.key === key ? result.answer : null;
+  const answer = freshAnswer(result, key);
   const fresh = answer !== null;
-  const shown = answer ?? result?.answer ?? null; // keep the previous answer on screen while computing
+  // While computing, the previous answer's charts stay on screen, dimmed and marked busy; the
+  // verdict, countdowns and export appear only for the answer that matches the inputs.
+  const shown = answer ?? result?.answer ?? null;
   const cds = shown && fresh
     ? countdownsAt(shown.metrics, { lit0: shown.series.sun_frac[0] >= scn.rules.lit_threshold, earth0: shown.series.earth_frac[0] > 0, contact0: shown.series.contact[0] > 0 }, t_s)
     : null;
@@ -142,7 +148,8 @@ export function App() {
         </nav>
 
         {scn.view === 'report' && shown && (
-          <div role="tabpanel" aria-label="Report card" style={{ opacity: fresh ? 1 : 0.6 }}>
+          <div role="tabpanel" aria-label="Report card" aria-busy={!fresh} data-stale={!fresh} style={{ opacity: fresh ? 1 : 0.6 }}>
+            {!fresh && <p class="small" role="status" data-testid="stale-note">Updating: the charts below are from the previous inputs.</p>}
             <Timeline series={shown.series} metrics={shown.metrics} rules={scn.rules} start_s={shown.series.t_s[0]}
               stay_s={shown.series.t_s[shown.series.t_s.length - 1] - shown.series.t_s[0]} t_off_s={scn.t_off_s}
               onTime={(t_off_s) => update({ t_off_s })} />
@@ -158,7 +165,7 @@ export function App() {
           </div>
         )}
         {scn.view === 'sky' && shown && now && place && (
-          <div role="tabpanel" aria-label="Sky panorama" style={{ opacity: fresh ? 1 : 0.6 }}>
+          <div role="tabpanel" aria-label="Sky panorama" aria-busy={!fresh} data-stale={!fresh} style={{ opacity: fresh ? 1 : 0.6 }}>
             <Panorama series={shown.series} now={now} mask={place.mask} horizonLabel={place.horizonLabel} />
           </div>
         )}
