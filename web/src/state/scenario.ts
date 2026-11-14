@@ -3,13 +3,14 @@
 import type { EphemerisMeta } from '../data/types';
 import { makeRules, PRESETS, type PresetId, type Rules } from '../engine/light';
 
-export type View = 'report' | 'sky' | 'miss' | 'compare' | '3d' | 'validation';
+export type View = 'report' | 'sky' | 'miss' | 'compare' | '3d' | 'story' | 'validation';
 export const VIEWS: { id: View; label: string }[] = [
   { id: 'report', label: 'Report card' },
   { id: 'sky', label: 'Sky panorama' },
   { id: 'miss', label: 'Miss test' },
   { id: 'compare', label: 'Compare & calendar' },
   { id: '3d', label: '3D view' },
+  { id: 'story', label: 'Athena story' },
   { id: 'validation', label: 'Validation' },
 ];
 

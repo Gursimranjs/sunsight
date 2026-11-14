@@ -243,3 +243,23 @@ Checked the files lane A has merged on `main` (no `manifest.json` yet): `sites.j
 | Miss ring | 250 m ring draped on the ground around the landing point | Ties the 3D view to the miss test |
 | Frame loop | Continuous rAF while the tab is open, stopped on leaving | Needed for orbit damping and the fps measure |
 | Terrain beyond the cut | Not drawn; label says distant ridges (20–300 km) are missing here | The numbers use the full horizon masks |
+
+## P19 Guided Athena story
+
+**Generated files**: `web/src/views/Story.tsx` (five steps, Back/Next, numbered step buttons), `web/src/views/storyNumbers.ts` (distance, offset, rounding box, possible-miss range; named so it does not clash with `Story.tsx` on case-insensitive disks), "Athena story" tab (`view=story`), styles; test `web/tests/unit/story.test.ts`. `MissView`'s map now keeps its aspect ratio when scaled down (`height: auto`), which fixed a tall empty gap on phones.
+
+**Facts used, and where from**
+
+| Fact | Source |
+| --- | --- |
+| Intended site 84.78° S, 29.13° E, about 160 km from the south pole | LROC image 1401 (`sites.json` `im2_athena_target`) |
+| Resting place 84.7906° S, 29.1957° E; came down faster than intended and "ended up on its side within a 20-meter diameter crater" | LROC image 1408 (`im2_athena_actual`) |
+| Landed 6 March 2025; NASA declared the mission over about 12 h 45 min (≈ 13 h) after landing; on its side in a crater sunlight could not reach, so the solar cells could not recharge the batteries; Intuitive Machines put the miss at about 250 m, NASA at more than 400 m | SpacePolicyOnline, https://spacepolicyonline.com/news/im-2-mission-ends-one-day-after-lunar-landing/ (read 2026-11-14; the page title says "one day", its text says about 13 hours, so the story says "about 13 hours") |
+
+The brief also cites a NASA news release ("more than 1,300 feet (400 meters)") and a NASA Marshall page (250 m). I had no URLs for those, so the story attributes both figures to the SpacePolicyOnline report, which states both. **People:** if you want direct NASA links, add them in `Story.tsx` step 2.
+
+**Computed in the app** (from the two LROC coordinate pairs, Moon sphere 1,737.4 km): target to resting place **369 m**, toward the south-south-east (321 m south, 181 m east). The target is quoted to two decimals, i.e. ±0.005° = ±152 m north–south and ±14 m east–west at 84.78° S, so the miss could be anywhere from about **240 m to 510 m**; both published figures fit inside. Unit tests check the distance against an independent haversine (< 1 cm), the rounding box, and the min/max against a brute-force search over the box.
+
+**Honesty points built in**: step 3 says a 20 m crater is at the limit of the 20 m terrain map and draws it over 20 m cells; step 4 says the table covers 2027–2030 only, so SunSight cannot replay March 2025, and that it does not model a tipped lander; step 5 shows the real `miss/im2_athena_target` grid for a start date the user picks inside 2027–2030, with a boxed "Future date: … not the 2025 landing" label; if the grid is not in the manifest it says the map is not available (no fixture fallback). Credits link LROC images 1401 and 1408 (NASA/GSFC/Arizona State University) and SpacePolicyOnline; no images are reproduced.
+
+**Verification (phone)**: Playwright, 375 × 812, touch, real data: tapped Next through all five steps; no horizontal page scroll on any step (`scrollWidth == 375`), no console errors; step 5 ran the 317-point grid (2027-03-01 start, robotic preset: 0 % pass at every radius, the real answer for that date, each point's reason is a > 300 h dark spell).

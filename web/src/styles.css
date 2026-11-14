@@ -152,3 +152,15 @@ table.csv-head th { white-space: nowrap; }
 .btnrow { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
 .btnrow button[aria-pressed=true] { background: var(--oi-blue); border-color: var(--oi-blue); color: #fff; }
 .field input[type=range] { padding: 0; accent-color: var(--oi-orange); }
+
+/* Guided Athena story */
+.story h2 { font-size: 1.35rem; }
+.story p { max-width: 42rem; }
+.story-steps { display: flex; gap: 6px; list-style: none; padding: 0; margin: 4px 0 10px; }
+.story-steps button { width: 44px; height: 44px; padding: 0; border-radius: 50%; font-weight: 700; }
+.story-steps button[aria-current=step] { background: var(--oi-orange); border-color: var(--oi-orange); color: #000; }
+.story-nav { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin: 14px 0 8px; }
+.story-nav button { min-height: 44px; }
+.future-label { display: inline-block; margin: 0 0 8px; padding: 4px 10px; border: 2px solid var(--oi-sky); border-radius: 6px; font-weight: 700; }
+.story q { font-style: italic; }
+.story .card { padding-left: 0; padding-right: 0; border: 0; background: transparent; }

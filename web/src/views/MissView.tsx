@@ -143,7 +143,7 @@ export function MissView({ data, site, scn, onSite }: Props) {
       <div ref={ref}>
         <svg width={size} height={H} viewBox={`0 0 ${size} ${H}`} data-testid="miss-map" role="img"
           aria-label={a ? `Map of ${pts.length} landing points. ${a.passes.filter(Boolean).length} pass, ${a.passes.filter((x) => !x).length} fail.` : 'Map of landing points, computing.'}
-          onPointerDown={onDown} onPointerMove={onMove} onPointerUp={() => (dragging.current = false)} style={{ touchAction: 'none', cursor: 'pointer' }}>
+          onPointerDown={onDown} onPointerMove={onMove} onPointerUp={() => (dragging.current = false)} style={{ touchAction: 'none', cursor: 'pointer', height: 'auto' }}>
           <rect x={pad} y={12} width={plot} height={plot} fill="#05070b" />
           <g class="axis">
             {ticks.map((t) => (

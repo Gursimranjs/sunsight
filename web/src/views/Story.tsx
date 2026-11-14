@@ -1,0 +1,179 @@
+// SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
+// Guided Athena story: five short steps, built for a 375 px phone. Facts come only from the cited
+// sources (LROC images 1401 and 1408, SpacePolicyOnline); distances are computed here from the
+// cited coordinates.
+import { useRef, useState } from 'preact/hooks';
+import { formatUtc, fromInputUtc, toInputUtc } from '../format';
+import type { AppData } from '../state/data';
+import { tableRange, type Scenario } from '../state/scenario';
+import { MissView } from './MissView';
+import { athenaMiss, ATHENA_TARGET_ID, missRange, roundingHalfStep, type AthenaMiss } from './storyNumbers';
+
+const SPO_URL = 'https://spacepolicyonline.com/news/im-2-mission-ends-one-day-after-lunar-landing/';
+const STEPS = ['The target', 'The miss', 'The shadow', 'The lost power', 'What SunSight shows'] as const;
+
+interface Props {
+  data: AppData;
+  scn: Scenario;
+  update: (patch: Partial<Scenario>) => void;
+}
+
+const m0 = (x: number) => `${Math.round(x)} m`;
+const r10 = (x: number) => `${Math.round(x / 10) * 10} m`;
+
+function Src({ href, children }: { href: string; children: string }) {
+  return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
+}
+
+/** Map of the quoted target, its rounding box and the resting place, in metres. */
+function MissMap({ m }: { m: AthenaMiss }) {
+  const box = roundingHalfStep(m.target.lat_deg, 2);
+  const W = 320, H = 260, pad = 30;
+  // Fit the rounding box and the resting place, centred between them.
+  const n_lo = Math.min(-box.ns_m, m.north_m), n_hi = Math.max(box.ns_m, m.north_m);
+  const e_lo = Math.min(-box.ew_m, m.east_m), e_hi = Math.max(box.ew_m, m.east_m);
+  const k = Math.min((H - 2 * pad) / (n_hi - n_lo), (W - 2 * pad - 110) / Math.max(e_hi - e_lo, 1));
+  const cx = pad + 70 - e_lo * k, cy = pad + n_hi * k;
+  const X = (e: number) => cx + e * k, Y = (n: number) => cy - n * k;
+  const bar_m = 100;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxWidth: 420 }} role="img" data-testid="story-miss-map"
+      aria-label={`Map: the resting place is ${m0(m.dist_m)} from the quoted target, toward the ${m.north_m < 0 ? 'south' : 'north'}-${m.east_m > 0 ? 'east' : 'west'}. The dashed box shows where the true target could be, given the two-decimal coordinates.`}>
+      <rect x={X(-box.ew_m)} y={Y(box.ns_m)} width={2 * box.ew_m * k} height={2 * box.ns_m * k} fill="none" stroke="var(--muted)" stroke-dasharray="4 3" />
+      <line x1={X(0)} y1={Y(0)} x2={X(m.east_m)} y2={Y(m.north_m)} stroke="var(--fg)" stroke-width="2" />
+      <g stroke="var(--oi-sky)" stroke-width="3"><line x1={X(0) - 8} x2={X(0) + 8} y1={Y(0)} y2={Y(0)} /><line x1={X(0)} x2={X(0)} y1={Y(0) - 8} y2={Y(0) + 8} /></g>
+      <text x={X(0) - 12} y={Y(0) - 10} text-anchor="end">Target</text>
+      <rect x={X(m.east_m) - 7} y={Y(m.north_m) - 7} width="14" height="14" fill="var(--oi-orange)" />
+      <text x={X(m.east_m) + 12} y={Y(m.north_m) + 5}>Resting place</text>
+      <text x={(X(0) + X(m.east_m)) / 2 + 8} y={(Y(0) + Y(m.north_m)) / 2}>{m0(m.dist_m)}</text>
+      <text x={X(box.ew_m) + 6} y={Y(box.ns_m) + 14} style={{ fill: 'var(--muted)' }}>rounding box</text>
+      <g transform={`translate(${W - pad - 80} ${H - 14})`}>
+        <line x1="0" x2={bar_m * k} y1="0" y2="0" stroke="var(--fg)" stroke-width="2" />
+        <text x={bar_m * k + 6} y="5">{bar_m} m</text>
+      </g>
+      <text x={W - 30} y={22} text-anchor="middle">N ↑</text>
+    </svg>
+  );
+}
+
+/** A 20 m crater drawn over 20 m terrain-map pixels. */
+function PixelPicture() {
+  const px = 60, n = 4, o = 10;
+  return (
+    <svg viewBox={`0 0 ${n * px + 2 * o} ${n * px + 2 * o}`} width="100%" style={{ maxWidth: 260 }} role="img" data-testid="story-pixels"
+      aria-label="Four by four grid of 20 metre terrain-map cells with a 20 metre crater drawn on it: the crater is only one cell across.">
+      {Array.from({ length: n * n }, (_, i) => (
+        <rect key={i} x={o + (i % n) * px} y={o + Math.floor(i / n) * px} width={px} height={px} fill="var(--panel2)" stroke="var(--muted)" />
+      ))}
+      <circle cx={o + 1.6 * px} cy={o + 1.6 * px} r={px / 2} fill="none" stroke="var(--oi-orange)" stroke-width="3" />
+      <text x={o + 1.6 * px} y={o + 1.6 * px + 5} text-anchor="middle">20 m</text>
+      <text x={o + 3.5 * px} y={o + 3.5 * px + 5} text-anchor="middle" style={{ fill: 'var(--muted)' }}>1 cell</text>
+    </svg>
+  );
+}
+
+export function Story({ data, scn, update }: Props) {
+  const [step, setStep] = useState(0);
+  const top = useRef<HTMLElement>(null);
+  const m = athenaMiss(data.sites);
+  const go = (k: number) => {
+    setStep(Math.max(0, Math.min(STEPS.length - 1, k)));
+    top.current?.scrollIntoView?.({ block: 'start' });
+  };
+  if (!m) {
+    return <section class="card"><p>The Athena story needs the IM-2 target and resting-place entries in the site list, which this data set does not have.</p></section>;
+  }
+  const box = roundingHalfStep(m.target.lat_deg, 2);
+  const range = missRange(m, box);
+  const target = data.sites.find((s) => s.id === ATHENA_TARGET_ID)!;
+  const hasGrid = !!target.miss_target_id && (data.manifest.files.miss ?? []).some((r) => r.id === target.miss_target_id);
+  const range_s = tableRange(data.eph.meta);
+  const startMs = data.eph.start_ms + scn.start_s * 1000;
+
+  return (
+    <section class="card story" aria-label="Guided Athena story" ref={top} data-testid="story">
+      <p class="small muted" style={{ margin: 0 }}>Step {step + 1} of {STEPS.length}</p>
+      <h2 data-testid="story-title">{STEPS[step]}</h2>
+      <ol class="story-steps" aria-label="Story steps">
+        {STEPS.map((t, i) => (
+          <li key={t}>
+            <button type="button" aria-current={i === step ? 'step' : undefined} aria-label={`Step ${i + 1}: ${t}`} onClick={() => go(i)}>{i + 1}</button>
+          </li>
+        ))}
+      </ol>
+
+      {step === 0 && (
+        <div data-testid="story-step-1">
+          <p>In March 2025 the lander <strong>Athena</strong> (Intuitive Machines’ IM-2 mission) aimed for a spot on Mons Mouton, a mountain near the Moon’s south pole.</p>
+          <p>The Lunar Reconnaissance Orbiter Camera team gives the intended site as <strong>84.78° S, 29.13° E</strong>, about 160 km from the south pole (<Src href="https://lroc.im-ldi.com/images/1401">LROC image 1401</Src>).</p>
+          <p class="small muted">Those coordinates are quoted to two decimals. At this latitude that is precise to about ±{Math.round(box.ns_m)} m north–south and ±{Math.round(box.ew_m)} m east–west.</p>
+        </div>
+      )}
+
+      {step === 1 && (
+        <div data-testid="story-step-2">
+          <p>LROC later found Athena at <strong>84.7906° S, 29.1957° E</strong> (<Src href="https://lroc.im-ldi.com/images/1408">LROC image 1408</Src>).</p>
+          <p>From the two sets of coordinates, SunSight computes a distance of <strong data-testid="story-miss-m">{m0(m.dist_m)}</strong> on the Moon’s 1,737.4 km sphere. Because the target is only quoted to two decimals, the true miss could be anywhere from about {r10(range.min_m)} to {r10(range.max_m)}.</p>
+          <MissMap m={m} />
+          <p class="small">Published figures differ: Intuitive Machines put Athena about 250 m from its target, NASA more than 400 m (both as reported by <Src href={SPO_URL}>SpacePolicyOnline</Src>). Both fit inside the range above.</p>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div data-testid="story-step-3">
+          <p>LROC reports that Athena came down too fast and <q>ended up on its side within a 20-meter diameter crater</q> (<Src href="https://lroc.im-ldi.com/images/1408">LROC image 1408</Src>). Sunlight could not reach into that crater (<Src href={SPO_URL}>SpacePolicyOnline</Src>).</p>
+          <PixelPicture />
+          <p><strong>An honest limit:</strong> SunSight’s terrain map has one height every 20 m, so a crater 20 m across is right at the edge of what it can show. Its horizons would not capture the walls of a crater that small; finer maps would be needed.</p>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div data-testid="story-step-4">
+          <p>Lying on its side in the dark, Athena’s solar cells could not recharge its batteries. NASA declared the mission over about 13 hours after the landing on 6 March 2025 (<Src href={SPO_URL}>SpacePolicyOnline</Src>).</p>
+          <svg viewBox="0 0 320 70" width="100%" style={{ maxWidth: 420 }} role="img" aria-label="Timeline: landing at hour 0, mission ended about 13 hours later.">
+            <line x1="20" x2="300" y1="35" y2="35" stroke="var(--muted)" stroke-width="2" />
+            <circle cx="20" cy="35" r="7" fill="var(--oi-sky)" /><text x="20" y="62" text-anchor="middle">Landing</text>
+            <rect x="273" y="28" width="14" height="14" fill="var(--nogo)" /><text x="280" y="62" text-anchor="middle">Power gone</text>
+            <text x="150" y="24" text-anchor="middle">about 13 hours</text>
+          </svg>
+          <p class="small muted">SunSight cannot replay March 2025: its Sun and Earth table covers 2027 to 2030 only. It does not model a lander lying on its side either; it asks whether the ground around a target gets sunlight.</p>
+        </div>
+      )}
+
+      {step === 4 && (
+        <div data-testid="story-step-5">
+          <p>A planner can ask SunSight: if a lander misses this target by a few hundred metres, how much of the ground nearby still gets enough sunlight and Earth contact? The map below answers that for <strong>Athena’s target</strong> on a <strong>future</strong> date.</p>
+          <label class="field" style={{ marginBottom: 8 }}>
+            <span>Future start date (UTC, within 2027–2030)</span>
+            <input type="datetime-local" step={3600} data-testid="story-date"
+              min={toInputUtc(data.eph.start_ms + range_s.min_s * 1000)} max={toInputUtc(data.eph.start_ms + range_s.max_s * 1000)}
+              value={toInputUtc(startMs)}
+              onChange={(e) => {
+                const ms = fromInputUtc((e.target as HTMLInputElement).value);
+                if (Number.isFinite(ms)) update({ start_s: (ms - data.eph.start_ms) / 1000, t_off_s: 0 });
+              }} />
+          </label>
+          <p class="future-label" data-testid="story-future-label">Future date: a stay starting {formatUtc(startMs)}, not the 2025 landing.</p>
+          {hasGrid ? (
+            <>
+              <MissView data={data} site={target} scn={scn} onSite={(id) => update({ site_id: id })} />
+              <button type="button" class="primary" onClick={() => update({ site_id: target.id, view: 'miss' })}>Open this in the full miss test</button>
+            </>
+          ) : (
+            <p data-testid="story-no-grid"><strong>The miss-test grid for Athena’s target is not available in this build</strong>, so this step cannot show the map yet.</p>
+          )}
+        </div>
+      )}
+
+      <div class="story-nav">
+        <button type="button" onClick={() => go(step - 1)} disabled={step === 0}>← Back</button>
+        {step < STEPS.length - 1
+          ? <button type="button" class="primary" data-testid="story-next" onClick={() => go(step + 1)}>Next: {STEPS[step + 1]} →</button>
+          : <button type="button" onClick={() => go(0)}>Start again</button>}
+      </div>
+      <p class="small muted" style={{ marginBottom: 0 }}>
+        Credits: coordinates and the crater description from the Lunar Reconnaissance Orbiter Camera (LROC; NASA/GSFC/Arizona State University), <Src href="https://lroc.im-ldi.com/images/1401">image 1401</Src> and <Src href="https://lroc.im-ldi.com/images/1408">image 1408</Src>; mission timeline from <Src href={SPO_URL}>SpacePolicyOnline</Src>. These links leave SunSight.
+      </p>
+    </section>
+  );
+}

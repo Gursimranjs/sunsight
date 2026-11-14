@@ -18,6 +18,7 @@ import { SitePicker } from './views/SitePicker';
 import { Timeline } from './views/Timeline';
 import { ValidationView } from './views/Validation';
 import { Hero3D } from './views/Hero3D';
+import { Story } from './views/Story';
 
 export function App() {
   const [data, setData] = useState<AppData | null>(null);
@@ -178,6 +179,11 @@ export function App() {
         {scn.view === '3d' && (
           <div role="tabpanel" aria-label="3D view">
             <Hero3D data={data} site={site} place={place} scn={scn} now={now} update={update} />
+          </div>
+        )}
+        {scn.view === 'story' && (
+          <div role="tabpanel" aria-label="Athena story">
+            <Story data={data} scn={scn} update={update} />
           </div>
         )}
         {scn.view === 'validation' && (
