@@ -52,8 +52,8 @@ export interface Site {
   /** Optional (pipeline): great-circle distance from the cited site to its region point. */
   region_point_offset_m?: number;
   /** Optional (pipeline): the miss grid containing the site, its grid point nearest the site and that distance. */
-  miss_grid_id?: string;
-  miss_point_id?: string;
+  miss_grid_id?: string | null;
+  miss_point_id?: string | null;
   miss_point_offset_m?: number;
   /** Optional: who published the coordinates, and a note on them. */
   source_org?: string;

@@ -2,12 +2,13 @@
 // Review fix 1: a site resolves to its miss-grid point when that point is within 40 m of the cited
 // coordinates, then to its region point (labelled with the distance), then to the grid centre, then
 // to the smooth horizon. The optional sites.json fields may be absent.
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { loadSites } from '../../src/data/loaders';
 import {
   loadMaskSet, maskOf, MISS_CENTRE_LABEL, MISS_POINT_MAX_OFFSET_M, NO_TERRAIN_LABEL, resolveSite,
 } from '../../src/data/sites';
-import type { Site } from '../../src/data/types';
+import type { Manifest, Site } from '../../src/data/types';
 import { resolveForSite, type AppData } from '../../src/state/data';
 import { DATA, fileFetcher, fixtureManifest } from './helpers';
 
@@ -111,5 +112,36 @@ describe('older sites.json without the new fields', () => {
     expect(r.pointId).toBe('g31');
     expect(r.lat_deg).toBe(grid.meta.points[gi(grid, 'g31')].lat_deg);
     expect(r.horizonLabel).toBe('Terrain horizon from the miss-test grid (10 m map), point g31 (12 m from the cited site)');
+  });
+});
+
+describe('shipped sites.json (real data)', () => {
+  const REAL = new URL('../../public/data/', import.meta.url).pathname;
+  async function realData() {
+    const m = JSON.parse(readFileSync(REAL + 'manifest.json', 'utf8')) as Manifest;
+    const { sites } = await loadSites(m, fileFetcher, REAL);
+    const data = {
+      manifest: m, sites,
+      region: (id: string) => loadMaskSet(m, 'regions', id, fileFetcher, REAL),
+      missGrid: (id: string) => loadMaskSet(m, 'miss', id, fileFetcher, REAL),
+    } as unknown as AppData;
+    return { data, site: (id: string) => sites.find((s) => s.id === id)! };
+  }
+
+  it('resolves the review cases to the expected points and labels', async () => {
+    const { data, site } = await realData();
+    const ridge = await resolveForSite(data, site('shackleton_ridge_rim'), 2);
+    expect(ridge.pointId).toBe('g158');
+    expect(ridge.horizonLabel).toBe('Terrain horizon from the miss-test grid (10 m map), point g158');
+    const crater = await resolveForSite(data, site('shackleton_crater'), 2);
+    expect(crater.horizonLabel).toContain('nearest region point p338, 214 m from the cited site');
+    const athena = await resolveForSite(data, site('im2_athena_actual'), 2);
+    expect(athena.pointId).toBe('g274');
+    expect(athena.horizonLabel).toBe('Terrain horizon from the miss-test grid (10 m map), point g274 (29 m from the cited site)');
+    const malapert = await resolveForSite(data, site('a3_malapert_massif'), 10);
+    expect(malapert.maskKey).toBe('miss:a3_malapert_massif/g158@10');
+    const haworth = await resolveForSite(data, site('a3_haworth'), 2);
+    expect(haworth.horizonLabel).toMatch(/^Terrain horizon from region ".*", point p480, observer 2 m$/);
+    expect((await resolveForSite(data, site('apollo_11'), 2)).horizonLabel).toBe(NO_TERRAIN_LABEL);
   });
 });

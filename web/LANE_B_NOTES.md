@@ -343,3 +343,5 @@ Branch `review-fixes-web`, one commit per finding group. Each fix has a vitest u
 | Grid-centre fallback (c) | Only when `miss_grid_id` is absent | As specified; a site whose grid point is > 40 m away and has no region gets the smooth horizon |
 | A grid named in `sites.json` but not in the manifest | Skipped silently (falls to the region) | Same as the existing rule for `miss_target_id` |
 | Load failure | Falls through to the next option; the smooth horizon is labelled "Terrain file missing" only if a load failed and nothing with terrain is left | Keeps the app usable and honest |
+
+**Real data** (after merging main `cdaf002`+, same test file): Shackleton ridge → grid point g158 ("…point g158", no distance), Shackleton crater → "nearest region point p338, 214 m from the cited site", Athena's resting place → g274 in the Athena grid ("(29 m from the cited site)"), Malapert massif → its grid g158 at 10 m, Haworth → region p480 short label, Apollo 11 → smooth horizon. Note: the Athena *target* now reads "…miss-test grid (10 m map), point g158" instead of the old "(target point)" label, because lane A gave it `miss_grid_id`.
