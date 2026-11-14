@@ -44,7 +44,7 @@ describe('miss-tolerant calendar', () => {
         });
       }
     }
-  });
+  }, 60_000); // heavy: 8 days x 81 points x 3 radii; GitHub runners take 5-9 s (Vitest default limit is 5 s)
 
   it('agrees with the miss view (runMiss) for the same window', async () => {
     const t = await fixtureTable();
