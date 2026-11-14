@@ -145,6 +145,46 @@ def build() -> dict:
             }
         )
 
+    # Verdict branches (go / marginal / no-go) on synthetic metrics, every preset.
+    base = {
+        "longest_dark_s": 0.0,
+        "longest_gap_s": 0.0,
+        "min_sun_fraction": 1.0,
+        "contact_share": 1.0,
+        "grazing_share": 0.0,
+    }
+    verdict_cases = []
+    for preset in ("robotic", "crew", "long"):
+        pr = L.PRESETS[preset]
+        for over in (
+            {},
+            {"longest_dark_s": 0.8 * pr.max_dark_s} if pr.max_dark_s > 0 else {"min_sun_fraction": 0.6},
+            {"longest_dark_s": pr.max_dark_s + 600.0},
+            {"longest_gap_s": 0.8 * pr.max_gap_s},
+            {"longest_gap_s": pr.max_gap_s + 600.0},
+            {"grazing_share": 0.7},
+            {"longest_dark_s": 8100.0 + pr.max_dark_s, "longest_gap_s": 8100.0 + pr.max_gap_s},
+        ):
+            m = {**base, **over}
+            verdict_cases.append({"preset": preset, "metrics": m, "expected": L.verdict(m, pr)})
+    # A near-side daytime window on the smooth horizon (Anywhere mode), crew preset at 10 m.
+    rules = L.PRESETS["crew"]
+    smooth = L.flat_mask(L.smooth_horizon_deg(rules.observer_height_m))
+    day = L.window_metrics(table, 0.67, 23.47, 0.0, smooth, 86400.0 * 5, 86400.0 * 8, rules)
+    windows_extra = [
+        {
+            "preset": "crew",
+            "mask": {"smooth_m": rules.observer_height_m},
+            "lat_deg": 0.67,
+            "lon_deg": 23.47,
+            "h_m": 0.0,
+            "start_s": 86400.0 * 5,
+            "end_s": 86400.0 * 8,
+            "metrics": day,
+            "verdict": L.verdict(day, rules),
+        }
+    ]
+
     return {
         "note": "Shared vectors for pipeline/sunsight/light.py and web/src/engine. Made-up inputs; tolerance 1e-6.",
         "tolerance": 1e-6,
@@ -162,6 +202,8 @@ def build() -> dict:
         "table": {"rows": [[float(x) for x in r] for r in table32], "step_s": 3600.0},
         "interp": interp_cases,
         "window": windows,
+        "verdict_cases": verdict_cases,
+        "windows_extra": windows_extra,
         "miss_share": [
             {
                 "passes": [True, False, True, True],
