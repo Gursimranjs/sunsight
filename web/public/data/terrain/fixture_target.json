@@ -1,0 +1,15 @@
+{
+ "fixture": true,
+ "note": "MADE-UP FIXTURE DATA for development only. Not real geometry or terrain.",
+ "site_id": "fixture_target",
+ "size": 512,
+ "spacing_m": 20.0,
+ "center": {
+  "lat_deg": -84.79,
+  "lon_deg": 29.2
+ },
+ "row_order": "north to south",
+ "col_order": "west to east",
+ "dtype": "int16",
+ "units": "m"
+}

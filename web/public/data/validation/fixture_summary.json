@@ -1,0 +1,78 @@
+{
+ "fixture": true,
+ "note": "MADE-UP FIXTURE DATA for development only. Not real geometry or terrain.",
+ "checks": [
+  {
+   "id": "ephemeris_horizons",
+   "title": "ephemeris horizons",
+   "value": null,
+   "unit": "",
+   "pass_mark": "fixture",
+   "status": "not run",
+   "explanation": "Fixture placeholder; no check has been run."
+  },
+  {
+   "id": "sunlight_pgda",
+   "title": "sunlight pgda",
+   "value": null,
+   "unit": "",
+   "pass_mark": "fixture",
+   "status": "not run",
+   "explanation": "Fixture placeholder; no check has been run."
+  },
+  {
+   "id": "earth_pgda",
+   "title": "earth pgda",
+   "value": null,
+   "unit": "",
+   "pass_mark": "fixture",
+   "status": "not run",
+   "explanation": "Fixture placeholder; no check has been run."
+  },
+  {
+   "id": "glaser_ridge",
+   "title": "glaser ridge",
+   "value": null,
+   "unit": "",
+   "pass_mark": "fixture",
+   "status": "not run",
+   "explanation": "Fixture placeholder; no check has been run."
+  },
+  {
+   "id": "eclipses",
+   "title": "eclipses",
+   "value": null,
+   "unit": "",
+   "pass_mark": "fixture",
+   "status": "not run",
+   "explanation": "Fixture placeholder; no check has been run."
+  },
+  {
+   "id": "station_geometry",
+   "title": "station geometry",
+   "value": null,
+   "unit": "",
+   "pass_mark": "fixture",
+   "status": "not run",
+   "explanation": "Fixture placeholder; no check has been run."
+  },
+  {
+   "id": "physics_sanity",
+   "title": "physics sanity",
+   "value": null,
+   "unit": "",
+   "pass_mark": "fixture",
+   "status": "not run",
+   "explanation": "Fixture placeholder; no check has been run."
+  },
+  {
+   "id": "known_places",
+   "title": "known places",
+   "value": null,
+   "unit": "",
+   "pass_mark": "fixture",
+   "status": "not run",
+   "explanation": "Fixture placeholder; no check has been run."
+  }
+ ]
+}

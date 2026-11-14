@@ -1,0 +1,45 @@
+{
+ "fixture": true,
+ "note": "MADE-UP FIXTURE DATA for development only. Not real geometry or terrain.",
+ "sites": [
+  {
+   "id": "fixture_ridge",
+   "name": "Fixture ridge (made-up)",
+   "lat_deg": -89.42,
+   "lon_deg": -136.5,
+   "height_m": 1600.0,
+   "category": "fixture",
+   "region_id": "fixture_ridge",
+   "miss_target_id": null,
+   "terrain_id": null,
+   "source_url": null,
+   "fixture": true
+  },
+  {
+   "id": "fixture_target",
+   "name": "Fixture target (made-up)",
+   "lat_deg": -84.79,
+   "lon_deg": 29.2,
+   "height_m": 5000.0,
+   "category": "fixture",
+   "region_id": null,
+   "miss_target_id": "fixture_target",
+   "terrain_id": "fixture_target",
+   "source_url": null,
+   "fixture": true
+  },
+  {
+   "id": "fixture_equator",
+   "name": "Fixture equator site (made-up)",
+   "lat_deg": 0.67,
+   "lon_deg": 23.47,
+   "height_m": 0.0,
+   "category": "fixture",
+   "region_id": null,
+   "miss_target_id": null,
+   "terrain_id": null,
+   "source_url": null,
+   "fixture": true
+  }
+ ]
+}
