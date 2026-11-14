@@ -11,8 +11,8 @@ export const VERDICT_TEXT: Record<VerdictKind, { label: string; sym: string }> =
   'no-go': { label: 'NO-GO', sym: '✕' },
 };
 
-export function VerdictBadge({ v, small }: { v: VerdictKind; small?: boolean }) {
-  const t = VERDICT_TEXT[v];
+export function VerdictBadge({ v, small, label }: { v: VerdictKind; small?: boolean; label?: string }) {
+  const t = { ...VERDICT_TEXT[v], ...(label ? { label } : {}) };
   return (
     <span class={`vbadge ${v}${small ? ' small' : ''}`}>
       <span class="sym" aria-hidden="true">{t.sym}</span>

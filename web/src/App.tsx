@@ -7,6 +7,7 @@ import { local_frame, sample_at, site_vector } from './engine/light';
 import { formatDeg } from './format';
 import { loadAppData, type AppData } from './state/data';
 import { clampScenario, defaultScenario, tableRange, VIEWS, type Scenario } from './state/scenario';
+import { MissView } from './views/MissView';
 import { Panorama } from './views/Panorama';
 import { MetricTiles, VerdictHero } from './views/ReportCard';
 import { ScenarioControls, TimeBar } from './views/RulesEditor';
@@ -141,7 +142,12 @@ export function App() {
             <Panorama series={shown.series} now={now} mask={place.mask} horizonLabel={place.horizonLabel} />
           </div>
         )}
-        {(scn.view === 'miss' || scn.view === 'compare') && (
+        {scn.view === 'miss' && (
+          <div role="tabpanel" aria-label="Miss test">
+            <MissView data={data} site={site} scn={scn} onSite={(id) => update({ site_id: id })} />
+          </div>
+        )}
+        {scn.view === 'compare' && (
           <div role="tabpanel" class="card"><p>This view is coming in a later package.</p></div>
         )}
         <footer class="small muted" style={{ marginTop: 24 }}>

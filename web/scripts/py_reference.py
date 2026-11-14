@@ -149,7 +149,7 @@ def main() -> None:
         ("crew", 1, 4.0, {}),
         ("robotic", 0, 6.0, short),
         ("robotic", 0, 36.0, short),
-        ("robotic", 1, 45.0, short),
+        ("robotic", 1, 45.0, {**short, "observer_height_m": 10.0}),
     ]:
         rules = replace(L.PRESETS[preset], **over)
         start_s = start_d * 86400.0
