@@ -2,8 +2,8 @@
  "format_version": 2,
  "fixture": false,
  "generated_with": "SunSight pipeline; code written by Claude Code (Anthropic)",
- "pipeline_version": "0.1.0+1f2ccba",
- "build_time_utc": "2026-11-15T18:48:47Z",
+ "pipeline_version": "0.1.0+b3e43ab",
+ "build_time_utc": "2026-11-15T18:54:38Z",
  "kernels": [
   "naif0012.tls",
   "pck00011.tpc",
@@ -143,7 +143,33 @@
  "files": {
   "ephemeris": {
    "meta": "ephemeris/2027_2030.json",
-   "bin": "ephemeris/2027_2030.bin"
+   "bin": "ephemeris/2027_2030.bin",
+   "years": [
+    {
+     "year": 2027,
+     "bin": "ephemeris/2027.bin",
+     "first_row": 0,
+     "row_count": 8760
+    },
+    {
+     "year": 2028,
+     "bin": "ephemeris/2028.bin",
+     "first_row": 8760,
+     "row_count": 8784
+    },
+    {
+     "year": 2029,
+     "bin": "ephemeris/2029.bin",
+     "first_row": 17544,
+     "row_count": 8760
+    },
+    {
+     "year": 2030,
+     "bin": "ephemeris/2030.bin",
+     "first_row": 26304,
+     "row_count": 8760
+    }
+   ]
   },
   "sites": "sites.json",
   "regions": [
@@ -283,6 +309,11 @@
  },
  "outputs": [
   {
+   "path": "ephemeris/2027.bin",
+   "size_bytes": 630720,
+   "sha256": "9813ee98362914fac43e66119ee4796326ed48a04be3cedbda07b7ba8f7f7417"
+  },
+  {
    "path": "ephemeris/2027_2030.bin",
    "size_bytes": 2524608,
    "sha256": "8259eb476e96c6c05b041dd071bbba436737955c3590406004223990fb528267"
@@ -291,6 +322,21 @@
    "path": "ephemeris/2027_2030.json",
    "size_bytes": 1059,
    "sha256": "ee1e940e729cf3be7a9aeef2e87cd06b8477df69206fe62c33d03f6db5597027"
+  },
+  {
+   "path": "ephemeris/2028.bin",
+   "size_bytes": 632448,
+   "sha256": "6f9b77c95cf523b388a8d91824f3de1d51f616a8a8044b02ba8cb25a1f07ab47"
+  },
+  {
+   "path": "ephemeris/2029.bin",
+   "size_bytes": 630720,
+   "sha256": "23df8eb890904b8ae02722c3f9d51a142aaa8c35f6a2bd14b48dfbc0c324c2d3"
+  },
+  {
+   "path": "ephemeris/2030.bin",
+   "size_bytes": 630720,
+   "sha256": "5886d7ec1de1e5a39ee6e06ff62b90470265d1185ae5d6c917ec57edf20f4e02"
   },
   {
    "path": "miss/a3_malapert_massif.json",

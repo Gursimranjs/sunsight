@@ -5,6 +5,8 @@ import type { Table } from './light';
 
 export type Request =
   | { type: 'init'; id: number; table: Table }
+  /** Rows first_row .. first_row + rows.length / 18 - 1 of the table, just fetched on the UI thread. */
+  | { type: 'fill'; id: number; first_row: number; rows: Float32Array }
   | { type: 'window'; id: number; job: WindowJob }
   | { type: 'miss'; id: number; job: MissJob }
   | { type: 'calendar'; id: number; job: CalendarJob }

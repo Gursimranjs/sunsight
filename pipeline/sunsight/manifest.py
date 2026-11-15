@@ -11,6 +11,7 @@ import json
 import subprocess
 
 from . import dem as D
+from . import ephemeris as E
 from . import kernels as K
 from .contracts import DATA_OUT, DATA_RAW, REPO_ROOT
 from .export import build_manifest, sha256_file, write_json
@@ -63,7 +64,12 @@ def terrain_inputs(used_px: list[int]) -> list[dict]:
 
 def main() -> None:
     files: dict = {
-        "ephemeris": {"meta": "ephemeris/2027_2030.json", "bin": "ephemeris/2027_2030.bin"},
+        # The full table is the open dataset; the app fetches the per-year slices it needs (note 004).
+        "ephemeris": {
+            "meta": "ephemeris/2027_2030.json",
+            "bin": "ephemeris/2027_2030.bin",
+            "years": E.year_spans(),
+        },
         "sites": "sites.json",
     }
     for kind, key in (("regions", "masks"), ("miss", "masks")):

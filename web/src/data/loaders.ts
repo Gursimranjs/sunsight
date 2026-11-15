@@ -1,5 +1,6 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 import { N_COLS } from './contracts';
+import { EphemerisStore, type YearRef } from './ephemerisStore';
 import type { Ephemeris, EphemerisMeta, Manifest, Site } from './types';
 
 export const DATA_BASE = `${import.meta.env.BASE_URL}data/`;
@@ -40,6 +41,25 @@ export async function loadEphemeris(m: Manifest, fetcher: Fetcher = fetch, base 
   const meta = (await (await fetcher(base + m.files.ephemeris.meta)).json()) as EphemerisMeta;
   const buf = await (await fetcher(base + m.files.ephemeris.bin)).arrayBuffer();
   return decodeEphemeris(meta, buf);
+}
+
+/**
+ * The table's metadata and an empty store that fetches year files on demand (ensureRange). A manifest
+ * without `years` (the fixture) is served as one chunk: the whole file, fetched on first use.
+ */
+export async function loadEphemerisStore(
+  m: Manifest, fetcher: Fetcher = fetch, base = DATA_BASE,
+): Promise<{ eph: Ephemeris; store: EphemerisStore }> {
+  const meta = (await (await fetcher(base + m.files.ephemeris.meta)).json()) as EphemerisMeta;
+  const start_ms = parseUtcMs(meta.start_utc);
+  const chunks: YearRef[] = m.files.ephemeris.years
+    ?? [{ year: new Date(start_ms).getUTCFullYear(), bin: m.files.ephemeris.bin, first_row: 0, row_count: meta.row_count }];
+  const store = new EphemerisStore(meta, chunks, async (c) => {
+    const res = await fetcher(base + c.bin);
+    if (!res.ok) throw new Error(`Could not load ${c.bin} (HTTP ${res.status})`);
+    return res.arrayBuffer();
+  });
+  return { eph: { meta, data: store.table.data, start_ms }, store };
 }
 
 export async function loadSites(m: Manifest, fetcher: Fetcher = fetch, base = DATA_BASE): Promise<{ fixture: boolean; sites: Site[] }> {

@@ -1,6 +1,7 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // Loaded data shared by every view, with caches for region and miss-grid files.
-import { loadEphemeris, loadManifest, loadSites } from '../data/loaders';
+import type { EphemerisStore } from '../data/ephemerisStore';
+import { loadEphemerisStore, loadManifest, loadSites } from '../data/loaders';
 import { loadMaskSet, resolveSite, siteMissGridId, type MaskSet, type Resolved } from '../data/sites';
 import type { Ephemeris, Manifest, Site } from '../data/types';
 import { Engine } from '../engine/client';
@@ -9,7 +10,13 @@ import type { Table } from '../engine/light';
 export interface AppData {
   manifest: Manifest;
   eph: Ephemeris;
+  /** The engine's table; rows are filled a year at a time by `store`. Call ensureRange before reading it. */
   table: Table;
+  store: EphemerisStore;
+  /** Fetch the year files every interpolation in [start_s, end_s] reads (deduplicated); resolves when filled. */
+  ensureRange(start_s: number, end_s: number): Promise<void>;
+  /** True when every row [start_s, end_s] needs is already filled. */
+  hasRange(start_s: number, end_s: number): boolean;
   sites: Site[];
   engine: Engine;
   /** Names of loaded files that carry "fixture": true. */
@@ -22,12 +29,14 @@ export interface AppData {
 
 export async function loadAppData(onFixture: () => void): Promise<AppData> {
   const manifest = await loadManifest();
-  const [eph, s] = await Promise.all([loadEphemeris(manifest), loadSites(manifest)]);
+  // Only the table's metadata here: the year files load on demand (the scenario's year first, then the
+  // rest in the background once the first answer is on screen; see App).
+  const [{ eph, store }, s] = await Promise.all([loadEphemerisStore(manifest), loadSites(manifest)]);
   const fixtureFiles = new Set<string>();
   if (manifest.fixture) fixtureFiles.add('manifest');
   if (eph.meta.fixture === true) fixtureFiles.add(manifest.files.ephemeris.meta);
   if (s.fixture || s.sites.some((x) => x.fixture === true)) fixtureFiles.add(manifest.files.sites);
-  const table: Table = { data: eph.data, rows: eph.meta.row_count, step_s: eph.meta.step_s };
+  const table: Table = store.table;
   const cache = new Map<string, Promise<MaskSet>>();
   const get = (kind: 'regions' | 'miss', id: string) => {
     const key = `${kind}/${id}`;
@@ -42,7 +51,9 @@ export async function loadAppData(onFixture: () => void): Promise<AppData> {
     return cache.get(key)!;
   };
   return {
-    manifest, eph, table, sites: s.sites, engine: new Engine(table), fixtureFiles,
+    manifest, eph, table, store, sites: s.sites, engine: new Engine(table, store), fixtureFiles,
+    ensureRange: (a, b) => store.ensureRange(a, b),
+    hasRange: (a, b) => store.has(a, b),
     region: (id) => get('regions', id),
     missGrid: (id) => get('miss', id),
     markFixture: (name) => { if (!fixtureFiles.has(name)) { fixtureFiles.add(name); onFixture(); } },

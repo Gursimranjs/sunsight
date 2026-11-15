@@ -1,5 +1,6 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // Web Worker: holds the ephemeris table and runs the heavy maths off the UI thread.
+import { N_COLS } from '../data/contracts';
 import { runCalendar, runMiss, runMissCalendar, runWindow } from './compute';
 import type { Request } from './protocol';
 import type { Table } from './light';
@@ -14,6 +15,13 @@ self.onmessage = (ev: MessageEvent<Request>) => {
     if (req.type === 'init') {
       table = req.table;
       post({ id: req.id, ok: true, result: null });
+      return;
+    }
+    if (req.type === 'fill') {
+      // Year rows arrive before any job that needs them (the client posts them first, in order).
+      if (!table || !table.loaded) throw new Error('Engine worker got table rows before a lazy table');
+      (table.data as Float32Array).set(req.rows, req.first_row * N_COLS);
+      (table.loaded as Uint8Array).fill(1, req.first_row, req.first_row + req.rows.length / N_COLS);
       return;
     }
     if (!table) throw new Error('Engine worker has no table yet');

@@ -1,6 +1,7 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // "I have a date: which sites work?": every curated site with terrain masks, scored for the
 // scenario's start date, stay and rules, ranked by verdict and then score.
+import { TableStatus, useTableRange } from './useTableRange';
 import { useEffect, useState } from 'preact/hooks';
 import type { Resolved } from '../data/sites';
 import type { WindowAnswer } from '../engine/compute';
@@ -25,7 +26,9 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 export function RankView({ data, scn, update }: Props) {
   const h_m = scn.rules.observer_height_m;
-  const key = JSON.stringify([scn.start_s, scn.stay_s, scn.rules]);
+  const table = useTableRange(data, scn.start_s, scn.start_s + scn.stay_s);
+  // table.epoch: a run that failed because a year of the table could not be fetched runs again once it is there.
+  const key = JSON.stringify([scn.start_s, scn.stay_s, scn.rules, table.epoch]);
   // Only sites that may load a terrain file take time while masks load; the rest resolve at once.
   const maskTotal = data.sites.filter(mayHaveTerrain).length;
   const [ranking, setRanking] = useState<Ranking | null>(null);
@@ -82,11 +85,13 @@ export function RankView({ data, scn, update }: Props) {
         Every curated site with terrain horizon masks, scored with the current rules ({PRESET_LABELS[scn.preset]} preset, observer {scn.rules.observer_height_m} m).
         Sorted by verdict, then by score. Change the date, stay or rules above and the ranking follows.
       </p>
-      {err && <p role="alert">The ranking failed: {err}</p>}
-      {!r && !err && (
+      {!r && table.state === 'error' && <p data-testid="rank-progress"><TableStatus tr={table} /></p>}
+      {err && table.state !== 'error' && <p role="alert">The ranking failed: {err}</p>}
+      {!r && !err && table.state !== 'error' && (
         <p role="status" data-testid="rank-progress">
           {prog.phase === 'masks'
             ? <>Loading horizon masks… {prog.done} of {prog.total} {plural(prog.total, 'site', 'sites')}</>
+            : table.state !== 'ok' ? <TableStatus tr={table} />
             : <>Scoring {prog.total} {plural(prog.total, 'site', 'sites')}… {formatPct(prog.total ? prog.done / prog.total : 0)}</>}
         </p>
       )}

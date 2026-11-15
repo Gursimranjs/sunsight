@@ -10,7 +10,8 @@ export interface Manifest {
   kernels: string[];
   inputs: { name?: string; url: string; size_bytes: number; sha256: string }[];
   files: {
-    ephemeris: { meta: string; bin: string };
+    /** `bin` is the whole 2027-2030 table (the open dataset); the app fetches the `years` slices it needs. */
+    ephemeris: { meta: string; bin: string; years?: { year: number; bin: string; first_row: number; row_count: number }[] };
     sites: string;
     regions?: FileRef[];
     miss?: FileRef[];

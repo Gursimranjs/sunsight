@@ -17,8 +17,19 @@ export const CONTACT_RANK: Record<Grade, number> = { blocked: 0, grazing: 1, cle
 
 export type Mask = ArrayLike<number>;
 
-/** The hourly table: row-major, `rows` x 18 columns (see data contracts). */
-export interface Table { data: ArrayLike<number>; rows: number; step_s: number }
+/**
+ * The hourly table: row-major, `rows` x 18 columns (see data contracts). When `loaded` is present the
+ * table is filled a year at a time (data/ephemerisStore.ts) and `loaded[k]` is 1 once row k holds real values.
+ */
+export interface Table { data: ArrayLike<number>; rows: number; step_s: number; loaded?: ArrayLike<number> }
+
+/** Thrown when a computation reads a row of the table that has not been fetched yet. */
+export class RowsNotLoadedError extends Error {
+  constructor(t_s: number, first_row: number, last_row: number) {
+    super(`Sun and Earth positions for t = ${t_s} s (table rows ${first_row}-${last_row}) are not loaded yet; ensureRange must run before this computation.`);
+    this.name = 'RowsNotLoadedError';
+  }
+}
 
 // ---------------------------------------------------------------------------------------------
 // Geometry
@@ -56,6 +67,8 @@ export function interp(table: Table, t_s: number, step_s = 3600.0, out?: number[
   const w1 = ((u + 1.0) * (u - 1.0) * (u - 2.0)) / 2.0;
   const w2 = (-(u + 1.0) * u * (u - 2.0)) / 2.0;
   const w3 = ((u + 1.0) * u * (u - 1.0)) / 6.0;
+  const l = table.loaded;
+  if (l !== undefined && !(l[i - 1] && l[i] && l[i + 1] && l[i + 2])) throw new RowsNotLoadedError(t_s, i - 1, i + 2);
   const d = table.data;
   const r0 = (i - 1) * N_COLS, r1 = i * N_COLS, r2 = (i + 1) * N_COLS, r3 = (i + 2) * N_COLS;
   const res = out ?? new Array<number>(N_COLS);
