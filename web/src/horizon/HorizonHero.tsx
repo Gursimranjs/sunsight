@@ -73,6 +73,57 @@ export function labelSides(sun: DiscAt, earth: DiscAt): { sun: 'above' | 'below'
   return earth.cy < sun.cy ? { sun: 'below', earth: 'above' } : { sun: 'above', earth: 'below' };
 }
 
+/** A placed disc label: baseline centre (x, y) and, when it was raised off its disc, a leader line to it. */
+export interface LabelAt { x: number; y: number; leader: { x1: number; y1: number; x2: number; y2: number } | null }
+/** Space kept between two stacked labels, and between a label and the SVG edge, px. */
+const LABEL_GAP_PX = 4;
+const EDGE_PX = 2;
+/** Box of a label whose baseline centre is (x, y). */
+export const labelRect = (x: number, y: number, text: string) => {
+  const w = labelW(text);
+  return { x0: x - w / 2, x1: x + w / 2, y0: y - LABEL_PX, y1: y + 3 };
+};
+/** Centre x of a label, moved in so the whole label stays inside an SVG width_px wide (note 011 capture: "arth"). */
+export function clampLabelX(cx: number, text: string, width_px: number): number {
+  const half = labelW(text) / 2;
+  return Math.min(width_px - half - EDGE_PX, Math.max(half + EDGE_PX, cx));
+}
+
+/**
+ * Where the Sun and Earth labels go (note 011 #8). Each label sits above its disc, kept inside the SVG.
+ * When the two would collide, both stay in the sky: the label labelSides would have put below its disc
+ * (the lower disc's) is raised above the other label and joined to its disc by a short leader line. Only
+ * when there is no room above (the top of the drawing) does it go beside the other label instead, at the
+ * same height. A label is never put below its disc, where the terrain is.
+ */
+export function placeLabels(sun: DiscAt, earth: DiscAt, width_px: number, hidden: { sun: boolean; earth: boolean } = { sun: false, earth: false }): { sun: LabelAt; earth: LabelAt } {
+  const base = (d: DiscAt, text: string): LabelAt => ({ x: clampLabelX(d.cx, text, width_px), y: Math.max(LABEL_PX + EDGE_PX, labelY(d.cy, d.ry, 'above')), leader: null });
+  const out = { sun: base(sun, 'Sun'), earth: base(earth, 'Earth') };
+  if (hidden.sun || hidden.earth) return out;
+  const a = labelRect(out.sun.x, out.sun.y, 'Sun'), b = labelRect(out.earth.x, out.earth.y, 'Earth');
+  if (!overlap(a, b)) return out;
+  const moverKind: 'sun' | 'earth' = labelSides(sun, earth).sun === 'below' ? 'sun' : 'earth';
+  const stayKind = moverKind === 'sun' ? 'earth' : 'sun';
+  const mText = moverKind === 'sun' ? 'Sun' : 'Earth', sText = stayKind === 'sun' ? 'Sun' : 'Earth';
+  const md = moverKind === 'sun' ? sun : earth, sd = stayKind === 'sun' ? sun : earth;
+  const stay = out[stayKind], mover = out[moverKind];
+  const raisedY = Math.min(mover.y, stay.y - LABEL_PX - 3 - LABEL_GAP_PX);
+  let x = mover.x, y = raisedY;
+  if (raisedY - LABEL_PX < EDGE_PX) {
+    // No room above: beside the other label, on the mover's side of it (the other side if that does not fit).
+    const sr = labelRect(stay.x, stay.y, sText), half = labelW(mText) / 2;
+    const left = sr.x0 - LABEL_GAP_PX - half, right = sr.x1 + LABEL_GAP_PX + half;
+    const fitsL = left - half >= EDGE_PX, fitsR = right + half <= width_px - EDGE_PX;
+    x = (md.cx <= sd.cx ? (fitsL || !fitsR) : !fitsR) ? left : right;
+    x = clampLabelX(x, mText, width_px);
+    y = stay.y;
+  }
+  const top = md.cy - RING_PX - Math.max(md.ry, 2) - 1;
+  const r = labelRect(x, y, mText);
+  out[moverKind] = { x, y, leader: { x1: md.cx, y1: top, x2: Math.min(r.x1, Math.max(r.x0, md.cx)), y2: r.y1 } };
+  return out;
+}
+
 /** "Sun 2.1° below" (note 010 #8): the body's elevation from the engine sample, one decimal. */
 export function belowText(kind: 'sun' | 'earth', el_deg: number): string {
   const name = kind === 'sun' ? 'Sun' : 'Earth';
@@ -112,26 +163,29 @@ function useRun(key: string | null): number {
 }
 
 /**
- * A disc's label, drawn in its own layer after the terrain so a label placed below its disc is never painted
- * over by the ground; a dark halo keeps it readable where it crosses the light terrain.
+ * A disc's label, drawn in its own layer after the terrain, at the place placeLabels chose (always in the
+ * sky), with its leader line when it was raised. A thin sky-coloured halo keeps it clear of the paths.
  */
-function BodyLabel({ s, az_deg, el_deg, r_deg, kind, side = 'above', hidden = false }: {
-  s: PanoScale; az_deg: number; el_deg: number; r_deg: number; kind: 'sun' | 'earth'; side?: 'above' | 'below'; hidden?: boolean;
-}) {
+function BodyLabel({ kind, at, hidden = false }: { kind: 'sun' | 'earth'; at: LabelAt; hidden?: boolean }) {
   if (hidden) return null;
-  const d = disc(s, az_deg, el_deg, r_deg);
   const col = kind === 'sun' ? 'var(--hz-sun, #FFD27A)' : 'var(--hz-earth, #4F8FD6)';
   return (
-    <text class="hz-body-label" data-testid={`hz-${kind}-label`} x={d.cx} y={labelY(d.cy, d.ry, side)} text-anchor="middle"
-      style={{ fill: col, stroke: 'var(--hz-sky, #000000)', strokeWidth: 3, paintOrder: 'stroke', strokeLinejoin: 'round' }}>
-      {kind === 'sun' ? 'Sun' : 'Earth'}
-    </text>
+    <>
+      {at.leader && (
+        <line class="hz-leader" data-testid={`hz-${kind}-leader`} x1={at.leader.x1} y1={at.leader.y1} x2={at.leader.x2} y2={at.leader.y2}
+          stroke={col} stroke-width="1" opacity="0.8" />
+      )}
+      <text class="hz-body-label" data-testid={`hz-${kind}-label`} data-raised={at.leader ? 'true' : 'false'} x={at.x} y={at.y} text-anchor="middle"
+        style={{ fill: col, stroke: 'var(--hz-sky, #000000)', strokeWidth: 2, strokeOpacity: 0.6, paintOrder: 'stroke', strokeLinejoin: 'round' }}>
+        {kind === 'sun' ? 'Sun' : 'Earth'}
+      </text>
+    </>
   );
 }
 
 function Body({ s, az_deg, el_deg, r_deg, kind, settled = true, side = 'above', hidden = false }: {
   s: PanoScale; az_deg: number; el_deg: number; r_deg: number; kind: 'sun' | 'earth'; settled?: boolean;
-  side?: 'above' | 'below'; hidden?: boolean;
+  side?: 'above' | 'raised'; hidden?: boolean;
 }) {
   const d = disc(s, az_deg, el_deg, r_deg);
   const col = kind === 'sun' ? 'var(--hz-sun, #FFD27A)' : 'var(--hz-earth, #4F8FD6)';
@@ -174,9 +228,9 @@ export function HorizonHero({ series, now, mask, terrain, horizonLabel, busy }: 
     const sunEl_deg = settled ? now.sun_el_deg : series.sun_el_deg[i_run];
     const bottom_px = H - box.padB;
     const sunD = disc(s, sunAz_deg, sunEl_deg, now.sun_r_deg), earthD = disc(s, now.earth_az_deg, now.earth_el_deg, now.earth_r_deg);
-    const sides = labelSides(sunD, earthD);
     const sunHidden = belowHorizon(mask, sunAz_deg, sunEl_deg, now.sun_r_deg);
     const earthHidden = belowHorizon(mask, now.earth_az_deg, now.earth_el_deg, now.earth_r_deg);
+    const labels = placeLabels(sunD, earthD, W, { sun: sunHidden, earth: earthHidden });
     // Bodies under the terrain: a small marker on the horizon line at the azimuth, with the depth in words.
     const below = ([['sun', sunAz_deg, sunEl_deg, sunHidden], ['earth', now.earth_az_deg, now.earth_el_deg, earthHidden]] as const)
       .filter((b) => b[3])
@@ -198,11 +252,11 @@ export function HorizonHero({ series, now, mask, terrain, horizonLabel, busy }: 
       <>
         <path d={trackPath(s, series.sun_az_deg, series.sun_el_deg)} fill="none" stroke="var(--hz-sun, #FFD27A)" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.75" />
         <path d={trackPath(s, series.earth_az_deg, series.earth_el_deg)} fill="none" stroke="var(--hz-earth, #4F8FD6)" stroke-width="1.5" stroke-dasharray="2 4" opacity="0.9" />
-        <Body s={s} az_deg={now.earth_az_deg} el_deg={now.earth_el_deg} r_deg={now.earth_r_deg} kind="earth" side={sides.earth} hidden={earthHidden} />
-        <Body s={s} az_deg={sunAz_deg} el_deg={sunEl_deg} r_deg={now.sun_r_deg} kind="sun" settled={settled} side={sides.sun} hidden={sunHidden} />
-        <path d={terrainPath(s, mask)} fill="var(--hz-ground, #CFCBC2)" />
-        <BodyLabel s={s} az_deg={now.earth_az_deg} el_deg={now.earth_el_deg} r_deg={now.earth_r_deg} kind="earth" side={sides.earth} hidden={earthHidden} />
-        <BodyLabel s={s} az_deg={sunAz_deg} el_deg={sunEl_deg} r_deg={now.sun_r_deg} kind="sun" side={sides.sun} hidden={sunHidden} />
+        <Body s={s} az_deg={now.earth_az_deg} el_deg={now.earth_el_deg} r_deg={now.earth_r_deg} kind="earth" side={labels.earth.leader ? 'raised' : 'above'} hidden={earthHidden} />
+        <Body s={s} az_deg={sunAz_deg} el_deg={sunEl_deg} r_deg={now.sun_r_deg} kind="sun" settled={settled} side={labels.sun.leader ? 'raised' : 'above'} hidden={sunHidden} />
+        <path d={terrainPath(s, mask)} fill="var(--hz-ground, #CFCBC2)" data-testid="hz-terrain" />
+        <BodyLabel kind="earth" at={labels.earth} hidden={earthHidden} />
+        <BodyLabel kind="sun" at={labels.sun} hidden={sunHidden} />
         {below}
         <rect x="0" y={bottom_px} width={W} height={box.padB} fill="var(--hz-ground, #CFCBC2)" />
         {[0, 90, 180, 270].map((az_deg, i) => (
