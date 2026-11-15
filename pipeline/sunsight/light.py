@@ -398,8 +398,18 @@ def window_metrics(
     }
 
 
-def _hours(s: float) -> str:
-    return f"{s / 3600.0:.1f} h"
+LONG_DURATION_S = 48 * 3600.0
+
+
+def format_hours(s: float) -> str:
+    """'4.5 h'; over 48 hours also in days: '13.0 days (311.6 h)'. Same text as web/src/engine/light.ts."""
+    hours = f"{s / 3600.0:.1f} h"
+    if s > LONG_DURATION_S:
+        return f"{s / 86400.0:.1f} days ({hours})"
+    return hours
+
+
+_hours = format_hours
 
 
 def verdict(metrics: dict, rules: Rules) -> dict:
