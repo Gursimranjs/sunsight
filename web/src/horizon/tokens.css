@@ -131,21 +131,19 @@
   border-radius: 50%;
 }
 
-.hz-polar-map .hz-pin {
-  cursor: pointer;
+/* Pins sit on the black map: Sun ring on focus (14.75:1 on the sky), not the ink ring of the dialog. */
+.hz .hz-dialog .hz-pins .hz-pin:focus-visible {
+  outline: 3px solid var(--hz-sun, #FFD27A);
+  outline-offset: 2px;
 }
 
-.hz-polar-map .hz-pin:focus {
-  outline: none;
+/* The chosen pin: Sun fill plus a double ring, so it differs from the others by shape, not colour alone. */
+.hz-dialog .hz-pins .hz-pin[aria-current='true'] {
+  box-shadow: 0 0 0 2px #000000, 0 0 0 4px var(--hz-sun, #FFD27A);
+  font-weight: 700;
 }
 
-.hz-polar-map .hz-pin:focus .hz-pin-ring,
-.hz-polar-map .hz-pin:hover .hz-pin-ring {
-  stroke: var(--hz-sun, #FFD27A);
-  stroke-width: 3;
-}
-
-.hz-site-list {
+.hz-map-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -169,6 +167,12 @@
   min-height: 32px;
 }
 
+.hz .hz-dialog button:focus-visible,
+.hz .hz-dialog input:focus-visible,
+.hz .hz-surface button:focus-visible,
+.hz .hz-surface summary:focus-visible,
+.hz .hz-surface input:focus-visible,
+.hz .hz-surface select:focus-visible,
 .hz-dialog button:focus-visible,
 .hz-strip button:focus-visible,
 .hz-cards button:focus-visible {
@@ -203,6 +207,13 @@
   border: 1px solid var(--hz-ink, #17181A);
   background: #FFFFFF;
   color: var(--hz-ink, #17181A);
+}
+
+.hz-surface {
+  background: var(--hz-ground, #CFCBC2);
+  color: var(--hz-ink, #17181A);
+  padding: 10px;
+  border-radius: 6px;
 }
 
 .hz-strip {

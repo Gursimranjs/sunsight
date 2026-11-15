@@ -11,6 +11,7 @@ import { formatPct, formatUtc } from '../../format';
 import { resolveForSite, type AppData } from '../../state/data';
 import { tableRange, type Scenario } from '../../state/scenario';
 import { dayStarts } from '../../views/calendar';
+import { Term } from '../../views/Term';
 import { TableStatus, useTableRange } from '../../views/useTableRange';
 
 /** Days on one page of the strip. */
@@ -23,6 +24,15 @@ export const STRIP_WORD: Record<VerdictKind, { word: string; sym: string }> = {
   marginal: { word: 'Marginal', sym: '!' },
   'no-go': { word: 'No-go', sym: '✕' },
 };
+
+/**
+ * The UTC midnight at or before start_s (seconds after the table's first row, which is at epoch_ms).
+ * The strip anchors here, so a start at, say, 06:00 still has its own day on the first page.
+ */
+export function dayFloor_s(start_s: number, epoch_ms: number): number {
+  const epochInDay_s = (((epoch_ms / 1000) % DAY_S) + DAY_S) % DAY_S;
+  return Math.floor((start_s + epochInDay_s) / DAY_S) * DAY_S - epochInDay_s;
+}
 
 /** Where a page of the strip begins, `page` pages after the anchor, kept inside the table. */
 export function stripFrom(anchor_s: number, page: number, max_s: number): number {
@@ -53,11 +63,12 @@ function usePlace(data: AppData, site: Site | null, scn: Scenario): Resolved | n
 export function DateStrip({ data, site, scn, onStart }: Props) {
   const { max_s } = tableRange(data.eph.meta);
   // The strip stays put while the chosen start is on it; it jumps when the start moves off it.
-  const [anchor_s, setAnchor] = useState(scn.start_s);
+  const floor_s = (s: number) => dayFloor_s(s, data.eph.start_ms);
+  const [anchor_s, setAnchor] = useState(() => floor_s(scn.start_s));
   const [page, setPage] = useState(0);
   const from_s = stripFrom(anchor_s, page, max_s);
   useEffect(() => {
-    if (scn.start_s < from_s || scn.start_s >= from_s + STRIP_DAYS * DAY_S) { setAnchor(scn.start_s); setPage(0); }
+    if (scn.start_s < from_s || scn.start_s >= from_s + STRIP_DAYS * DAY_S) { setAnchor(floor_s(scn.start_s)); setPage(0); }
   }, [scn.start_s]);
 
   const starts = dayStarts(from_s, STRIP_DAYS, scn.stay_s, data.eph.meta, data.eph.start_ms);
@@ -93,18 +104,28 @@ export function DateStrip({ data, site, scn, onStart }: Props) {
   const stayDays = Number((scn.stay_s / DAY_S).toFixed(2));
   const canEarlier = from_s > 0;
   const canLater = starts.length > 0 && starts[starts.length - 1] + DAY_S + scn.stay_s <= max_s;
+  const startInDay_s = scn.start_s - floor_s(scn.start_s);
+  const startHhmm = new Date(data.eph.start_ms + scn.start_s * 1000).toISOString().slice(11, 16);
 
   return (
-    <section class="hz-strip" aria-labelledby="hz-strip-title" data-testid="date-strip">
+    <section class="hz-strip hz-surface" aria-labelledby="hz-strip-title" data-testid="date-strip">
       <h3 id="hz-strip-title" style={{ margin: '0 0 4px', fontSize: '1rem' }}>Start dates at {placeName}</h3>
+      {place && !place.terrain && (
+        <p data-testid="strip-horizon" style={{ margin: '0 0 4px', fontSize: '0.9rem' }}><Term tip="smooth">{place.horizonLabel}</Term></p>
+      )}
       <p style={{ margin: '0 0 6px', fontSize: '0.9rem' }}>
-        Each day is a {stayDays}-day stay starting at 00:00 UTC, scored with the current rules.
+        Each day: a {stayDays}-day stay from 00:00 UTC, current rules. Site point only; the miss test is in Calendar.
       </p>
+      {startInDay_s > 0 && (
+        <p data-testid="strip-offset" style={{ margin: '0 0 6px', fontSize: '0.9rem' }}>
+          Your start, {startHhmm} UTC, is scored in the call; these days start at 00:00 UTC.
+        </p>
+      )}
       <div class="hz-strip-nav">
         <button type="button" onClick={() => setPage((p) => p - 1)} disabled={!canEarlier}>Earlier {STRIP_DAYS} days</button>
         <button type="button" onClick={() => setPage((p) => p + 1)} disabled={!canLater}>Later {STRIP_DAYS} days</button>
       </div>
-      {!starts.length && <p>The stay is too long to fit any start date here in the table.</p>}
+      {!starts.length && <p>No start date here leaves room for the whole stay in the table.</p>}
       {!cells && starts.length > 0 && table.state !== 'ok' && <p><TableStatus tr={table} /></p>}
       {!cells && starts.length > 0 && table.state === 'ok' && (err
         ? <p role="alert">The calendar failed: {err}</p>
@@ -132,7 +153,7 @@ export function DateStrip({ data, site, scn, onStart }: Props) {
         </ol>
       )}
       <p style={{ margin: '4px 0 0', fontSize: '0.85rem' }}>
-        ✓ Go: every rule met with margin. ! Marginal: rules met, thin margin. ✕ No-go: a rule fails.
+        ✓ Go: every rule met with margin. ! Marginal: met, thin margin. ✕ No-go: a rule fails.
       </p>
     </section>
   );

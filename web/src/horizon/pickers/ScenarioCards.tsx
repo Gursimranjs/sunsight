@@ -19,6 +19,12 @@ export function presetPatch(p: PresetId): Partial<Scenario> {
   return { preset: p, rules: r, stay_s: r.stay_s, t_off_s: 0 };
 }
 
+/** True when the scenario's rules or stay differ from its preset's (the user edited them). */
+export function rulesEdited(scn: Pick<Scenario, 'preset' | 'rules' | 'stay_s'>): boolean {
+  const base = makeRules(PRESETS[scn.preset]);
+  return JSON.stringify(scn.rules) !== JSON.stringify(base) || scn.stay_s !== base.stay_s;
+}
+
 /** One line of the preset's own rules, all numbers from PRESETS. */
 export function presetSummary(p: PresetId): string {
   const r = PRESETS[p];
@@ -39,8 +45,9 @@ function Num({ label, value, min, max, unit, onSet }: { label: string; value: nu
 export function ScenarioCards({ scn, update }: Props) {
   const setRules = (patch: Partial<Rules>) => update({ rules: { ...scn.rules, ...patch } });
   const r = scn.rules;
+  const edited = rulesEdited(scn);
   return (
-    <section aria-labelledby="hz-scn-title" data-testid="scenario-cards">
+    <section class="hz-surface" aria-labelledby="hz-scn-title" data-testid="scenario-cards">
       <h3 id="hz-scn-title" style={{ margin: '0 0 6px', fontSize: '1rem' }}>Mission type</h3>
       <div class="hz-cards" role="group" aria-labelledby="hz-scn-title">
         {PRESET_ORDER.map((p) => (
@@ -49,6 +56,11 @@ export function ScenarioCards({ scn, update }: Props) {
             <span class="hz-card-title">{PRESET_LABELS[p]}</span>
             <span class="hz-num">{PRESETS[p].stay_s / 86400} days</span>
             <span style={{ fontSize: '0.85rem' }}>{presetSummary(p)}</span>
+            {scn.preset === p && edited && (
+              <span class="hz-card-edited" data-testid="scenario-edited" style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                Edited: your rules differ from this preset
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -84,7 +96,8 @@ export function ScenarioCards({ scn, update }: Props) {
           </div>
         </div>
         <p style={{ fontSize: '0.85rem' }}>
-          Starting defaults from the build plan; only continuous sunlight for a 6.5-day crew stay comes from NASA. Masks exist for 2 m and 10 m observers; other heights use the nearest.
+          Starting defaults from the build plan; only continuous sunlight for a 6.5-day crew stay
+          comes from NASA. Masks exist for 2 m and 10 m observers; other heights use the nearest.
         </p>
       </details>
     </section>

@@ -90,6 +90,15 @@ export function gameShareLink(href: string, pointId: string): string {
   return u.toString();
 }
 
+/** Spread of the reveal, ms: the farthest point starts this long after the target; with the 100 ms fade, 300 ms in all. */
+export const REVEAL_SPREAD_MS = 200;
+
+/** Delay before a grid point appears in the reveal, ms: outward from the target, in proportion to distance. */
+export function revealDelay_ms(east_m: number, north_m: number, radius_m: number): number {
+  if (!(radius_m > 0)) return 0;
+  return Math.round(REVEAL_SPREAD_MS * Math.min(1, Math.hypot(east_m, north_m) / radius_m));
+}
+
 /** "on the target" or "120 m from the target". */
 export function distanceText(d_m: number): string {
   return d_m < 0.5 ? 'on the target' : `${Math.round(d_m)} m from the target`;

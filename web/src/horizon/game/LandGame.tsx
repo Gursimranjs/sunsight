@@ -16,8 +16,8 @@ import { VerdictBadge } from '../../views/ReportCard';
 import { Timeline } from '../../views/Timeline';
 import { firstFailure, resultLine, type FirstFailure } from './firstFailure';
 import {
-  ATHENA_TARGET_ID, distanceFromTarget_m, distanceText, DROP_MS, gameBrief, gameGridId, gamePointJob, gameShareLink,
-  gameTargetIndex, gridRadius_m, MAX_TRIES, parseGamePoint, REPLAY_MS, REVEAL_RADIUS_M,
+  ATHENA_TARGET_ID, distanceFromTarget_m, distanceText, DROP_MS, GAME_POINT_PARAM, gameBrief, gameGridId, gamePointJob,
+  gameShareLink, gameTargetIndex, gridRadius_m, MAX_TRIES, parseGamePoint, REPLAY_MS, REVEAL_RADIUS_M, revealDelay_ms,
 } from './gameLogic';
 import './game.css';
 
@@ -40,6 +40,7 @@ interface Try {
 interface Active { i: number; phase: 'drop' | 'compute' | 'replay' | 'done'; t_off_s: number }
 
 const VB = 360, PAD = 14;
+const NO_TRIES = 'No tries left. Show the whole ground to see every point.';
 
 function reducedMotion(): boolean {
   return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -48,9 +49,9 @@ function reducedMotion(): boolean {
 function Lander({ x, y, n, dropping }: { x: number; y: number; n: number; dropping: boolean }) {
   return (
     <g class={`hz-game-lander${dropping ? ' dropping' : ''}`} data-testid="game-lander">
-      <path d={`M${x},${y - 18} l-7,12 h14 z`} fill="var(--hz-sun, #FFD27A)" stroke="#000" stroke-width="1" />
-      <line x1={x - 6} y1={y - 6} x2={x - 9} y2={y} stroke="var(--hz-sun, #FFD27A)" stroke-width="2" />
-      <line x1={x + 6} y1={y - 6} x2={x + 9} y2={y} stroke="var(--hz-sun, #FFD27A)" stroke-width="2" />
+      <path d={`M${x},${y - 18} l-7,12 h14 z`} fill="#FFFFFF" stroke="#000" stroke-width="1" />
+      <line x1={x - 6} y1={y - 6} x2={x - 9} y2={y} stroke="#FFFFFF" stroke-width="2" />
+      <line x1={x + 6} y1={y - 6} x2={x + 9} y2={y} stroke="#FFFFFF" stroke-width="2" />
       <text x={x + 10} y={y - 10} class="hz-game-try-n">{n}</text>
     </g>
   );
@@ -69,6 +70,19 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
   /** Bumped when a fresh game starts (new grid, date or rules): a reveal from the old game is dropped. */
   const gameEpoch = useRef(0);
   const sharedPointUsed = useRef(false);
+  /**
+   * The shared point (?game_pt=<id>), read on the first render: the app rewrites the address bar from
+   * the scenario as soon as it is set, which drops game_pt long before the grid has loaded.
+   */
+  const sharedPt = useRef<string | null | undefined>(undefined);
+  if (sharedPt.current === undefined) {
+    sharedPt.current = typeof location !== 'undefined' ? new URLSearchParams(location.search).get(GAME_POINT_PARAM) : null;
+  }
+  const reticleRef = useRef<SVGGElement>(null);
+  const shareLineRef = useRef<HTMLParagraphElement>(null);
+  /** Set when focus must land on the reticle once the (new) grid is in, e.g. after "Try Athena's target". */
+  const focusReticle = useRef(false);
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
     setSet(null); setErr(null);
@@ -84,13 +98,16 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
   useEffect(() => {
     seq.current += 1;
     gameEpoch.current += 1;
-    setTries([]); setActive(null); setReveal(null); setCopied(false);
+    setTries([]); setActive(null); setReveal(null); setCopied(false); setNotice('');
     setReticle(grid ? gameTargetIndex(grid) : null);
   }, [key]);
   useEffect(() => () => { seq.current += 1; gameEpoch.current += 1; }, []);
 
   const land = (i: number) => {
-    if (!grid || tries.length >= MAX_TRIES || (active && active.phase !== 'done')) return;
+    if (!grid) return;
+    if (tries.length >= MAX_TRIES) { setNotice(NO_TRIES); return; }
+    if (active && active.phase !== 'done') return;
+    setNotice('');
     const my = (seq.current += 1);
     const reduce = reducedMotion();
     setReticle(i);
@@ -122,9 +139,18 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
   useEffect(() => {
     if (!grid || sharedPointUsed.current || typeof location === 'undefined') return;
     sharedPointUsed.current = true;
-    const i = parseGamePoint(location.search, grid);
+    const id = sharedPt.current;
+    const i = id ? parseGamePoint(`?${GAME_POINT_PARAM}=${encodeURIComponent(id)}`, grid) : null;
     if (i !== null) land(i);
   }, [grid]);
+
+  // Focus goes back to the reticle once a switched-to grid is in.
+  useEffect(() => {
+    if (grid && reticle !== null && focusReticle.current && reticleRef.current) {
+      focusReticle.current = false;
+      reticleRef.current.focus();
+    }
+  });
 
   const current = tries.length ? tries[tries.length - 1] : null;
   const shownTry = current && active && current.i === active.i && active.phase !== 'drop' && active.phase !== 'compute' ? current : null;
@@ -143,22 +169,31 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
     setReveal({ state: 'running', progress: 0 });
     data.engine.miss(missJob(grid, scn.start_s, scn.start_s + scn.stay_s, scn.rules), (f) => {
       if (gameEpoch.current === my) setReveal({ state: 'running', progress: f });
-    }).then((a) => { if (gameEpoch.current === my) setReveal({ state: 'done', a }); })
+    }).then((a) => {
+      if (gameEpoch.current !== my) return;
+      setReveal({ state: 'done', a });
+      // The button stays (disabled); focus moves to the share line, which says what the reveal found.
+      requestAnimationFrame(() => shareLineRef.current?.focus());
+    })
       .catch((e) => { if (gameEpoch.current === my) setReveal({ state: 'failed', error: String(e) }); });
   };
 
   const athena = data.sites.find((s) => s.id === ATHENA_TARGET_ID);
   const athenaButton = athena && site?.id !== ATHENA_TARGET_ID && (
-    <button type="button" data-testid="game-athena" onClick={() => update({ site_id: ATHENA_TARGET_ID })}>Try Athena's target</button>
+    <button type="button" data-testid="game-athena" onClick={() => { focusReticle.current = true; update({ site_id: ATHENA_TARGET_ID }); }}>Try Athena's target</button>
   );
-  const label = <p class="hz-game-small" data-testid="game-robustness-label">A robustness share, not a landing probability: every grid point counts equally and the lander's guidance is not modelled.</p>;
+  const label = (
+    <p class="hz-game-small" data-testid="game-robustness-label">
+      A robustness share, not a landing probability: every grid point counts equally; guidance is not modelled.
+    </p>
+  );
 
   if (!gridId) {
     const withGrid = data.sites.filter((s) => gameGridId(s) && s.miss_target_id);
     return (
       <section class="hz-game" aria-label="Land it yourself" data-testid="land-game">
         <h2 class="hz-game-title">Land it yourself</h2>
-        <p>This game needs a fine terrain grid around a landing target. Grids exist for:</p>
+        <p>The game needs a fine terrain grid round a landing target. Grids exist for:</p>
         <div class="hz-game-row">{withGrid.map((s) => <button key={s.id} type="button" onClick={() => update({ site_id: s.id })}>{s.name}</button>)}</div>
       </section>
     );
@@ -193,6 +228,9 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
     const d = dirs[ev.key];
     if (!d) return;
     ev.preventDefault();
+    // While a landing plays, or with no tries left, the reticle stays put (it is aria-disabled).
+    if (busy) return;
+    if (out) { setNotice(NO_TRIES); return; }
     setReticle(stepGridPoint(pts, reticle, d[0], d[1]));
   };
   const where = (i: number) => {
@@ -204,17 +242,28 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
   const done = current && active?.phase === 'done' && active.i === current.i ? current : null;
   const share250 = revealed ? revealed.shares[MISS_RADII_M.indexOf(REVEAL_RADIUS_M)] : NaN;
   const link = done && typeof location !== 'undefined' ? gameShareLink(location.href, pts[done.i].id) : '';
+  const nHold = revealed ? revealed.passes.filter(Boolean).length : 0;
+  const nFail = revealed ? revealed.passes.length - nHold : 0;
+  const groundAt = (i: number) => (revealed ? (revealed.passes[i] ? ', holds' : ', fails') : '');
+  const statusText = busy
+    ? (active!.phase === 'drop' ? 'Landing…' : active!.phase === 'compute' ? 'Computing the stay at this spot…' : 'Playing the stay…')
+    : done ? `${resultLine(done.failure, scn.stay_s)}. Landed ${distanceText(distanceFromTarget_m(grid, done.i))}.` : '';
+  const delay_ms = (p: { east_m?: number; north_m?: number }) =>
+    revealDelay_ms((p.east_m ?? 0) - (tp.east_m ?? 0), (p.north_m ?? 0) - (tp.north_m ?? 0), Rplot);
 
   return (
     <section class="hz-game" aria-label="Land it yourself" data-testid="land-game">
       <h2 class="hz-game-title">Land it yourself</h2>
       <p class="hz-game-brief" data-testid="game-brief">{brief}</p>
-      <p class="hz-game-small" aria-live="polite" data-testid="game-tries">
-        {out ? 'No tries left.' : `Try ${tries.length + 1} of ${MAX_TRIES}.`} Click the map, or focus it, move the reticle with the arrow keys and press Enter.
+      <p class="hz-game-small" data-testid="game-tries">
+        {out ? 'No tries left.' : `Try ${tries.length + 1} of ${MAX_TRIES}.`} Click the map, or move the reticle with the arrow keys and press Enter.
       </p>
+      {/* One live region, always mounted: the landing status, then the result and the distance. */}
+      <p class="hz-game-small hz-game-live" role="status" aria-live="polite" data-testid="game-live">{notice || statusText}</p>
       <div class="hz-game-grid">
         <div class="hz-game-map-wrap">
-          <svg viewBox={`0 0 ${VB} ${VB}`} class="hz-game-map" data-testid="game-map"
+          <svg viewBox={`0 0 ${VB} ${VB}`} class="hz-game-map" data-testid="game-map" role="group"
+            aria-label={revealed ? `Map of ${pts.length} landing points. ${nHold} hold, ${nFail} fail.` : `Map of ${pts.length} landing points; pass or fail shows after three tries.`}
             onPointerMove={(ev) => { if (!busy && !out) { const m = toMetres(ev); setReticle(nearestGridPoint(pts, m.e, m.n)); } }}
             onClick={(ev) => { const m = toMetres(ev); land(nearestGridPoint(pts, m.e, m.n)); }}>
             <rect x="0" y="0" width={VB} height={VB} fill="var(--hz-sky, #000000)" />
@@ -225,8 +274,8 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
               if (!revealed) return <circle key={p.id} cx={x} cy={y} r={1.6} fill="#8E8A82" />;
               const v = revealed.verdicts[i];
               return revealed.passes[i]
-                ? <circle key={p.id} cx={x} cy={y} r={dotR} fill="var(--hz-go, #1F7A4D)" data-testid="game-map-point" data-point-id={p.id} data-verdict={v} class="hz-game-reveal" style={{ animationDelay: `${Math.round(300 * Math.hypot(p.east_m ?? 0, p.north_m ?? 0) / Rplot)}ms` }} />
-                : <g key={p.id} stroke="var(--hz-nogo, #B4421E)" stroke-width="2.5" data-testid="game-map-point" data-point-id={p.id} data-verdict={v} class="hz-game-reveal" style={{ animationDelay: `${Math.round(300 * Math.hypot(p.east_m ?? 0, p.north_m ?? 0) / Rplot)}ms` }}>
+                ? <circle key={p.id} cx={x} cy={y} r={dotR} fill="var(--hz-go, #1F7A4D)" data-testid="game-map-point" data-point-id={p.id} data-verdict={v} class="hz-game-reveal" style={{ animationDelay: `${delay_ms(p)}ms` }} />
+                : <g key={p.id} stroke="var(--hz-nogo, #B4421E)" stroke-width="2.5" data-testid="game-map-point" data-point-id={p.id} data-verdict={v} class="hz-game-reveal" style={{ animationDelay: `${delay_ms(p)}ms` }}>
                   <line x1={x - dotR * 0.8} y1={y - dotR * 0.8} x2={x + dotR * 0.8} y2={y + dotR * 0.8} />
                   <line x1={x - dotR * 0.8} y1={y + dotR * 0.8} x2={x + dotR * 0.8} y2={y - dotR * 0.8} />
                 </g>;
@@ -236,17 +285,23 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
             {active && (active.phase === 'drop' || active.phase === 'compute') && (
               <Lander x={X(pts[active.i].east_m ?? 0)} y={Y(pts[active.i].north_m ?? 0)} n={tries.length + 1} dropping />
             )}
-            <g tabindex={0} role="slider" class="hz-game-reticle" data-testid="game-reticle" aria-label="Landing reticle"
-              aria-valuemin={0} aria-valuemax={pts.length - 1} aria-valuenow={reticle} aria-valuetext={`${where(reticle)}, grid point ${rp.id}`}
+            <g tabindex={0} role="slider" class="hz-game-reticle" data-testid="game-reticle" aria-label="Landing reticle" ref={reticleRef}
+              aria-valuemin={0} aria-valuemax={pts.length - 1} aria-valuenow={reticle} aria-valuetext={`${where(reticle)}, grid point ${rp.id}${groundAt(reticle)}`}
               aria-disabled={busy || out} onKeyDown={onKey}>
               <circle cx={X(rp.east_m ?? 0)} cy={Y(rp.north_m ?? 0)} r={9} fill="none" stroke="#ffffff" stroke-width="2" />
               <circle cx={X(rp.east_m ?? 0)} cy={Y(rp.north_m ?? 0)} r={2.5} fill="#ffffff" />
             </g>
           </svg>
-          <p class="hz-game-small" data-testid="game-reticle-text">Reticle: grid point {rp.id}, {where(reticle)}. Dashed rings: {REVEAL_RADIUS_M} m and {Math.round(R)} m.</p>
+          <p class="hz-game-small" data-testid="game-reticle-text">Reticle: grid point {rp.id}, {where(reticle)}{groundAt(reticle)}. Dashed rings: {REVEAL_RADIUS_M} m and {Math.round(R)} m.</p>
+          {revealed && (
+            <ul class="hz-game-legend" data-testid="game-legend">
+              <li><svg aria-hidden="true" width="14" height="14"><circle cx="7" cy="7" r="6" fill="var(--hz-go, #1F7A4D)" /></svg> Holds: every rule met (go or marginal)</li>
+              <li><svg aria-hidden="true" width="14" height="14"><g stroke="var(--hz-nogo, #B4421E)" stroke-width="2.5"><line x1="2" y1="2" x2="12" y2="12" /><line x1="2" y1="12" x2="12" y2="2" /></g></svg> Fails a rule (no-go)</li>
+            </ul>
+          )}
         </div>
         <div class="hz-game-side">
-          {busy && <p data-testid="game-status" role="status">{active!.phase === 'drop' ? 'Landing…' : active!.phase === 'compute' ? 'Computing the stay at this spot…' : 'Playing the stay…'}</p>}
+          {busy && <p data-testid="game-status">{statusText}</p>}
           {done && (
             <div class="hz-game-result" data-testid="game-result" data-verdict={done.answer.verdict.verdict} data-point-id={pts[done.i].id}>
               <p class="hz-game-call"><VerdictBadge v={done.answer.verdict.verdict} small /> <span data-testid="game-result-line">{resultLine(done.failure, scn.stay_s)}</span></p>
@@ -265,14 +320,14 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
               ))}
             </ol>
           )}
-          {out && !busy && !revealed && (
-            <button type="button" data-testid="game-show-ground" disabled={reveal?.state === 'running'} onClick={showWhole}>
-              {reveal?.state === 'running' ? `Scoring ${pts.length} landing points… ${formatPct(reveal.progress)}` : 'Show the whole ground'}
+          {out && !busy && (
+            <button type="button" data-testid="game-show-ground" disabled={reveal?.state === 'running' || !!revealed} onClick={showWhole}>
+              {reveal?.state === 'running' ? `Scoring ${pts.length} landing points… ${formatPct(reveal.progress)}` : revealed ? 'Whole ground shown' : 'Show the whole ground'}
             </button>
           )}
           {reveal?.state === 'failed' && <p role="alert">Could not score the ground: {reveal.error}</p>}
           {revealed && (
-            <p class="hz-game-call" data-testid="game-share-line">Within {REVEAL_RADIUS_M} m, {formatPct(share250)} of the ground holds.</p>
+            <p class="hz-game-call" data-testid="game-share-line" tabIndex={-1} ref={shareLineRef}>Within {REVEAL_RADIUS_M} m, {formatPct(share250)} of the ground holds.</p>
           )}
           {label}
           <div class="hz-game-row">
