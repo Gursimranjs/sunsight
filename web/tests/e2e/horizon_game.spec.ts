@@ -76,14 +76,18 @@ test('three landings, then the whole ground: each landing has the Miss map verdi
   const t3 = await waitResult(page, 3);
   await expect(page.getByTestId('game-tries')).toContainText('No tries left.');
 
-  await page.getByTestId('game-show-ground').click();
-  // While scoring runs the button is aria-disabled, not disabled, so it keeps focus (polish review #7).
-  await expect(page.getByTestId('game-show-ground')).toHaveAttribute('aria-disabled', 'true');
-  await expect(page.getByTestId('game-share-line')).toHaveText(/^Within 250 m, \d+% of the ground holds\.$/, { timeout: 120_000 });
+  // Note 011 item 7: the whole ground is shown without a further click, with one line above the map.
+  const held = [t1, t2, t3].filter((t) => t.verdict !== 'no-go').length;
+  await expect(page.getByTestId('game-share-line')).toHaveText(
+    new RegExp(`^${held} of your 3 landings held\\. Within 250 m, \\d+% of the ground holds\\.$`), { timeout: 120_000 });
+  const lineBox = (await page.getByTestId('game-share-line').boundingBox())!;
+  expect(lineBox.y + lineBox.height).toBeLessThanOrEqual((await map.boundingBox())!.y + 1);
   await expect(page.getByTestId('game-robustness-label')).toBeVisible();
-  // Focus moves to the share line (the user was still on the button); the button stays, aria-disabled.
+  // The button stays, for keyboard users who want to see the reveal again; it moves focus to the line.
+  await expect(page.getByTestId('game-show-ground')).toHaveText('Show the whole ground again');
+  await page.getByTestId('game-show-ground').focus();
+  await page.keyboard.press('Enter');
   await expect(page.getByTestId('game-share-line')).toBeFocused();
-  await expect(page.getByTestId('game-show-ground')).toBeDisabled();
   // The reveal fades in; with reduced motion the same marks have no animation at all (polish review #5).
   const revealAnim = () => page.locator('.hz-game-reveal').first().evaluate((el) => getComputedStyle(el).animationName);
   expect(await revealAnim()).toBe('hz-game-fade');
@@ -92,7 +96,8 @@ test('three landings, then the whole ground: each landing has the Miss map verdi
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   // Legend and a text alternative with the counts; the reticle now says whether its point holds.
   await expect(page.getByTestId('game-legend')).toContainText('Holds');
-  await expect(page.getByTestId('game-map')).toHaveAttribute('aria-label', /^Map of \d+ landing points\. \d+ hold, \d+ fail\.$/);
+  await expect(page.getByTestId('game-map')).toHaveAttribute('aria-label',
+    /^Map of \d+ landing points\. \d+ hold, \d+ fail\. Sun at touchdown at azimuth \d+°, Earth at azimuth \d+°, marked on the \d+ m ring\.$/);
   await expect(page.getByTestId('game-reticle')).toHaveAttribute('aria-valuetext', /, (holds|fails)$/);
   for (const t of [t1, t2, t3]) {
     await expect(page.locator(`[data-testid="game-map-point"][data-point-id="${t.id}"]`)).toHaveAttribute('data-verdict', t.verdict);

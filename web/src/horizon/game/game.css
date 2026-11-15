@@ -61,3 +61,18 @@
   .hz-game-lander.dropping, .hz-game-reveal { animation: none; }
   .hz-game button { transition: none; }
 }
+
+/* Note 011 item 1: the moment of failure on the strip, a no-go line with its label at the top. */
+.hz-game-strip { position: relative; }
+.hz-game-fail-mark { position: absolute; width: 0; border-left: 3px solid var(--hz-nogo, #B4421E); pointer-events: none; }
+.hz-game-fail-mark span {
+  position: absolute; top: -2px; left: 4px; white-space: nowrap; font-size: 13px; font-weight: 600;
+  background: var(--hz-nogo, #B4421E); color: #FFFFFF; padding: 0 4px; border-radius: 2px;
+}
+/* Late failures: the label sits left of the line so it stays inside the strip. */
+.hz-game-fail-mark.flip span { left: auto; right: 1px; }
+/* Note 011 item 5: while a try plays the map is busy; its dots dim and a click or Enter skips ahead. */
+.hz-game-map.busy .hz-game-dots { opacity: 0.4; }
+.hz-game-busy { font-weight: 600; }
+/* Note 011 item 6: Sun and Earth markers on the outer ring, labels outlined in black on the black map. */
+.hz-game-map .hz-game-sky-mark text { font-size: 12px; paint-order: stroke; stroke: #000000; stroke-width: 3px; }

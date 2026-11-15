@@ -45,6 +45,13 @@ const DAY_S = 86400;
  * Event times are seconds after the table's first row, as in the engine; start_s is the stay's start.
  */
 export function firstFailure(m: MetricsIn, rules: RulesIn, start_s: number): FirstFailure | null {
+  const { power, contact } = failures(m, rules, start_s);
+  if (power && contact) return contact.at_s < power.at_s ? contact : power;
+  return power ?? contact;
+}
+
+/** The first dark spell and the first contact gap that break their rules (each null if none does), and the stay length. */
+export function failures(m: MetricsIn, rules: RulesIn, start_s: number): { power: FirstFailure | null; contact: FirstFailure | null; stay_s: number } {
   const t_end = start_s + (m.n_samples - 1) * SAMPLE_STEP_S;
   const dark = spells(start_s, t_end, initialState(m.lit_events, m.lit_share), m.lit_events, false);
   const gaps = spells(start_s, t_end, initialState(m.contact_events, m.contact_share), m.contact_events, false);
@@ -68,8 +75,42 @@ export function firstFailure(m: MetricsIn, rules: RulesIn, start_s: number): Fir
     day: Math.floor((g[0] - start_s) / DAY_S) + 1,
     text: `Out of contact for ${formatHoursText(g[1] - g[0])} on day ${Math.floor((g[0] - start_s) / DAY_S) + 1}`,
   } : null;
-  if (power && contact) return contact.at_s < power.at_s ? contact : power;
-  return power ?? contact;
+  return { power, contact, stay_s: t_end - start_s };
+}
+
+/** True when a spell starting at touchdown lasts the whole stay (to within a second). */
+const wholeStay = (f: FirstFailure, stay_s: number) => f.spell_start_s === 0 && f.spell_s >= stay_s - 1;
+
+/**
+ * Note 011 item 2: the Sun sentence for the dark spell that breaks the rule, from its start, its own
+ * length and the stay length (the engine's reason says "sets" even where the Sun never rises).
+ */
+export function sunSentence(f: FirstFailure, stay_s: number): string {
+  if (wholeStay(f, stay_s)) return 'The Sun never rises here during the stay.';
+  if (f.spell_start_s === 0) return `The Sun is hidden at touchdown for the first ${formatHoursText(f.spell_s)}.`;
+  return `The Sun sets after ${formatHoursText(f.spell_start_s)} and stays down for ${formatHoursText(f.spell_s)}.`;
+}
+
+/** The contact sentence for a gap that breaks the rule: the note 011 wording when there is no contact at all, else the engine's. */
+export function contactSentence(f: FirstFailure, stay_s: number, longest_gap_s: number, max_gap_s: number): string {
+  if (wholeStay(f, stay_s)) return 'No ground station is in view at any time during the stay.';
+  return `Longest gap in Earth contact is ${formatHoursText(longest_gap_s)}, over the ${formatHoursText(max_gap_s)} limit.`;
+}
+
+/**
+ * The game's reason line. For a no-go it says what breaks each rule in the note 011 wordings, from the
+ * same events as the verdict; for a go or marginal stay it is the engine's own reason.
+ */
+export function gameReason(m: MetricsIn & Pick<Metrics, 'longest_gap_s'>, rules: RulesIn, start_s: number, engineReason: string): string {
+  const { power, contact, stay_s } = failures(m, rules, start_s);
+  if (!power && !contact) return engineReason;
+  const out: string[] = [];
+  if (power) {
+    out.push(sunSentence(power, stay_s));
+    out.push(rules.max_dark_s === 0 ? 'This scenario needs continuous sunlight.' : `The limit is ${formatHoursText(rules.max_dark_s)} of darkness.`);
+  }
+  if (contact) out.push(contactSentence(contact, stay_s, m.longest_gap_s, rules.max_gap_s));
+  return out.join(' ');
 }
 
 /** "6.5" for 6.5 days, "14" for 14 days. */

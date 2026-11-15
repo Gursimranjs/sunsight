@@ -103,7 +103,8 @@ interface Props {
   onCustom?: (lat_deg: number, lon_deg: number) => void;
 }
 
-const VIEW = 120; // SVG half-size; the 80°S circle has radius 100.
+// SVG half-size; the 80°S circle has radius 100. Note 011 item 3: room for "90°W" and "90°E" beside the circle.
+const VIEW = 138;
 const R = 100;
 /** Pin size, px: at least the 24 px target size of WCAG 2.2 (2.5.8). */
 const PIN_PX = 24;
@@ -157,7 +158,7 @@ export function SiteMapPicker({ sites, siteId, onSite, onClose, lat_deg, lon_deg
       <div class="hz-dialog" role="dialog" aria-modal="true" aria-labelledby="hz-site-title" ref={box} onKeyDown={onKeyDown} data-testid="site-map-picker">
         <button type="button" class="hz-dialog-close" onClick={onClose}>Close</button>
         <h2 id="hz-site-title">Choose a landing site</h2>
-        <p style={{ margin: '0 0 8px' }}>South pole from below. Rings at 85°S and 80°S; 0° longitude is up.</p>
+        <p style={{ margin: '0 0 8px' }} data-testid="site-map-caption">Map of the south pole. Rings at 85°S and 80°S; 0° longitude, the side that faces Earth, is up.</p>
         <div style={{ position: 'relative', maxWidth: 420, margin: '0 auto' }}>
           <svg class="hz-polar-map" viewBox={`${-VIEW} ${-VIEW} ${2 * VIEW} ${2 * VIEW}`} aria-hidden="true" focusable="false">
             <circle cx={0} cy={0} r={ring[1]} fill="#000000" stroke="#8E8A82" stroke-width={1} />
@@ -168,7 +169,10 @@ export function SiteMapPicker({ sites, siteId, onSite, onClose, lat_deg, lon_deg
             })}
             {([[0, '0°'], [90, '90°E'], [180, '180°'], [-90, '90°W']] as [number, string][]).map(([l, t]) => {
               const p = polarXY(MAP_EDGE_LAT_DEG, l);
-              return <text key={t} x={p.x * (R + 10)} y={p.y * (R + 10) + 3} fill="#CFCBC2" font-size={8} text-anchor="middle">{t}</text>;
+              // Side labels start just outside the circle and run outward, inside the drawing.
+              const anchor = p.x > 0.5 ? 'start' : p.x < -0.5 ? 'end' : 'middle';
+              const off = anchor === 'middle' ? 10 : 4;
+              return <text key={t} x={p.x * (R + off)} y={p.y * (R + off) + 3} fill="#CFCBC2" style={{ fontSize: '12px' }} text-anchor={anchor} data-testid="site-map-lon-label">{t}</text>;
             })}
             <text x={ring85Label.x * R + 3} y={ring85Label.y * R + 8} fill="#8E8A82" font-size={7}>85°S</text>
             {truePos.map((p, i) => (
