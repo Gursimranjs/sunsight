@@ -7,13 +7,13 @@ import { formatDeg, formatPct } from '../format';
 import { encodeScenario } from '../state/url';
 import { AboutData, SiteSource, TerrainCredit } from '../views/Credits';
 import { MISS_TOLERANT_SHARE, missSig } from '../views/missGeometry';
-import { Panorama } from '../views/Panorama';
+import { tableRange } from '../state/scenario';
 import { asRefined, MetricTiles, RefinedNote } from '../views/ReportCard';
 import { RulesContext, Term } from '../views/Term';
 import { TableStatus } from '../views/useTableRange';
 import { GroundPanel } from './GroundPanel';
 import { HorizonHero } from './HorizonHero';
-import { MissionLine, type PickerKind } from './MissionLine';
+import { MissionLine, movedDateText, type PickerKind } from './MissionLine';
 import { hzViewFor, isLocalView, lazyComponent, missGridIdOf, scnViewFor, useHorizonState, type HzView } from './useHorizonState';
 import { ViewSwitch } from './ViewSwitch';
 import './tokens.css';
@@ -38,7 +38,7 @@ const showViewArea = () => requestAnimationFrame(() => document.getElementById('
 
 export function HorizonApp() {
   const st = useHorizonState();
-  const { data, error, scn, update, site, place, table, shown, fresh, answer, jobError, now, cds, missShare, missLineShare, local, setLocal } = st;
+  const { data, error, scn, update, site, place, table, shown, fresh, answer, jobError, now, cds, missShare, missLineShare, missLineSettled, missLineUnavailable, local, setLocal, moved, dismissMoved } = st;
   const [picker, setPicker] = useState<PickerKind | null>(null);
 
   if (error) return <main class="hz"><p role="alert">Could not load data: {error}</p></main>;
@@ -56,14 +56,18 @@ export function HorizonApp() {
   const hasMiss = missGridIdOf(site) !== null;
   const sig = missSig(scn.site_id, scn.start_s, scn.stay_s, scn.rules);
   // The Miss map's own share when it has one for this scenario (its radius may differ), else the miss line's job.
-  const ms = missShare && missShare.sig === sig ? missShare : missLineShare && missLineShare.sig === sig ? missLineShare : null;
+  // Never while the game is open: the game must not give its answer away (wiring #4).
+  const ms = view === 'game' ? null : missShare && missShare.sig === sig ? missShare : missLineShare && missLineShare.sig === sig ? missLineShare : null;
   const ok = ms ? ms.share >= MISS_TOLERANT_SHARE : false;
   const openView = (v: HzView) => { setView(v); showViewArea(); };
   const missLine = hasMiss ? (
     <p class={`hz-miss ${ms ? (ok ? 'ok' : 'warn') : ''}`} data-testid="verdict-miss-line">
       {ms
         ? <><span class="sym" aria-hidden="true">{ok ? '✓' : '!'}</span> Miss by up to {ms.radius_m} m: <strong data-testid="verdict-miss-share">{formatPct(ms.share)}</strong> of the ground still holds{ok ? ' (miss-tolerant)' : ' (not miss-tolerant)'}; <Term tip="miss">a robustness share, not a landing probability</Term>. </>
-        : view === 'game' ? <>How much ground near the target still holds? Play to find out, or </> : <>Miss test: computing… </>}
+        : view === 'game' ? <>How much ground near the target still holds? Play to find out, or </>
+          : view !== 'miss' && (missLineUnavailable || missLineSettled || !!jobError)
+            ? <span data-testid="miss-line-failed">How much ground near the target still holds? The miss test could not run here; </span>
+            : <>Miss test: computing… </>}
       <button type="button" class="link-button" data-testid="hz-open-miss" onClick={() => openView('miss')}>{ms ? 'See the map' : 'Open the Miss map'}</button>
     </p>
   ) : undefined;
@@ -72,11 +76,14 @@ export function HorizonApp() {
   ) : undefined;
 
   const stale = !fresh && !jobError;
+  // The one "Updating" status of the page (wiring #9): the view area's note below is plain text.
   const staleNote = !fresh && shown ? (
     <p class="small hz-stale" role="status" data-testid="stale-note">
       {jobError ? 'The paths shown are from the previous inputs; the engine failed for the current ones.' : 'Updating: the paths shown are from the previous inputs.'}
     </p>
   ) : null;
+  const range = tableRange(data.eph.meta);
+  const movedText = moved ? movedDateText(epochMs + range.min_s * 1000, epochMs + range.max_s * 1000, moved.to_ms) : null;
   return (
     <RulesContext.Provider value={scn.rules}>
       <div class="hz" data-testid="hz-app">
@@ -87,9 +94,12 @@ export function HorizonApp() {
         )}
         <header class="hz-sky">
           <h1 class="hz-brand">SunSight</h1>
-          <MissionLine data={data} scn={scn} site={site} placeName={placeName} open={picker} setOpen={setPicker} update={update} />
-          {/* Old answers stay visible while the new one computes, dimmed and labelled, as in the classic interface (shell #3). */}
-          <div data-stale={!fresh} style={{ opacity: fresh ? 1 : 0.6 }}>
+          <MissionLine data={data} scn={scn} site={site} placeName={placeName} open={picker} setOpen={setPicker} update={update}
+            movedText={movedText} onDismissMoved={dismissMoved} />
+          {/* Old answers stay visible while the new one computes, labelled "Updating" (shell #3). No opacity on the
+              wrapper: dimming the labels made "Earth" fail contrast (wiring #6). Dimming only the paths is a
+              horizon.css rule on this group's data-stale (polish-owned). */}
+          <div class="hz-hero-group" data-stale={!fresh} data-testid="hz-hero-group">
             <HorizonHero series={shown?.series ?? null} now={now} mask={place?.mask ?? null} terrain={place?.terrain ?? true}
               horizonLabel={place?.horizonLabel ?? ''} busy={stale} />
           </div>
@@ -108,15 +118,19 @@ export function HorizonApp() {
               {site && <SiteSource site={site} />}
               <TerrainCredit />
             </>} />
-          <ViewSwitch view={view} onView={setView} />
-          {/* The wrapped views still sit on the classic dark surfaces: keep the classic text colour there, not the
-              tokens' ink (which is for the light ground), until the views themselves take the tokens. */}
-          <div class="hz-view" id="hz-view" data-testid="hz-view" key={view} aria-label="View" role="region" data-surface="classic" style={{ color: 'var(--fg)' }}>
+          <ViewSwitch view={view} onView={setView} hasGame={hasMiss} />
+          {/* The view area wears the ground (note 010 #2): ink on regolith outside the cards; the classic chart cards
+              inside stay dark sky panels with light text and a Sun focus ring (horizon.css, ".hz-view.hz-surface"). */}
+          <div class="hz-view hz-surface" id="hz-view" data-testid="hz-view" key={view} aria-label="View" role="region">
+            {/* Note 010 #2: the hero above is the one horizon on the page, so this view drops the classic full-width
+                panorama. Its close-up lives in the same classic component (Panorama), which cannot be split without
+                editing classic files, so it is dropped here too; the classic interface still has both. */}
             {view === 'horizon' && shown && now && place && (
-              <div aria-busy={stale} data-stale={!fresh} style={{ opacity: fresh ? 1 : 0.6 }}>
-                {!fresh && <p class="small" role="status">{jobError ? 'The charts below are from the previous inputs; the engine failed for the current ones.' : 'Updating: the charts below are from the previous inputs.'}</p>}
-                <Panorama series={shown.series} now={now} mask={place.mask} horizonLabel={place.horizonLabel} />
+              <div class="hz-horizon-view" aria-busy={stale} data-stale={!fresh} data-testid="hz-horizon-view">
+                {!fresh && <p class="small">{jobError ? 'The numbers below are from the previous inputs; the engine failed for the current ones.' : 'Updating: the numbers below are from the previous inputs.'}</p>}
                 <MetricTiles m={shown.metrics} rules={scn.rules} />
+                <p class="small" data-testid="hz-horizon-note">The sky chart and its equal-scale close-up are in the{' '}
+                  <a style={{ color: 'var(--hz-ink, #17181A)' }} href={'?' + encodeScenario(scn, epochMs) + '&ui=classic'}>classic interface</a>; the horizon at the top of this page is the same sky.</p>
               </div>
             )}
             {view === 'ground' && <><Hero3D data={data} site={site} place={place} scn={scn} now={now} series={answer?.series ?? null} update={update} table={table} /><TerrainCredit /></>}

@@ -70,11 +70,12 @@ export function initialView(search: string): { scnView: View | null; local: Loca
  * Address-bar query: the encoded scenario with the flag, and, while the game is open, view=game plus the
  * game's chosen point (game_pt) taken from the current address bar, so the game's share link keeps working.
  */
-export function horizonQuery(encoded: string, local: LocalView | null, currentSearch: string): string {
+export function horizonQuery(encoded: string, local: LocalView | null, currentSearch: string, keepPt = true): string {
   if (local !== 'game') return withUi(encoded);
   const q = new URLSearchParams(encoded);
   q.set(VIEW_PARAM, GAME_VIEW);
-  const pt = new URLSearchParams(currentSearch).get(GAME_PT_PARAM);
+  // The point belongs to the grid, start and rules it was chosen for: dropped once any of them changes.
+  const pt = keepPt ? new URLSearchParams(currentSearch).get(GAME_PT_PARAM) : null;
   if (pt) q.set(GAME_PT_PARAM, pt);
   return withUi(q.toString());
 }
@@ -91,9 +92,11 @@ export const MISS_LINE_RADIUS_M = 250;
 /**
  * The miss line's share, computed without the Miss map being open (review 009 shell #7): the same grid,
  * the same missJob and the same share index as MissView, stale-guarded by key and by missSig.
- * `enabled` is false while the Miss map is open (it reports its own share).
+ * `enabled` is false while the Miss map is open (it reports its own share) and while the game is open.
+ * `ready` is true once the window answer for the current inputs is in: the single worker runs jobs in order
+ * and cannot cancel them, so the miss job is queued only then, never ahead of the next window job (wiring #7).
  */
-export function useMissLine(data: AppData | null, site: Site | null, scn: Scenario | null, table: TableRange, enabled: boolean) {
+export function useMissLine(data: AppData | null, site: Site | null, scn: Scenario | null, table: TableRange, enabled: boolean, ready = true) {
   const gridId = missGridIdOf(site);
   const [set, setSet] = useState<MaskSet | null>(null);
   const [answer, setAnswer] = useState<{ key: string; a: MissAnswer } | null>(null);
@@ -108,21 +111,24 @@ export function useMissLine(data: AppData | null, site: Site | null, scn: Scenar
   const grid = set && (set.meta.id === undefined || set.meta.id === gridId) ? set : null;
   const key = grid && scn ? JSON.stringify([grid.meta.id, scn.start_s, scn.stay_s, scn.rules, table.epoch]) : '';
   useEffect(() => {
-    if (!data || !grid || !scn || !key || !enabled) return;
+    if (!data || !grid || !scn || !key || !enabled || !ready) return;
     if (answer && answer.key === key) return;
     let live = true;
     data.engine.miss(missJob(grid, scn.start_s, scn.start_s + scn.stay_s, scn.rules))
       .then((a) => live && setAnswer({ key, a }))
       .catch(() => live && setFailed(key));
     return () => { live = false; };
-  }, [key, enabled]);
+  }, [key, enabled, ready]);
   const a = answer && answer.key === key ? answer.a : null;
   const share = a && scn ? a.shares[MISS_RADII_M.indexOf(MISS_LINE_RADIUS_M)] : NaN;
   const missLine: MissShare | null = scn && Number.isFinite(share)
     ? { sig: missSig(site?.id ?? null, scn.start_s, scn.stay_s, scn.rules), share, radius_m: MISS_LINE_RADIUS_M }
     : null;
-  const settled = !gridId || !!a || failed === key || failed === `grid:${gridId}` || table.state === 'error';
-  return { missLine, settled };
+  const failedNow = failed !== null && (failed === key || failed === `grid:${gridId}`);
+  const settled = !gridId || !!a || failedNow || table.state === 'error';
+  /** True when the miss line has no number and will not get one (grid or job failed, or the table is in error). */
+  const unavailable = !!gridId && !a && (failedNow || table.state === 'error');
+  return { missLine, settled, unavailable };
 }
 
 /**
@@ -172,6 +178,11 @@ export function useHorizonState() {
   const [missShare, setMissShare] = useState<MissShare | null>(null);
   /** Views kept beside the scenario: Export and the game ('game' is also written to the address bar). */
   const [local, setLocal] = useState<LocalView | null>(() => (typeof location !== 'undefined' ? initialView(stripUi(location.search)).local : null));
+  /** The start the link asked for, in ms, when it lay outside the table and was moved in (note 010 #4). */
+  const [moved, setMoved] = useState<{ from_ms: number; to_ms: number } | null>(null);
+  /** missSig of the scenario a shared game_pt was chosen for; game_pt is dropped once it changes (wiring #9). */
+  const ptSig = useRef<string | null>(null);
+  const ptDropped = useRef(false);
 
   useEffect(() => {
     loadAppData(() => setFixtureTick((x) => x + 1))
@@ -185,16 +196,30 @@ export function useHorizonState() {
         const s0 = q0 ? decodeScenario(q0, d.eph.start_ms, first, ids) : defaultScenario(first);
         const iv = initialView(q);
         if (iv.scnView) s0.view = iv.scnView;
-        setScn(clampScenario(s0, d.eph.meta));
+        const s1 = clampScenario(s0, d.eph.meta);
+        if (Number.isFinite(s0.start_s) && s1.start_s !== s0.start_s) {
+          const m = { from_ms: d.eph.start_ms + s0.start_s * 1000, to_ms: d.eph.start_ms + s1.start_s * 1000 };
+          // Fill the note after its (empty) live region has mounted, so screen readers announce it.
+          setTimeout(() => setMoved(m), 300);
+        }
+        setScn(s1);
       })
       .catch((e) => setError(String(e)));
   }, []);
 
+  // The moved-date note describes the start the link asked for; once the start changes it no longer applies.
+  useEffect(() => {
+    if (moved && scn && data && data.eph.start_ms + scn.start_s * 1000 !== moved.to_ms) setMoved(null);
+  }, [scn?.start_s, moved]);
+
   // Keep the scenario (and the flag, and the game's view and point) in the address bar, at most every URL_WRITE_MS.
   useEffect(() => {
     if (!scn || !data) return;
+    const sig = missSig(scn.site_id, scn.start_s, scn.stay_s, scn.rules);
+    if (ptSig.current === null) ptSig.current = sig;
+    else if (ptSig.current !== sig) ptDropped.current = true;
     const id = setTimeout(() => {
-      const q = horizonQuery(encodeScenario(scn, data.eph.start_ms), local, location.search);
+      const q = horizonQuery(encodeScenario(scn, data.eph.start_ms), local, location.search, !ptDropped.current);
       if (q !== location.search) history.replaceState(null, '', q);
     }, URL_WRITE_MS);
     return () => clearTimeout(id);
@@ -228,9 +253,11 @@ export function useHorizonState() {
       .catch((e) => { if (reqKey.current === key) setJobError(String(e)); });
   }, [key]);
 
-  // The miss line's own job (shell #7), off while the Miss map is open: the Miss map reports its share then.
+  // The miss line's own job (shell #7), off while the Miss map is open (it reports its share then) and while
+  // the game is open; queued only once the window answer for these inputs is in (wiring #7).
   const missMapOpen = local === null && scn?.view === 'miss';
-  const ml = useMissLine(data, site, scn, table, !missMapOpen && local !== 'game');
+  const windowFresh = !!result && !!key && result.key === key;
+  const ml = useMissLine(data, site, scn, table, !missMapOpen && local !== 'game', windowFresh);
 
   // Background prefetch of the other table years once the first screen is done (as in the classic App):
   // the window answer, and the miss answer (the Miss map's or the miss line's).
@@ -281,7 +308,8 @@ export function useHorizonState() {
 
   return {
     data, error, scn, update, site, place, table, result, answer, shown, fresh, jobError, now, cds, missShare, setMissShare, setMissSettled,
-    missLineShare: ml.missLine, local, setLocal,
+    missLineShare: ml.missLine, missLineSettled: ml.settled, missLineUnavailable: ml.unavailable, local, setLocal,
+    moved, dismissMoved: () => setMoved(null), tableMeta: data?.eph.meta ?? null,
   };
 }
 

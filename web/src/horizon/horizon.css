@@ -205,3 +205,43 @@
   .hz .hz-call .hz-reason, .hz .hz-call-enter { animation: none; }
   .hz [data-testid=miss-map] > circle[fill='var(--go)'], .hz [data-testid=miss-map] > g[stroke='var(--nogo)'] { animation: none; }
 }
+
+/* ---- Stale answers (HorizonApp sets data-stale on the hero's wrapper): only the paths dim, labels stay legible ---- */
+.hz [data-stale=true] .hz-hero path { opacity: .45; }
+
+/* ---- Bodies under the terrain (note 010 #8): a marker on the horizon line with "Sun 2.1° below" ---- */
+.hz .hz-hero .hz-below text { font-weight: 600; }
+
+/* ---- The view area wears the ground (note 010 #2) ----
+   Choice: the view container is the light regolith surface with ink text (10.98:1); every classic chart card
+   inside it stays a dark sky panel, because the charts draw the Sun (#FFD27A) and Earth (#4F8FD6) in their
+   own colours, which fail 3:1 on the light ground (1.14:1 and 2.42:1) but pass on the sky (14.75:1, 6.23:1).
+   Sky above ground, as in the hero. Text outside the cards is ink; inside, light. */
+.hz .hz-view.hz-surface {
+  --fg: var(--hz-ink, #17181A);
+  --muted: #3F3D39;
+  --line: #6B6760;
+  --panel2: #E6E3DC;
+  --focus: var(--hz-ink, #17181A);
+  background: var(--hz-ground, #CFCBC2);
+  color: var(--hz-ink, #17181A) !important;
+  border-radius: 0;
+  padding: 12px 16px;
+}
+.hz .hz-view.hz-surface a, .hz .hz-view.hz-surface .link-button, .hz .hz-view.hz-surface .hint { color: var(--hz-ink, #17181A); }
+.hz .hz-view.hz-surface .card {
+  --fg: #F2F2F2;
+  --muted: #B5B2AB;
+  --line: #3A3B3E;
+  --panel2: #1A1B1D;
+  --focus: var(--hz-sun, #FFD27A);
+  background: #0E0F10;
+  color: #F2F2F2;
+}
+.hz .hz-view.hz-surface .card a, .hz .hz-view.hz-surface .card .link-button { color: #F2F2F2; }
+.hz .hz-view.hz-surface .card .hint { color: var(--hz-ground, #CFCBC2); }
+.hz .hz-view.hz-surface .card :focus-visible, .hz .hz-view.hz-surface .card button:focus-visible,
+.hz .hz-view.hz-surface .card input:focus-visible, .hz .hz-view.hz-surface .card select:focus-visible,
+.hz .hz-view.hz-surface .card summary:focus-visible { outline: 3px solid var(--hz-sun, #FFD27A); outline-offset: 2px; }
+.hz .hz-view.hz-surface button.primary { background: var(--hz-ink, #17181A); border-color: var(--hz-ink, #17181A); color: #FFFFFF; }
+.hz .hz-view.hz-surface .card button.primary { background: var(--hz-ground, #CFCBC2); border-color: var(--hz-ground, #CFCBC2); color: var(--hz-ink, #17181A); }

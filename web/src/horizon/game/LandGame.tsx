@@ -81,14 +81,18 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
   const reticleRef = useRef<SVGGElement>(null);
   const shareLineRef = useRef<HTMLParagraphElement>(null);
   /** Set when focus must land on the reticle once the (new) grid is in, e.g. after "Try Athena's target". */
-  const focusReticle = useRef(false);
+  /** The grid id whose load should take focus to the reticle ("Try Athena's target"), or null. */
+  const focusReticle = useRef<string | null>(null);
+  const showGroundRef = useRef<HTMLButtonElement>(null);
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
     setSet(null); setErr(null);
+    // A switch to some other ground than the one asked for drops the pending focus move.
+    if (focusReticle.current !== gridId) focusReticle.current = null;
     if (!gridId) return;
     let live = true;
-    data.missGrid(gridId).then((s) => live && setSet(s)).catch((e) => live && setErr(String(e)));
+    data.missGrid(gridId).then((s) => live && setSet(s)).catch((e) => { if (live) { focusReticle.current = null; setErr(String(e)); } });
     return () => { live = false; };
   }, [gridId]);
 
@@ -146,8 +150,8 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
 
   // Focus goes back to the reticle once a switched-to grid is in.
   useEffect(() => {
-    if (grid && reticle !== null && focusReticle.current && reticleRef.current) {
-      focusReticle.current = false;
+    if (grid && reticle !== null && focusReticle.current !== null && focusReticle.current === gridId && reticleRef.current) {
+      focusReticle.current = null;
       reticleRef.current.focus();
     }
   });
@@ -164,7 +168,7 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
   }, [shownTry, t_s, grid]);
 
   const showWhole = () => {
-    if (!grid) return;
+    if (!grid || reveal?.state === 'running' || reveal?.state === 'done') return;
     const my = gameEpoch.current;
     setReveal({ state: 'running', progress: 0 });
     data.engine.miss(missJob(grid, scn.start_s, scn.start_s + scn.stay_s, scn.rules), (f) => {
@@ -172,15 +176,19 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
     }).then((a) => {
       if (gameEpoch.current !== my) return;
       setReveal({ state: 'done', a });
-      // The button stays (disabled); focus moves to the share line, which says what the reveal found.
-      requestAnimationFrame(() => shareLineRef.current?.focus());
+      // The button stays (aria-disabled, so it keeps focus). Focus moves to the share line, which says what
+      // the reveal found, only if the user is still on that button (or focus fell to the page body).
+      requestAnimationFrame(() => {
+        const at = document.activeElement;
+        if (at === showGroundRef.current || at === document.body || at === null) shareLineRef.current?.focus();
+      });
     })
       .catch((e) => { if (gameEpoch.current === my) setReveal({ state: 'failed', error: String(e) }); });
   };
 
   const athena = data.sites.find((s) => s.id === ATHENA_TARGET_ID);
   const athenaButton = athena && site?.id !== ATHENA_TARGET_ID && (
-    <button type="button" data-testid="game-athena" onClick={() => { focusReticle.current = true; update({ site_id: ATHENA_TARGET_ID }); }}>Try Athena's target</button>
+    <button type="button" data-testid="game-athena" onClick={() => { focusReticle.current = gameGridId(athena) ?? null; update({ site_id: ATHENA_TARGET_ID }); }}>Try Athena's target</button>
   );
   const label = (
     <p class="hz-game-small" data-testid="game-robustness-label">
@@ -290,6 +298,8 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
               aria-disabled={busy || out} onKeyDown={onKey}>
               <circle cx={X(rp.east_m ?? 0)} cy={Y(rp.north_m ?? 0)} r={9} fill="none" stroke="#ffffff" stroke-width="2" />
               <circle cx={X(rp.east_m ?? 0)} cy={Y(rp.north_m ?? 0)} r={2.5} fill="#ffffff" />
+              {/* Focus cue: a wide Sun halo outside the ring, shown only on keyboard focus (game.css). */}
+              <circle class="hz-game-halo" cx={X(rp.east_m ?? 0)} cy={Y(rp.north_m ?? 0)} r={14} fill="none" stroke="var(--hz-sun, #FFD27A)" stroke-width="3" />
             </g>
           </svg>
           <p class="hz-game-small" data-testid="game-reticle-text">Reticle: grid point {rp.id}, {where(reticle)}{groundAt(reticle)}. Dashed rings: {REVEAL_RADIUS_M} m and {Math.round(R)} m.</p>
@@ -321,7 +331,7 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
             </ol>
           )}
           {out && !busy && (
-            <button type="button" data-testid="game-show-ground" disabled={reveal?.state === 'running' || !!revealed} onClick={showWhole}>
+            <button type="button" data-testid="game-show-ground" ref={showGroundRef} aria-disabled={reveal?.state === 'running' || !!revealed} onClick={showWhole}>
               {reveal?.state === 'running' ? `Scoring ${pts.length} landing points… ${formatPct(reveal.progress)}` : revealed ? 'Whole ground shown' : 'Show the whole ground'}
             </button>
           )}

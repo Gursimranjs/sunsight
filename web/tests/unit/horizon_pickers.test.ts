@@ -78,8 +78,10 @@ describe('SiteMapPicker', () => {
     expect(pins[1].getAttribute('aria-current')).toBe('true');
     // The chosen site's pin has focus on open.
     expect(doc.activeElement).toBe(pins[1]);
-    const elsewhere = findAll(root, byAttr('aria-label', 'Sites elsewhere on the Moon'));
-    expect(text(elsewhere[0])).toBe(SITES[2].name);
+    // The list is grouped under plain headings (note 010 #9); a site that fits no named group is under Other.
+    const elsewhere = findAll(root, byAttr('data-group', 'Other'));
+    expect(text(findAll(elsewhere[0], byTag('h3'))[0])).toBe('Other');
+    expect(text(findAll(elsewhere[0], byTag('ul'))[0])).toBe(SITES[2].name);
     await act(() => { pins[0].click(); });
     expect(picked).toEqual(['fixture_ridge']);
     expect(closed).toBe(1);

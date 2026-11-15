@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { makeRules, PRESETS } from '../../src/engine/light';
-import { RULES_SOURCE_TEXT, rulesEdited, scenarioPhrase } from '../../src/horizon/MissionLine';
+import { missionDate, missionDay, movedDateText, RULES_SOURCE_TEXT, rulesEdited, scenarioPhrase } from '../../src/horizon/MissionLine';
 import { GAME_POINT_PARAM } from '../../src/horizon/game/gameLogic';
 import { GAME_PT_PARAM, horizonQuery, initialView, MISS_LINE_RADIUS_M, missGridIdOf, stripUi } from '../../src/horizon/useHorizonState';
 import { DEFAULT_QUERY, defaultScenario } from '../../src/state/scenario';
@@ -77,5 +77,22 @@ describe('miss line', () => {
     expect(missGridIdOf({ miss_target_id: 't', miss_grid_id: 'g' } as never)).toBe('t');
     expect(missGridIdOf({ miss_target_id: null, miss_grid_id: 'g' } as never)).toBe('g');
     expect(missGridIdOf({ miss_target_id: null, miss_grid_id: null } as never)).toBeNull();
+  });
+});
+
+describe('review2 wiring fixes', () => {
+  it('drops game_pt once the site, start or rules change (keepPt false)', () => {
+    const q = new URLSearchParams(horizonQuery('site=b', 'game', '?site=a&view=game&game_pt=p7&ui=horizon', false).slice(1));
+    expect(q.get('view')).toBe('game');
+    expect(q.has('game_pt')).toBe(false);
+  });
+  it('writes the moved-date note with the table range and the moved-to day (note 010 #4)', () => {
+    const min = Date.UTC(2027, 0, 1), max = Date.UTC(2030, 11, 31, 22);
+    expect(movedDateText(min, max, min)).toBe('Dates run from 1 Jan 2027 to 31 Dec 2030. Your date was moved to 1 Jan 2027.');
+  });
+  it('splits the mission date into the day and the 24-hour UTC time', () => {
+    const ms = Date.UTC(2029, 6, 24, 17, 30);
+    expect(missionDay(ms)).toBe('24 Jul 2029');
+    expect(missionDate(ms)).toBe('24 Jul 2029, 17:30 UTC');
   });
 });
