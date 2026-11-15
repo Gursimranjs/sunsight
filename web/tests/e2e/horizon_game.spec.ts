@@ -2,6 +2,8 @@
 // Note 009, M2 "Land it yourself". Until the horizon shell mounts the game, this file starts its own Vite
 // dev server and plays the game on the temporary test-only page src/horizon/game/devMount.html (real data
 // from public/data). Key check: the game's verdict for a chosen point equals the Miss map's verdict for it.
+// The dev page rewrites the address bar without game_pt, as the app does: the shared-link test proves the
+// game reads game_pt on its first render.
 import { expect, test, type Page } from '@playwright/test';
 import { createServer, type ViteDevServer } from 'vite';
 
@@ -57,6 +59,9 @@ test('three landings, then the whole ground: each landing has the Miss map verdi
   await page.keyboard.press('Enter');
   const t1 = await waitResult(page, 1);
   expect(aimed).toContain(`grid point ${t1.id}`);
+  // One live region, always there, now holding the result and the distance.
+  await expect(page.getByTestId('game-live')).toHaveAttribute('role', 'status');
+  await expect(page.getByTestId('game-live')).toHaveText(/^(Mission holds for all 6\.5 days|Power lost .+|Out of contact for .+ on day \d+)\. Landed (on the target|\d+ m from the target)\.$/);
   await expect(page.getByTestId('game-result-line')).toHaveText(/^(Mission holds for all 6\.5 days|Power lost .+|Out of contact for .+ on day \d+)$/);
   await expect(page.getByTestId('game-distance')).toContainText(/m from the target|on the target/);
   await expect(page.getByTestId('game-replay')).toBeVisible();
@@ -74,6 +79,13 @@ test('three landings, then the whole ground: each landing has the Miss map verdi
   await page.getByTestId('game-show-ground').click();
   await expect(page.getByTestId('game-share-line')).toHaveText(/^Within 250 m, \d+% of the ground holds\.$/, { timeout: 120_000 });
   await expect(page.getByTestId('game-robustness-label')).toBeVisible();
+  // Focus moves to the share line; the button stays (disabled) so focus never falls to the page.
+  await expect(page.getByTestId('game-share-line')).toBeFocused();
+  await expect(page.getByTestId('game-show-ground')).toBeDisabled();
+  // Legend and a text alternative with the counts; the reticle now says whether its point holds.
+  await expect(page.getByTestId('game-legend')).toContainText('Holds');
+  await expect(page.getByTestId('game-map')).toHaveAttribute('aria-label', /^Map of \d+ landing points\. \d+ hold, \d+ fail\.$/);
+  await expect(page.getByTestId('game-reticle')).toHaveAttribute('aria-valuetext', /, (holds|fails)$/);
   for (const t of [t1, t2, t3]) {
     await expect(page.locator(`[data-testid="game-map-point"][data-point-id="${t.id}"]`)).toHaveAttribute('data-verdict', t.verdict);
   }
@@ -92,9 +104,12 @@ test('a shared link lands on the same point; Athena\'s target switches the groun
   const t = await waitResult(page, 1);
   const link = await page.getByTestId('game-share-link').inputValue();
   expect(new URL(link).searchParams.get('game_pt')).toBe(t.id);
-  // Reduced motion: the replay ends at once and nothing animates.
-  const anim = await page.getByTestId('game-lander').first().evaluate((el) => getComputedStyle(el).animationName);
-  expect(anim).toBe('none');
+  // Reduced motion: the replay ends at once and nothing animates (no CSS or Web Animations at all).
+  expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
+  await expect(page.getByTestId('game-replay')).toBeVisible();
+  // The landing itself started no drop animation either.
+  const box2 = (await map.boundingBox())!;
+  expect(box2.width).toBeGreaterThan(0);
 
   await page.goto(link);
   const t2 = await waitResult(page, 1);
@@ -102,6 +117,8 @@ test('a shared link lands on the same point; Athena\'s target switches the groun
 
   await page.getByTestId('game-athena').click();
   await expect(page.getByTestId('game-brief')).toContainText('Athena', { timeout: 60_000 });
+  // Focus is put back on the reticle of the new ground.
+  await expect(page.getByTestId('game-reticle')).toBeFocused();
   await expect(page.getByTestId('game-brief')).toContainText('24 July 2029');
   await expect(page.getByTestId('game-try-list')).toHaveCount(0);
   await page.getByTestId('game-reticle').focus();

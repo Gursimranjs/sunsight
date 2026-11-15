@@ -30,11 +30,30 @@
 .hz-game-result { margin-bottom: 8px; }
 .hz-game-replay { margin-top: 16px; background: var(--hz-sky, #000000); color: #e8ebf2; padding: 8px; border-radius: 4px; }
 
-/* The lander drops in 600 ms; the reveal fills outward from the target in 300 ms. */
+/* Focus on the light ground: ink ring (10.98:1); the global white ring is 1.6:1 here. The reticle sits on
+   the black map and keeps its Sun ring. */
+.hz-game :focus-visible { outline: 3px solid var(--hz-ink, #17181A); outline-offset: 2px; }
+.hz-game .hz-game-map :focus-visible, .hz-game .hz-game-reticle:focus-visible { outline: none; }
+.hz-game [tabindex='-1']:focus { outline: none; }
+.hz-game [tabindex='-1']:focus-visible { outline: 3px solid var(--hz-ink, #17181A); }
+
+/* Verdict marks in the 009 tokens: go and no-go fills with white symbols (5.32:1 and 5.62:1), marginal in
+   ink with a hatched triangle. The word beside each mark carries the meaning. */
+.hz-game .vbadge.go .sym { background: var(--hz-go, #1F7A4D); color: #FFFFFF; }
+.hz-game .vbadge.no-go .sym { background: var(--hz-nogo, #B4421E); color: #FFFFFF; }
+.hz-game .vbadge.marginal .sym {
+  color: transparent;
+  background: repeating-linear-gradient(135deg, var(--hz-ink, #17181A) 0 2px, var(--hz-ground, #CFCBC2) 2px 4px);
+}
+.hz-game-legend { list-style: none; padding: 0; margin: 4px 0; font-size: 14px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.hz-game-legend svg { display: inline; vertical-align: -2px; background: var(--hz-sky, #000000); border-radius: 2px; }
+.hz-game-live { min-height: 1.4em; font-weight: 600; }
+
+/* The lander drops in 600 ms; the reveal fills outward from the target in 300 ms (200 ms spread, 100 ms fade). */
 @keyframes hz-game-drop { from { transform: translateY(-48px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes hz-game-fade { from { opacity: 0; } to { opacity: 1; } }
 .hz-game-lander.dropping { animation: hz-game-drop 600ms var(--hz-ease, cubic-bezier(0.2, 0.8, 0.2, 1)) both; }
-.hz-game-reveal { animation: hz-game-fade 150ms ease-out both; }
+.hz-game-reveal { animation: hz-game-fade 100ms ease-out both; }
 @media (prefers-reduced-motion: reduce) {
   .hz-game-lander.dropping, .hz-game-reveal { animation: none; }
   .hz-game button { transition: none; }

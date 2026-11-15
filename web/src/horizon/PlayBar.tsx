@@ -1,6 +1,7 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // "Play the stay": the playhead runs the whole stay in about 8 s, three speeds, Space toggles, arrow keys
-// step 10 minutes. With prefers-reduced-motion, Play moves in coarse steps instead of a smooth run.
+// step 10 minutes. With prefers-reduced-motion, Play is a stepped slider: it moves in coarse jumps on a
+// timer, and only after the user pressed Play.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Series } from '../engine/compute';
 import { formatUtc } from '../format';
@@ -12,8 +13,9 @@ export const TIME_STEP_S = 600;
 export const PLAY_DURATION_MS = 8000;
 export const PLAY_SPEEDS = [{ label: 'Slow', x: 0.5 }, { label: 'Normal', x: 1 }, { label: 'Fast', x: 2 }] as const;
 /** Reduced motion: the stay in this many jumps, one every REDUCED_TICK_MS. */
-const REDUCED_STEPS = 16;
+export const REDUCED_STEPS = 16;
 const REDUCED_TICK_MS = 500;
+const DAY_S = 86400;
 
 const snap = (t_s: number) => Math.round(t_s / TIME_STEP_S) * TIME_STEP_S;
 
@@ -24,13 +26,43 @@ export function playAt(t0_s: number, stay_s: number, elapsed_ms: number, x: numb
 
 /** One arrow-key step from t_s (dir +1 or -1), on the 10-minute grid, inside [0, stay_s]. */
 export function stepTime(t_s: number, stay_s: number, dir: 1 | -1): number {
-  const base = Math.floor(t_s / TIME_STEP_S) * TIME_STEP_S;
-  const next = dir > 0 ? base + TIME_STEP_S : (base === t_s ? base - TIME_STEP_S : base);
-  return Math.max(0, Math.min(stay_s, next));
+  const base_s = Math.floor(t_s / TIME_STEP_S) * TIME_STEP_S;
+  const next_s = dir > 0 ? base_s + TIME_STEP_S : (base_s === t_s ? base_s - TIME_STEP_S : base_s);
+  return Math.max(0, Math.min(stay_s, next_s));
+}
+
+/** One reduced-motion jump of the playhead, s: the stay in REDUCED_STEPS, on the 10-minute grid. */
+export function reducedJump_s(stay_s: number): number {
+  return Math.max(TIME_STEP_S, snap(stay_s / REDUCED_STEPS));
+}
+
+/** "day 2, 06:30 into the stay". */
+export function intoStay(t_off_s: number): string {
+  const day_n = Math.floor(t_off_s / DAY_S);
+  const hours_h = Math.floor((t_off_s % DAY_S) / 3600), minutes_min = Math.floor((t_off_s % 3600) / 60);
+  return `day ${day_n}, ${String(hours_h).padStart(2, '0')}:${String(minutes_min).padStart(2, '0')} into the stay`;
+}
+
+/** Controls that own their keys: the play bar's page-wide shortcuts leave them alone. */
+const OWN_KEYS = '[role=slider],[role=application],[role=dialog],[role=menu],[role=listbox],dialog,canvas,input,select,textarea,a[href],summary,[contenteditable=""],[contenteditable=true]';
+
+/**
+ * True when a page-wide Space or arrow key should not move the playhead: another handler already used
+ * it, a modifier is held, or focus is on a control that owns those keys (a slider, the 3D canvas, a
+ * form field, a dialog, a link, or any button other than Play; Space on Play is the button's own click).
+ */
+export function ignorePlayKey(e: Pick<KeyboardEvent, 'defaultPrevented' | 'altKey' | 'ctrlKey' | 'metaKey' | 'key' | 'target'>): boolean {
+  if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return true;
+  const t = e.target as { closest?: (sel: string) => Element | null; isContentEditable?: boolean } | null;
+  if (!t || typeof t.closest !== 'function') return false;
+  if (t.isContentEditable || t.closest(OWN_KEYS)) return true;
+  const b = t.closest('button');
+  if (!b) return false;
+  if (!b.classList.contains('hz-play')) return true;
+  return e.key === ' ' || e.key === 'Enter';
 }
 
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-const typing = (el: EventTarget | null) => el instanceof HTMLElement && (/^(INPUT|SELECT|TEXTAREA|BUTTON|A|SUMMARY)$/.test(el.tagName) || el.isContentEditable);
 
 interface Props {
   t_off_s: number;
@@ -42,21 +74,26 @@ interface Props {
   onTime: (t_off_s: number) => void;
 }
 
-/** Lit and contact strips under the playhead: one row each, from the engine's series. */
+/** Lit and contact strips under the playhead: one row each, from the engine's series, with visible labels. */
 function Strips({ series, lit_threshold }: { series: Series; lit_threshold: number }) {
   const n = series.t_s.length;
   const lit = Array.from(series.sun_frac, (f) => (f >= lit_threshold ? 1 : 0));
   const w = (r: { a: number; b: number }) => (100 * (r.b - r.a)) / Math.max(1, n);
-  const row = (vals: ArrayLike<number>, y: number, col: string) => runs(vals).filter((r) => r.v > 0).map((r) => (
-    <rect key={`${y}-${r.a}`} x={(100 * r.a) / Math.max(1, n)} y={y} width={w(r)} height={4} fill={col} />
-  ));
-  return (
-    <svg class="hz-strips" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true">
+  const row = (vals: ArrayLike<number>, col: string, cls: string) => (
+    <svg class={`hz-strip-row ${cls}`} viewBox="0 0 100 4" preserveAspectRatio="none" aria-hidden="true">
       <rect x="0" y="0" width="100" height="4" fill="var(--hz-ground-shade, #8E8A82)" />
-      <rect x="0" y="6" width="100" height="4" fill="var(--hz-ground-shade, #8E8A82)" />
-      {row(lit, 0, 'var(--hz-sun, #FFD27A)')}
-      {row(series.contact, 6, 'var(--hz-earth, #4F8FD6)')}
+      {runs(vals).filter((r) => r.v > 0).map((r) => (
+        <rect key={r.a} x={(100 * r.a) / Math.max(1, n)} y={0} width={w(r)} height={4} fill={col} />
+      ))}
     </svg>
+  );
+  return (
+    <>
+      <span class="hz-strip-k" aria-hidden="true">Lit</span>
+      {row(lit, 'var(--hz-sun, #FFD27A)', 'hz-strip-lit')}
+      <span class="hz-strip-k" aria-hidden="true">Contact</span>
+      {row(series.contact, 'var(--hz-earth, #4F8FD6)', 'hz-strip-contact')}
+    </>
   );
 }
 
@@ -73,27 +110,28 @@ export function PlayBar({ t_off_s, stay_s, startMs, series, lit_threshold, onTim
 
   useEffect(() => {
     if (!playing) return;
-    const t0 = tRef.current >= stay_s ? 0 : tRef.current;
+    const t0_s = tRef.current >= stay_s ? 0 : tRef.current;
     const x = PLAY_SPEEDS[speed].x;
     if (reducedMotion()) {
-      const jump = Math.max(TIME_STEP_S, snap(stay_s / REDUCED_STEPS));
-      let t = t0;
-      onTimeRef.current(t);
+      // Stepped slider: one jump now (the user's press), then one per tick until the end or a pause.
+      const jump_s = reducedJump_s(stay_s);
+      let t_s = t0_s;
+      onTimeRef.current(t_s);
       const id = setInterval(() => {
         if (!playingRef.current) return;
-        t = Math.min(stay_s, t + jump);
-        onTimeRef.current(t);
-        if (t >= stay_s) setPlaying(false);
+        t_s = Math.min(stay_s, t_s + jump_s);
+        onTimeRef.current(t_s);
+        if (t_s >= stay_s) setPlaying(false);
       }, REDUCED_TICK_MS / x);
       return () => clearInterval(id);
     }
     let raf = 0;
-    const started = performance.now();
-    const frame = (nowMs: number) => {
+    const started_ms = performance.now();
+    const frame = (now_ms: number) => {
       if (!playingRef.current) return;
-      const t = playAt(t0, stay_s, nowMs - started, x);
-      if (t !== tRef.current) onTimeRef.current(t);
-      if (t >= stay_s) { setPlaying(false); return; }
+      const t_s = playAt(t0_s, stay_s, now_ms - started_ms, x);
+      if (t_s !== tRef.current) onTimeRef.current(t_s);
+      if (t_s >= stay_s) { setPlaying(false); return; }
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
@@ -102,7 +140,7 @@ export function PlayBar({ t_off_s, stay_s, startMs, series, lit_threshold, onTim
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if (typing(e.target) || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (ignorePlayKey(e)) return;
       if (e.key === ' ') { e.preventDefault(); playingRef.current = !playingRef.current; setPlaying(playingRef.current); }
       else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
         e.preventDefault();
@@ -115,22 +153,23 @@ export function PlayBar({ t_off_s, stay_s, startMs, series, lit_threshold, onTim
     return () => removeEventListener('keydown', key);
   }, [stay_s]);
 
-  const d = Math.floor(t_off_s / 86400);
-  const hh = Math.floor((t_off_s % 86400) / 3600), mm = Math.floor((t_off_s % 3600) / 60);
-  const into = `day ${d}, ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} into the stay`;
+  const into = intoStay(t_off_s);
   const clock = formatUtc(startMs + t_off_s * 1000);
   return (
     <div class="hz-playbar">
-      <button type="button" class="hz-play" data-testid="hz-play" aria-pressed={playing} onClick={() => { playingRef.current = !playingRef.current; setPlaying(playingRef.current); }}>
+      <button type="button" class="hz-play" data-testid="hz-play" aria-pressed={playing}
+        onClick={() => { playingRef.current = !playingRef.current; setPlaying(playingRef.current); }}>
         <span aria-hidden="true">{playing ? '❚❚' : '▶'}</span> {playing ? 'Pause' : 'Play the stay'}
       </button>
       <div class="hz-track">
+        <span class="hz-strip-k" aria-hidden="true" />
         <input type="range" aria-label="Time in the stay" min={0} max={stay_s} step={TIME_STEP_S} value={t_off_s}
           aria-valuetext={`${clock}, ${into}`}
           onInput={(e) => { playingRef.current = false; setPlaying(false); onTime(Number((e.target as HTMLInputElement).value)); }} />
         {series && <Strips series={series} lit_threshold={lit_threshold} />}
       </div>
-      <output class="hz-clock" data-testid="hz-clock">{clock} · {into}</output>
+      {/* Not a live region: during Play it changes many times a second. The slider's value text carries it. */}
+      <p class="hz-clock" data-testid="hz-clock" aria-live="off">{clock} · {into}</p>
       <label class="hz-speed">
         <span>Speed</span>
         <select value={speed} onChange={(e) => setSpeed(Number((e.target as HTMLSelectElement).value))}>

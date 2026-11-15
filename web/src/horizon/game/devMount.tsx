@@ -6,7 +6,6 @@ import { useEffect, useState } from 'preact/hooks';
 import { loadAppData, type AppData } from '../../state/data';
 import { clampScenario, type Scenario } from '../../state/scenario';
 import { decodeScenario, encodeScenario } from '../../state/url';
-import { GAME_POINT_PARAM } from './gameLogic';
 import { LandGame } from './LandGame';
 import '../../styles.css';
 
@@ -21,13 +20,11 @@ function GameDev() {
       setScn(clampScenario(s0, d.eph.meta));
     }).catch((e) => setError(String(e)));
   }, []);
-  // Keep the scenario in the address bar (with the game point, if any) like the app does.
+  // Rewrite the address bar from the scenario as the app does, which drops game_pt: LandGame reads it on
+  // its first render. The share link is rebuilt from this address plus game_pt.
   useEffect(() => {
     if (!scn || !data) return;
-    const pt = new URLSearchParams(location.search).get(GAME_POINT_PARAM);
-    const q = new URLSearchParams(encodeScenario(scn, data.eph.start_ms));
-    if (pt) q.set(GAME_POINT_PARAM, pt);
-    history.replaceState(null, '', '?' + q.toString());
+    history.replaceState(null, '', '?' + encodeScenario(scn, data.eph.start_ms));
   }, [scn, data]);
   if (error) return <p role="alert">Could not load data: {error}</p>;
   if (!data || !scn) return <p>Loading…</p>;

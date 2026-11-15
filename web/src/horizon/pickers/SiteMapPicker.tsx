@@ -82,7 +82,12 @@ interface Props {
 
 const VIEW = 120; // SVG half-size; the 80°S circle has radius 100.
 const R = 100;
-const PIN_D = 16; // pin spacing in SVG units: a 20 px pin is ~11 units on the 420 px map and ~15 on a phone
+/** Pin size, px: at least the 24 px target size of WCAG 2.2 (2.5.8). */
+const PIN_PX = 24;
+/** Pin spacing in SVG units: a 24 px pin is ~14 units on the 420 px map and ~19 on a 311 px phone map. */
+const PIN_D = 20;
+/** Double ring round the chosen pin (black then Sun), its shape cue. */
+export const CHOSEN_RING = '0 0 0 2px #000000, 0 0 0 4px #FFD27A';
 
 export function SiteMapPicker({ sites, siteId, onSite, onClose, lat_deg, lon_deg, onCustom }: Props) {
   const box = useRef<HTMLDivElement>(null);
@@ -128,7 +133,7 @@ export function SiteMapPicker({ sites, siteId, onSite, onClose, lat_deg, lon_deg
       <div class="hz-dialog" role="dialog" aria-modal="true" aria-labelledby="hz-site-title" ref={box} onKeyDown={onKeyDown} data-testid="site-map-picker">
         <button type="button" class="hz-dialog-close" onClick={onClose}>Close</button>
         <h2 id="hz-site-title">Choose a landing site</h2>
-        <p style={{ margin: '0 0 8px' }}>South pole, seen from below. Rings at 85°S and 80°S; 0° longitude points up.</p>
+        <p style={{ margin: '0 0 8px' }}>South pole from below. Rings at 85°S and 80°S; 0° longitude is up.</p>
         <div style={{ position: 'relative', maxWidth: 420, margin: '0 auto' }}>
           <svg class="hz-polar-map" viewBox={`${-VIEW} ${-VIEW} ${2 * VIEW} ${2 * VIEW}`} aria-hidden="true" focusable="false">
             <circle cx={0} cy={0} r={ring[1]} fill="#000000" stroke="#8E8A82" stroke-width={1} />
@@ -145,7 +150,9 @@ export function SiteMapPicker({ sites, siteId, onSite, onClose, lat_deg, lon_deg
             {truePos.map((p, i) => (
               <g key={polar[i].id}>
                 <line x1={p.x} y1={p.y} x2={pinPos[i].x} y2={pinPos[i].y} stroke="#CFCBC2" stroke-width={0.6} />
-                <circle cx={p.x} cy={p.y} r={1.6} fill={polar[i].id === siteId ? '#FFD27A' : '#CFCBC2'} />
+                {polar[i].id === siteId
+                  ? <circle cx={p.x} cy={p.y} r={2.6} fill="#FFD27A" stroke="#FFFFFF" stroke-width={0.8} data-testid="site-true-chosen" />
+                  : <circle cx={p.x} cy={p.y} r={1.6} fill="#CFCBC2" />}
               </g>
             ))}
           </svg>
@@ -161,8 +168,10 @@ export function SiteMapPicker({ sites, siteId, onSite, onClose, lat_deg, lon_deg
                     aria-current={chosen ? 'true' : undefined}
                     onClick={() => pick(s.id)} onMouseEnter={() => setHover(s.id)} onMouseLeave={() => setHover(null)}
                     onFocus={() => setHover(s.id)} onBlur={() => setHover(null)}
-                    style={{ minHeight: 0, padding: 0, width: 20, height: 20, borderRadius: '50%', fontSize: 11, lineHeight: '18px',
-                      background: chosen ? '#FFD27A' : '#CFCBC2', color: '#17181A', border: '1px solid #17181A' }}>
+                    style={{ minHeight: 0, padding: 0, width: PIN_PX, height: PIN_PX, borderRadius: '50%', fontSize: 12, lineHeight: `${PIN_PX - 2}px`,
+                      background: chosen ? '#FFD27A' : '#CFCBC2', color: '#17181A', border: '1px solid #17181A',
+                      // The chosen pin also differs in shape (a double ring), not by colour alone.
+                      boxShadow: chosen ? CHOSEN_RING : undefined, fontWeight: chosen ? 700 : 400 }}>
                     {i + 1}
                   </button>
                 </li>
@@ -170,10 +179,10 @@ export function SiteMapPicker({ sites, siteId, onSite, onClose, lat_deg, lon_deg
             })}
           </ol>
         </div>
-        <p data-testid="site-map-name" aria-live="polite" style={{ minHeight: '1.4em', margin: '4px 0 8px', fontWeight: 600 }}>
+        <p data-testid="site-map-name" style={{ minHeight: '1.4em', margin: '4px 0 8px', fontWeight: 600 }}>
           {named ? sites.find((s) => s.id === named)?.name ?? '' : ''}
         </p>
-        <ol class="hz-site-list" aria-label="Pins on the map">
+        <ol class="hz-map-list" aria-label="Pins on the map">
           {polar.map((s, i) => (
             <li key={s.id}>
               <button type="button" class="hz-chip" data-site-id={s.id} aria-current={s.id === siteId ? 'true' : undefined} onClick={() => pick(s.id)}>
@@ -185,7 +194,7 @@ export function SiteMapPicker({ sites, siteId, onSite, onClose, lat_deg, lon_deg
         {other.length > 0 && (
           <>
             <h3 style={{ margin: '12px 0 6px', fontSize: '1rem' }}>Elsewhere on the Moon</h3>
-            <ul class="hz-site-list" aria-label="Sites elsewhere on the Moon">
+            <ul class="hz-map-list" aria-label="Sites elsewhere on the Moon">
               {other.map((s) => (
                 <li key={s.id}>
                   <button type="button" class="hz-chip" data-site-id={s.id} aria-current={s.id === siteId ? 'true' : undefined} onClick={() => pick(s.id)}>

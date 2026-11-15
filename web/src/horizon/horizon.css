@@ -1,6 +1,30 @@
 /* SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md. */
 /* Horizon interface layout (review note 009). Everything is scoped under .hz so the classic App is unchanged.
    Colours and type come from tokens.css (--hz-*), with the note's values as fallbacks. */
+@import './tokens.css';
+
+/* Two surfaces. Sky (black): light text, Sun focus ring. Ground (light): ink text, ink focus ring.
+   The classic views keep their own markup; inside .hz their colour variables take the 009 tokens. */
+.hz {
+  background: var(--hz-sky, #000000);
+  color: #F2F2F2;
+
+  --bg: var(--hz-sky, #000000);
+  --panel: #0E0F10;
+  --panel2: #1A1B1D;
+  --line: #3A3B3E;
+  --fg: #F2F2F2;
+  --muted: #B5B2AB;
+  --go: var(--hz-go, #1F7A4D);
+  --nogo: var(--hz-nogo, #B4421E);
+  /* Marginal on the sky: a light ground-coloured mark (12.97:1), hatched where it is a fill. */
+  --marginal: var(--hz-ground, #CFCBC2);
+  --sun: var(--hz-sun, #FFD27A);
+  --earth: var(--hz-earth, #4F8FD6);
+  --focus: var(--hz-sun, #FFD27A);
+  --hz-hatch-sky: repeating-linear-gradient(135deg, var(--hz-ground, #CFCBC2) 0 2px, var(--hz-sky, #000000) 2px 4px);
+  --hz-hatch-ground: repeating-linear-gradient(135deg, var(--hz-ink, #17181A) 0 2px, var(--hz-ground, #CFCBC2) 2px 4px);
+}
 
 .hz { --hz-k-ink: var(--hz-ink, #17181A); font-family: var(--hz-font-body, 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif); }
 .hz-sky { background: var(--hz-sky, #000000); color: #F2F2F2; padding: 10px 16px 0; }
@@ -34,11 +58,11 @@
 .hz-call { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; }
 .hz-word { margin: 0; font: 700 34px/1.1 var(--hz-font-display, 'Barlow Condensed', system-ui, sans-serif); }
 .hz-word .vbadge .sym { color: #FFFFFF; }
-.hz-word.go .vbadge { color: var(--hz-go, #1F7A4D); }
-.hz-word.no-go .vbadge { color: var(--hz-nogo, #B4421E); }
+.hz-word.go .vbadge { color: var(--hz-go-ink, #19623E); }
+.hz-word.no-go .vbadge { color: var(--hz-nogo-ink, #973719); }
 .hz-word.go .vbadge .sym { background: var(--hz-go, #1F7A4D); }
 .hz-word.no-go .vbadge .sym { background: var(--hz-nogo, #B4421E); }
-.hz-word.marginal .vbadge .sym { background: var(--hz-ink, #17181A); }
+.hz-word.marginal .vbadge .sym { background: var(--hz-hatch-ground); color: transparent; }
 .hz-dark .hz-word .vbadge { color: var(--hz-ink, #17181A); }
 .hz-reason { margin: 0; max-width: 80ch; }
 .hz-miss { margin: 6px 0 0; padding-left: 8px; border-left: 4px solid var(--hz-ink, #17181A); max-width: 80ch; }
@@ -55,10 +79,11 @@
 
 .hz-playbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; }
 .hz .hz-play { background: var(--hz-ink, #17181A); color: #FFFFFF; border-color: var(--hz-ink, #17181A); font-weight: 600; white-space: nowrap; }
-.hz-track { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hz-track { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 2px 6px; min-width: 0; }
 .hz-track input[type=range] { width: 100%; margin: 0; height: 28px; accent-color: var(--hz-ink, #17181A); }
-.hz-strips { width: 100%; height: 10px; display: block; }
-.hz-clock { grid-column: 1 / -1; font-size: 14px; font-variant-numeric: tabular-nums; }
+.hz-strip-k { font-size: 12px; line-height: 1; font-weight: 600; min-width: 3.4em; }
+.hz-strip-row { width: 100%; height: 6px; display: block; }
+.hz-clock { grid-column: 1 / -1; margin: 0; font-size: 14px; font-variant-numeric: tabular-nums; }
 .hz-speed { grid-column: 3; grid-row: 1; display: flex; align-items: center; gap: 6px; font-size: 14px; }
 .hz-speed select { font: inherit; min-height: 36px; color: var(--hz-ink, #17181A); background: #E6E3DC; border: 1px solid var(--hz-ink, #17181A); border-radius: 6px; }
 .hz-sources { margin-top: 8px; font-size: 14px; }
@@ -101,7 +126,82 @@
   .hz { padding-bottom: 64px; }
 }
 
+/* ---- Load motion: the call appears with the Sun's run (HorizonHero, RUN_MS = 800 ms) ----
+   The verdict heading and reason mount anew for each new answer (site, date or scenario change), so the
+   animation runs then and never on its own. .hz-call-enter is the same hook for any other markup. */
+@keyframes hz-call-in { from { clip-path: inset(0 100% 0 0); transform: translateY(8px); } to { clip-path: inset(0 0 0 0); transform: none; } }
+.hz .hz-call .hz-word.go, .hz .hz-call .hz-word.no-go, .hz .hz-call .hz-word.marginal,
+.hz .hz-call .hz-reason, .hz .hz-call-enter {
+  animation: hz-call-in 800ms var(--hz-ease, cubic-bezier(0.2, 0.7, 0.2, 1)) both;
+}
+
+/* ---- Tokens on the existing views (M3), CSS only; the classic files are not edited ---- */
+.hz .hz-view h2, .hz .hz-view h3, .hz .hz-view .chart-title, .hz .verdict-badge {
+  font-family: var(--hz-font-display, 'Barlow Condensed', system-ui, sans-serif);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.hz .hz-view h2 { font-size: 1.4rem; }
+.hz .hz-view h3, .hz .hz-view .chart-title { font-size: 1.15rem; }
+.hz .hz-view .card { background: var(--panel); border-color: var(--line); }
+.hz .hz-view a { color: #F2F2F2; text-decoration: underline; }
+.hz .tile .v, .hz table td.num, .hz .countdowns strong, .hz .rank-n { font-variant-numeric: tabular-nums; }
+.hz .tile .v { font-family: var(--hz-font-display, 'Barlow Condensed', system-ui, sans-serif); font-size: 1.5rem; }
+/* Sentence case for the verdict words (the DOM keeps the engine's words; this is display only). */
+.hz .vbadge > span:not(.sym) { display: inline-block; text-transform: lowercase; }
+.hz .vbadge > span:not(.sym)::first-letter { text-transform: uppercase; }
+/* Verdict marks: word plus shape, white symbols on go and no-go (5.32:1, 5.62:1); marginal hatched. */
+.hz .vbadge.go .sym, .hz .vbadge.no-go .sym { color: #FFFFFF; }
+.hz .vbadge.marginal .sym { background: var(--hz-hatch-sky); color: transparent; }
+.hz .hz-ground .vbadge.marginal .sym, .hz .hz-surface .vbadge.marginal .sym { background: var(--hz-hatch-ground); }
+.hz .verdict.marginal, .hz .rank-row.marginal, .hz .vcheck.marginal { border-left-style: dashed; }
+/* Calendar cells: white on go and no-go; marginal hatched light with ink text (10.98:1 and 5.17:1). */
+.hz table.calendar td.cal.go button, .hz table.calendar td.cal.no-go button { color: #FFFFFF; }
+.hz table.calendar td.cal.marginal button {
+  color: var(--hz-ink, #17181A);
+  background: repeating-linear-gradient(135deg, var(--hz-ground, #CFCBC2) 0 4px, var(--hz-ground-shade, #8E8A82) 4px 6px);
+}
+/* Accents that were Okabe-Ito blue, orange or yellow: ground on the sky (Sun and Earth keep their meaning). */
+.hz button.primary, .hz .btnrow button[aria-pressed=true], .hz .story-steps button[aria-current=step] {
+  background: var(--hz-ground, #CFCBC2); border-color: var(--hz-ground, #CFCBC2); color: var(--hz-ink, #17181A);
+}
+.hz .hint { color: var(--hz-ground, #CFCBC2); }
+.hz .illustrative { border-color: var(--hz-ground, #CFCBC2); }
+.hz .future-label, .hz .start-choices button { border-color: var(--hz-ground, #CFCBC2); }
+.hz .timebar input[type=range], .hz .field input[type=range], .hz .check input { accent-color: var(--hz-ground, #CFCBC2); }
+.hz table.calendar tr.cal-chosen th[scope=row] { box-shadow: inset 4px 0 0 var(--hz-ground, #CFCBC2); }
+.hz .pin:focus-visible circle, .hz .pin:focus-visible path { stroke: var(--hz-sun, #FFD27A); }
+.hz .miss-line.warn { border-left-color: var(--hz-nogo, #B4421E); }
+
+/* Miss map (MissView): when the answer arrives the dots grow outward from the target in 300 ms. Each dot
+   scales about the target (the plot centre: 18 px right of and 16 px above the view-box centre). */
+@keyframes hz-dot-out { from { transform: scale(0); opacity: 0; } to { transform: none; opacity: 1; } }
+.hz [data-testid=miss-map] > circle[fill='var(--go)'], .hz [data-testid=miss-map] > g[stroke='var(--nogo)'] {
+  transform-box: view-box;
+  transform-origin: calc(50% + 18px) calc(50% - 16px);
+  animation: hz-dot-out 300ms var(--hz-ease, cubic-bezier(0.2, 0.7, 0.2, 1)) both;
+}
+
+/* ---- Focus rings: Sun on the sky (14.75:1), ink on light surfaces (10.98:1 on ground, 5.17:1 on shade) ---- */
+.hz :focus-visible { outline-color: var(--hz-sun, #FFD27A); }
+.hz .hz-ground :focus-visible, .hz .hz-ground button:focus-visible, .hz .hz-ground input:focus-visible,
+.hz .hz-ground select:focus-visible, .hz .hz-ground summary:focus-visible,
+.hz .hz-surface :focus-visible, .hz .hz-surface button:focus-visible, .hz .hz-surface input:focus-visible,
+.hz .hz-surface select:focus-visible, .hz .hz-surface summary:focus-visible,
+.hz .hz-dialog button:focus-visible, .hz .hz-dialog input:focus-visible,
+.hz .hz-game :focus-visible, .hz .hz-game button:focus-visible, .hz .hz-game input:focus-visible {
+  outline: 3px solid var(--hz-ink, #17181A);
+  outline-offset: 2px;
+}
+.hz .hz-ground input:focus, .hz .hz-ground select:focus, .hz .hz-surface input:focus, .hz .hz-surface select:focus,
+.hz .hz-dialog input:focus, .hz .hz-game input:focus { outline-color: var(--hz-ink, #17181A); }
+/* Pins sit on the black polar map inside the light dialog: Sun ring there. */
+.hz .hz-dialog .hz-pins .hz-pin:focus-visible { outline: 3px solid var(--hz-sun, #FFD27A); outline-offset: 2px; }
+
 @media (prefers-reduced-motion: reduce) {
   .hz-view { animation: none; }
   .hz-ground { transition: none; }
+  .hz .hz-call .hz-word.go, .hz .hz-call .hz-word.no-go, .hz .hz-call .hz-word.marginal,
+  .hz .hz-call .hz-reason, .hz .hz-call-enter { animation: none; }
+  .hz [data-testid=miss-map] > circle[fill='var(--go)'], .hz [data-testid=miss-map] > g[stroke='var(--nogo)'] { animation: none; }
 }
