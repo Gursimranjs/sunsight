@@ -91,7 +91,7 @@ test('the miss and 3D views credit the terrain', async ({ page }) => {
 });
 
 test("a site inside another target's grid gets that grid's miss view, pin at the site", async ({ page }) => {
-  await page.goto('./?site=im2_athena_actual&start=2027-03-01T00:00Z&view=miss');
+  await page.goto('./?site=im2_athena_actual&start=2027-03-01T00:00Z&view=miss&ui=classic');
   await expect(page.getByTestId('miss-borrowed-grid')).toBeVisible({ timeout: 90_000 });
   await expect(page.getByTestId('miss-borrowed-grid')).toContainText('IM-2 Athena target');
   await expect(page.getByTestId('miss-pin')).not.toHaveAttribute('aria-valuetext', 'on the target');
