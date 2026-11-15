@@ -33,6 +33,7 @@ export function AboutData({ sites, fixture }: { sites: Site[]; fixture: boolean 
       {fixture && <p class="small"><strong>Fixture data is loaded: the numbers on screen are made up and do not come from these sources.</strong></p>}
       <ul class="small" style={{ margin: 0, paddingLeft: '1.2em' }}>
         {dataCredits(sites).map((c) => <li key={c.id}><CreditLink c={c} /></li>)}
+        <li data-testid="font-credit">Type: Barlow and Barlow Condensed by The Barlow Project Authors, SIL Open Font License 1.1 (self-hosted).</li>
       </ul>
     </section>
   );
