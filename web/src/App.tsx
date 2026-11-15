@@ -28,6 +28,8 @@ import { TableStatus, useTableRange } from './views/useTableRange';
 
 /** Wait before the background prefetch of the other table years tries again after a failure. */
 const PREFETCH_RETRY_MS = 20_000;
+/** Background prefetch gives up after this many failures (20 s, 40 s, 80 s, 160 s apart). */
+const PREFETCH_MAX_TRIES = 5;
 
 export function App() {
   const [data, setData] = useState<AppData | null>(null);
@@ -108,19 +110,36 @@ export function App() {
   // and searches do not wait, and the first screen never shares the network with them. After a failure it
   // tries again on the next answer or after PREFETCH_RETRY_MS.
   const firstScreenDone = !!result && (scn?.view !== 'miss' || missSettled);
+  // Background retries back off (PREFETCH_RETRY_MS, then twice that, …) and stop after PREFETCH_MAX_TRIES; a
+  // view that needs a missing year still fetches it on demand and offers Retry. The timer lives in a ref so a
+  // retry scheduled by an older run of the effect is still cleared on unmount.
+  const prefetchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const prefetchFails = useRef(0);
+  useEffect(() => () => { if (prefetchTimer.current) clearTimeout(prefetchTimer.current); }, []);
   useEffect(() => {
-    if (!data || !firstScreenDone || prefetched.current) return;
+    if (!data || !firstScreenDone || prefetched.current || prefetchFails.current >= PREFETCH_MAX_TRIES) return;
     prefetched.current = true;
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    let ran = false;
     const go = () => {
+      ran = true;
       data.store.ensureAll().catch(() => {
         prefetched.current = false;
-        timer = setTimeout(() => setPrefetchTry((x) => x + 1), PREFETCH_RETRY_MS);
+        prefetchFails.current += 1;
+        if (prefetchFails.current >= PREFETCH_MAX_TRIES) return;
+        if (prefetchTimer.current) clearTimeout(prefetchTimer.current);
+        prefetchTimer.current = setTimeout(() => setPrefetchTry((x) => x + 1), PREFETCH_RETRY_MS * 2 ** (prefetchFails.current - 1));
       });
     };
-    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
-    if (w.requestIdleCallback) w.requestIdleCallback(go, { timeout: 5000 }); else setTimeout(go, 1000);
-    return () => { if (timer) clearTimeout(timer); };
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (h: number) => void };
+    const idle = w.requestIdleCallback ? w.requestIdleCallback(go, { timeout: 5000 }) : undefined;
+    const fallback = idle === undefined ? setTimeout(go, 1000) : undefined;
+    return () => {
+      if (ran) return; // the fetch is under way; its own catch schedules any retry
+      // not started yet: cancel it and let the next run of this effect schedule it again
+      if (idle !== undefined) w.cancelIdleCallback?.(idle);
+      if (fallback !== undefined) clearTimeout(fallback);
+      prefetched.current = false;
+    };
   }, [data, result, firstScreenDone, prefetchTry]);
 
   const t_s = scn ? scn.start_s + scn.t_off_s : 0;
