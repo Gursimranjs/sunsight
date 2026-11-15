@@ -105,8 +105,25 @@ describe('shared light vectors (tolerance 1e-6)', () => {
     }
   });
 
+  it('verdict_cases: every preset and branch gives the same verdict and reason text', () => {
+    for (const c of V.verdict_cases) expect(L.verdict(c.metrics, L.PRESETS[c.preset as L.PresetId])).toEqual(c.expected);
+  });
+
+  it('format_hours: same text as Python, days over 48 hours', () => {
+    expect(V.format_hours.length).toBeGreaterThan(5);
+    for (const c of V.format_hours) expect(L.formatHoursText(c.s)).toBe(c.expected);
+  });
+
   it('miss_share', () => {
     for (const c of V.miss_share) close(L.miss_share(c.passes, c.east_m, c.north_m, c.radius_m), c.expected, 'miss_share');
+  });
+});
+
+describe('duration text (review note 003 E)', () => {
+  it('47.9 h, 48 h and 311.6 h', () => {
+    expect(L.formatHoursText(47.9 * 3600)).toBe('47.9 h');
+    expect(L.formatHoursText(48 * 3600)).toBe('48.0 h');
+    expect(L.formatHoursText(311.6 * 3600)).toBe('13.0 days (311.6 h)');
   });
 });
 

@@ -113,6 +113,29 @@ def main() -> None:
         "- Athena's target: sunlight is nearly uniform at map scale within 250 m (see table). The 20 m crater Athena came to rest in (LROC) is below what our 10 m terrain resolves; say so on the page."
     )
     a("")
+    ds_path = REPO_ROOT / "docs" / "submission" / "default_scenario.json"
+    if ds_path.exists():
+        ds = json.loads(ds_path.read_text())
+        ch = ds["chosen"]
+        a("## The site's default link (review note 003 B)")
+        a("")
+        a(
+            f"Found by `pipeline/sunsight/default_scenario.py`, recorded in `docs/submission/default_scenario.json`. Rule: {ds['rule']}."
+        )
+        a("")
+        for preset, res in ds["presets"].items():
+            parts = [
+                f"{names.get(t, t)}: target passes on {v['target_passes_screen']} of {v['screened_starts']} daily starts, {v['candidates_share_below_90pct']} of them with the 250 m share below 90% (hourly screen)"
+                for t, v in res["per_target"].items()
+            ]
+            a(f"- {preset}: " + "; ".join(parts) + ("." if res["chosen"] else ". No start meets the rule."))
+        if ch:
+            a(
+                f"- Chosen: {names.get(ch['target'], ch['target'])}, start {ch['start_utc']}, {ch['preset']} preset: "
+                f"{ch['exact_target_verdict']['verdict'].upper()} at the target (exact), and {100 * ch['exact_share_250m']:.1f}% "
+                f"of the {ch['points_within_250m']} grid points within 250 m pass (exact). The browser shows the same share (end-to-end test)."
+            )
+        a("")
     a("## Engineering numbers (measured in this repository)")
     a("")
     for r in regions:

@@ -7,7 +7,7 @@ import { local_frame, sample_at, site_vector } from './engine/light';
 import { formatDeg } from './format';
 import { loadAppData, resolveForSite, type AppData } from './state/data';
 import { currentPlace, freshAnswer, placeRequestKey, windowKey, type TaggedPlace } from './state/freshness';
-import { clampScenario, defaultScenario, tableRange, VIEWS, type Scenario } from './state/scenario';
+import { clampScenario, DEFAULT_QUERY, DEFAULT_SITE_ID, defaultScenario, tableRange, VIEWS, type Scenario } from './state/scenario';
 import { decodeScenario, encodeScenario } from './state/url';
 import { ShareBar } from './views/ShareBar';
 import { Compare } from './views/Compare';
@@ -40,7 +40,10 @@ export function App() {
         setData(d);
         const first = d.sites[0]?.id ?? null;
         const q = typeof location !== 'undefined' ? location.search : '';
-        const s0 = q ? decodeScenario(q, d.eph.start_ms, first, d.sites.map((x) => x.id)) : defaultScenario(first);
+        const ids = d.sites.map((x) => x.id);
+        // No query: open on the computed default scenario (note 003 B) when its site ships, else the first site.
+        const q0 = q || (ids.includes(DEFAULT_SITE_ID) ? DEFAULT_QUERY : '');
+        const s0 = q0 ? decodeScenario(q0, d.eph.start_ms, first, ids) : defaultScenario(first);
         setScn(clampScenario(s0, d.eph.meta));
       })
       .catch((e) => setError(String(e)));

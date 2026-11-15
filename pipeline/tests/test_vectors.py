@@ -76,3 +76,15 @@ def test_extra_windows():
         for k, v in w["metrics"].items():
             assert (m[k] == pytest.approx(v, abs=TOL)) if isinstance(v, float) else (m[k] == v), k
         assert L.verdict(m, rules) == w["verdict"]
+
+
+def test_format_hours_note_003():
+    assert L.format_hours(47.9 * 3600.0) == "47.9 h"
+    assert L.format_hours(48 * 3600.0) == "48.0 h"
+    assert L.format_hours(311.6 * 3600.0) == "13.0 days (311.6 h)"
+
+
+def test_format_hours_vectors():
+    assert len(V["format_hours"]) > 5
+    for c in V["format_hours"]:
+        assert L.format_hours(c["s"]) == c["expected"]
