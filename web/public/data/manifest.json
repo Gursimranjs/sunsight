@@ -2,8 +2,8 @@
  "format_version": 2,
  "fixture": false,
  "generated_with": "SunSight pipeline; code written by Claude Code (Anthropic)",
- "pipeline_version": "0.1.0+31f9276",
- "build_time_utc": "2026-11-14T18:21:37Z",
+ "pipeline_version": "0.1.0+8b02d1e",
+ "build_time_utc": "2026-11-15T18:27:57Z",
  "kernels": [
   "naif0012.tls",
   "pck00011.tpc",
@@ -603,8 +603,8 @@
   },
   {
    "path": "validation/summary.json",
-   "size_bytes": 11915,
-   "sha256": "43d0cde192169f08d81acbaf985c75930a5d67aac55d2f546f85202f0bec64b3"
+   "size_bytes": 12155,
+   "sha256": "9038bf331cac11641e5b15ca924d77ccc91483e86b0cf65995c5729202e6084f"
   }
  ]
 }

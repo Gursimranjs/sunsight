@@ -1,5 +1,5 @@
 {
- "generated_utc": "2026-11-14T18:21:35Z",
+ "generated_utc": "2026-11-15T18:27:22Z",
  "checks": [
   {
    "id": "ephemeris_horizons",
@@ -55,7 +55,7 @@
    "value_label": "largest gap to the published value (half-disc rule)",
    "pass_mark": "within 2 points at both heights, or the gap explained",
    "status": "partial",
-   "explanation": "Half the disc visible (our 'lit' rule): 86.32% at 2 m (-5.95), 89.68% at 10 m (-5.97). Any part of the disc visible, same points: 90.73% (-1.54) and 93.62% (-2.03). Gl\u00e4ser's exact definition of 'sunlit' was not checked (the paper was not accessible here), so both are shown. The coarse grid alone gave 70.6% and 86.6%: a 2 m observer is very sensitive to standing exactly on the crest. Our bin rule (review note 001) lowers the lit share by only 0.37 and 0.33 points here. Other differences: newer 2023 terrain, an 18.6-year period starting 2009-07-13, and a search limited to two neighbourhoods.",
+   "explanation": "Half the disc visible (our 'lit' rule): 86.32% at 2 m (-5.95), 89.68% at 10 m (-5.97). Any part of the disc visible, same points: 90.73% (-1.54) and 93.62% (-2.03). Gl\u00e4ser's exact definition of 'sunlit' was not checked (the paper was not accessible here), so both are shown. The coarse grid alone gave 70.6% and 86.6%: a 2 m observer is very sensitive to standing exactly on the crest. Our bin rule (review note 001) lowers the lit share by only 0.37 and 0.33 points here. Other differences: newer 2023 terrain, an 18.6-year period starting 2009-07-13, and a search limited to two neighbourhoods. The horizon search distance used in the 2014 study is not stated in its abstract; a 100 km limit would raise our figure by 3.7 points (sensitivity table), so a nearer limit in the study is one possible reason for the gap, not a proven one.",
    "source": "https://ui.adsabs.harvard.edu/abs/2014Icar..243...78G",
    "data": "validation/glaser_ridge.csv",
    "rows": 2

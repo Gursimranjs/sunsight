@@ -203,6 +203,10 @@ def build() -> dict:
         "interp": interp_cases,
         "window": windows,
         "verdict_cases": verdict_cases,
+        "format_hours": [
+            {"s": h * 3600.0, "expected": L.format_hours(h * 3600.0)}
+            for h in (0.0, 0.25, 4.5, 47.9, 48.0, 48.04, 114.1, 311.6, 1000.0)
+        ],
         "windows_extra": windows_extra,
         "miss_share": [
             {

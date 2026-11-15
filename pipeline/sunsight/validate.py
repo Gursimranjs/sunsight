@@ -1047,10 +1047,35 @@ ORDER = [
 ]
 
 
+HORIZON_LIMIT_ROW = "Terrain search stops at 100 km instead of 300 km"
+
+
+def horizon_limit_sentence(sens: dict | None) -> str | None:
+    """Review note 006 lead 3: one sentence on the study's unstated horizon distance, from our sensitivity row."""
+    rows = [r for r in (sens or {}).get("rows", []) if r["change"] == HORIZON_LIMIT_ROW]
+    if not rows:
+        return None
+    return (
+        "The horizon search distance used in the 2014 study is not stated in its abstract; "
+        f"a 100 km limit would raise our figure by {rows[0]['delta_points']:.1f} points (sensitivity table), "
+        "so a nearer limit in the study is one possible reason for the gap, not a proven one."
+    )
+
+
+def annotate_glaser(check: dict, sens: dict | None) -> dict:
+    """Append (once) the horizon-limit sentence to the Gläser check's explanation."""
+    text = check["explanation"].split(" The horizon search distance used in the 2014 study")[0]
+    extra = horizon_limit_sentence(sens)
+    return {**check, "explanation": f"{text} {extra}" if extra else text}
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument(
-        "--only", nargs="*", default=None, help="check groups: ephemeris eclipses sanity known glaser pgda"
+        "--only",
+        nargs="*",
+        default=None,
+        help="check groups: ephemeris eclipses sanity known glaser pgda sensitivity refine annotate",
     )
     groups = ap.parse_args().only or ["ephemeris", "eclipses", "sanity", "known", "glaser", "pgda"]
     path = OUT / "summary.json"
@@ -1061,6 +1086,7 @@ def main() -> None:
     if "sensitivity" in groups:
         sens = check_sensitivity()
         groups = [g for g in groups if g != "sensitivity"]
+    groups = [g for g in groups if g != "annotate"]  # "annotate" alone just rewrites the texts below
     if "refine" in groups:
         print(json.dumps(run_refinement(), indent=1))
         groups = [g for g in groups if g != "refine"]
@@ -1077,6 +1103,8 @@ def main() -> None:
         for c in res if isinstance(res, tuple) else (res,):
             have[c["id"]] = c
         print(g, "done", round(time.time() - t0), "s")
+    if "glaser_ridge" in have:
+        have["glaser_ridge"] = annotate_glaser(have["glaser_ridge"], sens)
     checks = [
         have.get(
             i,

@@ -395,9 +395,15 @@ export function pyFixed(x: number, digits: 0 | 1): string {
   return x.toFixed(digits);
 }
 
-function _hours(s: number): string {
-  return `${pyFixed(s / 3600.0, 1)} h`;
+export const LONG_DURATION_S = 48 * 3600.0;
+
+/** "4.5 h"; over 48 hours also in days: "13.0 days (311.6 h)". Same text as format_hours in light.py. */
+export function formatHoursText(s: number): string {
+  const hours = `${pyFixed(s / 3600.0, 1)} h`;
+  return s > LONG_DURATION_S ? `${pyFixed(s / 86400.0, 1)} days (${hours})` : hours;
 }
+
+const _hours = formatHoursText;
 
 export type VerdictKind = 'go' | 'marginal' | 'no-go';
 export interface Verdict { verdict: VerdictKind; reason: string }

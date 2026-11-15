@@ -1,0 +1,236 @@
+{
+ "note": "Computed by pipeline/sunsight/default_scenario.py from web/public/data (review note 003 B).",
+ "radius_m": 250.0,
+ "rule": "presets in the order robotic, crew, long; per target, in rising screened share: first exact target verdict 'go' with exact share of passing points within 250 m in (0, 0.9); lowest share across targets, ties earliest",
+ "presets": {
+  "robotic": {
+   "per_target": {
+    "shackleton_ridge_rim": {
+     "screened_starts": 1447,
+     "target_passes_screen": 1,
+     "candidates_share_below_90pct": 1,
+     "verified": [
+      {
+       "target": "shackleton_ridge_rim",
+       "preset": "robotic",
+       "start_utc": "2029-10-13T00:00Z",
+       "start_s": 87782400.0,
+       "screen_share_250m": 0.13580246913580246,
+       "exact_target_verdict": {
+        "verdict": "no-go",
+        "reason": "Longest gap in Earth contact is 12.2 h, over the 12.0 h limit."
+       },
+       "exact_target_longest_dark_s": 0.0,
+       "exact_target_longest_gap_s": 44025.0,
+       "exact_share_250m": null,
+       "points_within_250m": null
+      }
+     ]
+    },
+    "a3_malapert_massif": {
+     "screened_starts": 1447,
+     "target_passes_screen": 0,
+     "candidates_share_below_90pct": 0,
+     "verified": []
+    },
+    "im2_athena_target": {
+     "screened_starts": 1447,
+     "target_passes_screen": 18,
+     "candidates_share_below_90pct": 0,
+     "verified": []
+    }
+   },
+   "chosen": null
+  },
+  "crew": {
+   "per_target": {
+    "shackleton_ridge_rim": {
+     "screened_starts": 1455,
+     "target_passes_screen": 221,
+     "candidates_share_below_90pct": 221,
+     "verified": [
+      {
+       "target": "shackleton_ridge_rim",
+       "preset": "crew",
+       "start_utc": "2028-03-22T00:00Z",
+       "start_s": 38534400.0,
+       "screen_share_250m": 0.012345679012345678,
+       "exact_target_verdict": {
+        "verdict": "marginal",
+        "reason": "The Sun stays up, but at times only 52% of its disc clears the terrain."
+       },
+       "exact_target_longest_dark_s": 0.0,
+       "exact_target_longest_gap_s": 1125.0,
+       "exact_share_250m": 0.012345679012345678,
+       "points_within_250m": 81
+      },
+      {
+       "target": "shackleton_ridge_rim",
+       "preset": "crew",
+       "start_utc": "2027-01-17T00:00Z",
+       "start_s": 1382400.0,
+       "screen_share_250m": 0.07407407407407407,
+       "exact_target_verdict": {
+        "verdict": "no-go",
+        "reason": "Longest gap in Earth contact is 2.3 h, over the 2.0 h limit."
+       },
+       "exact_target_longest_dark_s": 0.0,
+       "exact_target_longest_gap_s": 8437.5,
+       "exact_share_250m": null,
+       "points_within_250m": null
+      },
+      {
+       "target": "shackleton_ridge_rim",
+       "preset": "crew",
+       "start_utc": "2028-05-20T00:00Z",
+       "start_s": 43632000.0,
+       "screen_share_250m": 0.14814814814814814,
+       "exact_target_verdict": {
+        "verdict": "marginal",
+        "reason": "The Sun stays up, but at times only 67% of its disc clears the terrain."
+       },
+       "exact_target_longest_dark_s": 0.0,
+       "exact_target_longest_gap_s": 637.5,
+       "exact_share_250m": 0.14814814814814814,
+       "points_within_250m": 81
+      },
+      {
+       "target": "shackleton_ridge_rim",
+       "preset": "crew",
+       "start_utc": "2029-07-24T00:00Z",
+       "start_s": 80784000.0,
+       "screen_share_250m": 0.14814814814814814,
+       "exact_target_verdict": {
+        "verdict": "go",
+        "reason": "Sunlight and Earth contact meet every rule with margin."
+       },
+       "exact_target_longest_dark_s": 0.0,
+       "exact_target_longest_gap_s": 1875.0,
+       "exact_share_250m": 0.14814814814814814,
+       "points_within_250m": 81
+      }
+     ]
+    },
+    "a3_malapert_massif": {
+     "screened_starts": 1455,
+     "target_passes_screen": 86,
+     "candidates_share_below_90pct": 86,
+     "verified": [
+      {
+       "target": "a3_malapert_massif",
+       "preset": "crew",
+       "start_utc": "2029-09-18T00:00Z",
+       "start_s": 85622400.0,
+       "screen_share_250m": 0.4567901234567901,
+       "exact_target_verdict": {
+        "verdict": "marginal",
+        "reason": "The Sun stays up, but at times only 69% of its disc clears the terrain."
+       },
+       "exact_target_longest_dark_s": 0.0,
+       "exact_target_longest_gap_s": 1200.0,
+       "exact_share_250m": 0.4567901234567901,
+       "points_within_250m": 81
+      },
+      {
+       "target": "a3_malapert_massif",
+       "preset": "crew",
+       "start_utc": "2027-12-10T00:00Z",
+       "start_s": 29635200.0,
+       "screen_share_250m": 0.4691358024691358,
+       "exact_target_verdict": {
+        "verdict": "go",
+        "reason": "Sunlight and Earth contact meet every rule with margin."
+       },
+       "exact_target_longest_dark_s": 0.0,
+       "exact_target_longest_gap_s": 1106.25,
+       "exact_share_250m": 0.4691358024691358,
+       "points_within_250m": 81
+      }
+     ]
+    },
+    "im2_athena_target": {
+     "screened_starts": 1455,
+     "target_passes_screen": 201,
+     "candidates_share_below_90pct": 3,
+     "verified": [
+      {
+       "target": "im2_athena_target",
+       "preset": "crew",
+       "start_utc": "2029-02-22T00:00Z",
+       "start_s": 67651200.0,
+       "screen_share_250m": 0.2839506172839506,
+       "exact_target_verdict": {
+        "verdict": "no-go",
+        "reason": "Longest gap in Earth contact is 2.1 h, over the 2.0 h limit."
+       },
+       "exact_target_longest_dark_s": 0.0,
+       "exact_target_longest_gap_s": 7425.0,
+       "exact_share_250m": null,
+       "points_within_250m": null
+      },
+      {
+       "target": "im2_athena_target",
+       "preset": "crew",
+       "start_utc": "2029-09-23T00:00Z",
+       "start_s": 86054400.0,
+       "screen_share_250m": 0.49382716049382713,
+       "exact_target_verdict": {
+        "verdict": "marginal",
+        "reason": "The Sun stays up, but at times only 60% of its disc clears the terrain."
+       },
+       "exact_target_longest_dark_s": 0.0,
+       "exact_target_longest_gap_s": 450.0,
+       "exact_share_250m": 0.49382716049382713,
+       "points_within_250m": 81
+      },
+      {
+       "target": "im2_athena_target",
+       "preset": "crew",
+       "start_utc": "2028-08-05T00:00Z",
+       "start_s": 50284800.0,
+       "screen_share_250m": 0.7037037037037037,
+       "exact_target_verdict": {
+        "verdict": "go",
+        "reason": "Sunlight and Earth contact meet every rule with margin."
+       },
+       "exact_target_longest_dark_s": 0.0,
+       "exact_target_longest_gap_s": 1012.5,
+       "exact_share_250m": 0.7037037037037037,
+       "points_within_250m": 81
+      }
+     ]
+    }
+   },
+   "chosen": {
+    "target": "shackleton_ridge_rim",
+    "preset": "crew",
+    "start_utc": "2029-07-24T00:00Z",
+    "start_s": 80784000.0,
+    "screen_share_250m": 0.14814814814814814,
+    "exact_target_verdict": {
+     "verdict": "go",
+     "reason": "Sunlight and Earth contact meet every rule with margin."
+    },
+    "exact_target_longest_dark_s": 0.0,
+    "exact_target_longest_gap_s": 1875.0,
+    "exact_share_250m": 0.14814814814814814,
+    "points_within_250m": 81
+   }
+  }
+ },
+ "chosen": {
+  "target": "shackleton_ridge_rim",
+  "preset": "crew",
+  "start_utc": "2029-07-24T00:00Z",
+  "start_s": 80784000.0,
+  "screen_share_250m": 0.14814814814814814,
+  "exact_target_verdict": {
+   "verdict": "go",
+   "reason": "Sunlight and Earth contact meet every rule with margin."
+  },
+  "exact_target_longest_dark_s": 0.0,
+  "exact_target_longest_gap_s": 1875.0,
+  "exact_share_250m": 0.14814814814814814,
+  "points_within_250m": 81
+ }
+}
