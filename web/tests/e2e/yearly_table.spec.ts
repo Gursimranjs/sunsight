@@ -119,7 +119,7 @@ test.describe('a year file that fails to load', () => {
 
   test('default link: the report card and the miss test show the error, and Retry recovers', async ({ page }) => {
     await fail500(page, 2029);
-    await page.goto('./');
+    await page.goto('./?ui=classic');
     const missErr = page.getByTestId('miss-headline').getByTestId('table-error');
     await expect(missErr).toContainText('Could not load the Sun and Earth positions', { timeout: 60_000 });
     await expect(page.getByTestId('table-status').getByTestId('table-error')).toContainText(/2029\.bin|HTTP|500/);
@@ -135,7 +135,7 @@ test.describe('a year file that fails to load', () => {
 
   test('miss test: after a failed year, choosing another date tries again without Retry', async ({ page }) => {
     await fail500(page, 2029);
-    await page.goto('./');
+    await page.goto('./?ui=classic');
     await expect(page.getByTestId('miss-headline').getByTestId('table-error')).toBeVisible({ timeout: 60_000 });
     // Let every job that was waiting on the failed year settle first, so none of them refetches it after the unroute.
     await page.waitForLoadState('networkidle');
@@ -148,7 +148,7 @@ test.describe('a year file that fails to load', () => {
 
   test('compare and calendar show the error, and Retry recovers', async ({ page }) => {
     await fail500(page, 2030);
-    await page.goto('./?site=shackleton_ridge_rim&start=2030-03-01T00:00Z&preset=robotic&view=compare');
+    await page.goto('./?site=shackleton_ridge_rim&start=2030-03-01T00:00Z&preset=robotic&view=compare&ui=classic');
     const card = page.getByLabel('Compare sites');
     await expect(card.getByTestId('table-error')).toBeVisible({ timeout: 60_000 });
     await expect(page.getByRole('region', { name: 'Calendar', exact: true }).getByTestId('table-error')).toBeVisible();
@@ -163,7 +163,7 @@ test.describe('a year file that fails to load', () => {
 
   test('ranking shows the error, and Retry recovers', async ({ page }) => {
     await fail500(page, 2030);
-    await page.goto('./?site=shackleton_ridge_rim&start=2030-03-01T00:00Z&preset=robotic&view=rank');
+    await page.goto('./?site=shackleton_ridge_rim&start=2030-03-01T00:00Z&preset=robotic&view=rank&ui=classic');
     const rank = page.getByTestId('rank');
     await expect(rank.getByTestId('table-error')).toBeVisible({ timeout: 60_000 });
     // Let every job that was waiting on the failed year settle first, so none of them refetches it after the unroute.
@@ -176,7 +176,7 @@ test.describe('a year file that fails to load', () => {
 
   test('3D view shows the App\'s error instead of loading forever, and Retry recovers', async ({ page }) => {
     await fail500(page, 2027);
-    await page.goto('./?site=shackleton_ridge_rim&start=2027-10-13T00:00Z&view=3d');
+    await page.goto('./?site=shackleton_ridge_rim&start=2027-10-13T00:00Z&view=3d&ui=classic');
     await expect(page.getByTestId('hero3d-table-error')).toContainText('Could not load the Sun and Earth positions', { timeout: 60_000 });
     // Let every job that was waiting on the failed year settle first, so none of them refetches it after the unroute.
     await page.waitForLoadState('networkidle');
@@ -188,7 +188,7 @@ test.describe('a year file that fails to load', () => {
 
   test('Athena story contrast shows the error, and Retry recovers', async ({ page }) => {
     await fail500(page, 2030);
-    await page.goto('./?site=shackleton_ridge_rim&start=2030-03-01T00:00Z&view=story');
+    await page.goto('./?site=shackleton_ridge_rim&start=2030-03-01T00:00Z&view=story&ui=classic');
     await page.getByRole('button', { name: /^Step 5:/ }).click();
     const step = page.getByTestId('story-step-5');
     // The step holds the contrast table and, below it, a miss map: both say the year failed.

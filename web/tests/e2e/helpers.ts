@@ -21,8 +21,9 @@ export function watchErrors(page: Page): string[] {
   return errors;
 }
 
+/** Opens the classic interface (explicit ?ui=classic, so it stays classic whatever the default interface is). */
 export async function openApp(page: Page, query = '') {
-  await page.goto(query ? `./?${query}` : './');
+  await page.goto(`./?${query ? query + '&' : ''}ui=classic`);
   await expect(page.getByTestId('verdict-word')).toBeVisible();
 }
 
