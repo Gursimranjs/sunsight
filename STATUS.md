@@ -36,7 +36,7 @@ Checked Saturday November 14, 2026, 09:16 MST.
 | Gate | Due | Status | Note |
 | --- | --- | --- | --- |
 | 1: one real site end to end on the live address | Saturday 20:00 | Reached Saturday 10:01 MST (machine clock) | https://gursimranjs.github.io/sunsight/?site=shackleton_ridge_rim&start=2028-06-01T00%3A00Z&days=14&preset=robotic shows the same longest darkness (173.1 h), gap (231.6 h) and sunrise (2028-06-08 05:04 UTC) as light.py on the real table. A person should open it on a laptop and a phone. |
-| 2: feature freeze | Sunday 14:00 | Agent stopped feature work at 12:40 MST (last feature 7aa0674) | Review notes 003, 005, 006, 007, 008 resolved; 004 open: its 2023–2026 browser years and replay list were not started (they move the engine's time origin; judged too risky before the freeze). From here: fixes only. CI and deploy green on 24bd140. |
+| 2: feature freeze | Sunday 14:00 (owner reopened 14:13 for note 009 until 17:30) | Agent stopped feature work at 12:40 MST (last feature 7aa0674) | Review notes 003, 005, 006, 007, 008 resolved; 004 open: its 2023–2026 browser years and replay list were not started (they move the engine's time origin; judged too risky before the freeze). From here: fixes only. CI and deploy green on 24bd140. |
 | 3: submitted by people | Sunday 22:30 | Not reached | |
 
 ## Packages
@@ -71,6 +71,7 @@ Status is one of: todo, doing, done, cut.
 
 ## Log
 
+- **Note 009, horizon interface (Sunday 14:15).** BLOCKING note from the reviewer on the owner's request: a new interface behind `?ui=horizon`, milestones M1 14:30, M2 15:45, M3 16:45, M4 17:15, hard stop 17:30 (no flip unless M4 is green). Fallback tag `pre-polish` (c17ab94) pushed. Started 14:13; M1 will be late. Shell, game, and tokens/pickers built in parallel worktrees, each reviewed.
 - **Freeze (Sunday 12:40).** No new features from here. Live site checked as a visitor: the default link shows GO with the miss line on the first screen, fetches only 2029.bin first, no console errors. Review note 004 stays open for its remaining part (see Gate 2).
 - **Note 008 (Sunday 12:40).** The verdict card now carries the miss result on the default link ("! Miss test: within 250 m, 15% of the ground still passes (not miss-tolerant)", from the Miss test view's own job), visible on the first screen on desktop and at 375 px. Re-captured all shots and clips from this build (`make capture`), adding the first screen (desktop and phone), "Which sites work?", 3D lit and 3D at night with the fill light, and a first-visit clip. make check (140 Python, 165 unit) and 86 e2e pass.
 - **Note 004 speed item (Sunday 12:35).** The app now fetches the Sun and Earth table one year at a time (exact slices of the 2027–2030 file; every number unchanged). Default link at 10 Mbit/s, 40 ms latency, cache off (3 runs each): verdict at 3.23 s before, 1.61 s after, so the 3-second first-load target now holds. First-load JS 52.3 kB gzip. Every view shows an error with Retry if a year file fails; background prefetch backs off and stops after 5 failures. Reviewed twice by separate agents (no wrong numbers found). Main: make check (140 Python, 165 unit) and 83 e2e pass. Still not built from note 004: 2023–2026 years and the in-app replay list.
