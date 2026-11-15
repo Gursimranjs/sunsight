@@ -260,8 +260,9 @@ test('the Horizon view has one horizon on the page: no second panorama, the whol
   await expect(page.getByTestId('metrics')).toBeVisible({ timeout: 60_000 });
   await expect(page.getByTestId('hz-hero')).toHaveCount(1);
   await expect(page.getByTestId('panorama')).toHaveCount(0);
-  await expect(page.getByTestId('hz-horizon-view')).toHaveClass(/hz-surface/);
-  await expect(page.getByTestId('hz-horizon-view')).toHaveCSS('background-color', 'rgb(207, 203, 194)');
+  // The whole view area wears the ground surface (the class moved from the inner div to the view container).
+  await expect(page.getByTestId('hz-view')).toHaveClass(/hz-surface/);
+  await expect(page.getByTestId('hz-view')).toHaveCSS('background-color', 'rgb(207, 203, 194)');
 });
 
 test('a date outside the table is moved with a polite, dismissible note (note 010 #4)', async ({ page }) => {

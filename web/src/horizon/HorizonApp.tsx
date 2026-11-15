@@ -119,16 +119,16 @@ export function HorizonApp() {
               <TerrainCredit />
             </>} />
           <ViewSwitch view={view} onView={setView} hasGame={hasMiss} />
-          {/* The wrapped views still sit on the classic dark surfaces: keep the classic text colour there, not the
-              tokens' ink (which is for the light ground), until the views themselves take the tokens. */}
-          <div class="hz-view" id="hz-view" data-testid="hz-view" key={view} aria-label="View" role="region" data-surface="classic" style={{ color: 'var(--fg)' }}>
+          {/* The view area wears the ground (note 010 #2): ink on regolith outside the cards; the classic chart cards
+              inside stay dark sky panels with light text and a Sun focus ring (horizon.css, ".hz-view.hz-surface"). */}
+          <div class="hz-view hz-surface" id="hz-view" data-testid="hz-view" key={view} aria-label="View" role="region">
             {/* Note 010 #2: the hero above is the one horizon on the page, so this view drops the classic full-width
                 panorama. Its close-up lives in the same classic component (Panorama), which cannot be split without
                 editing classic files, so it is dropped here too; the classic interface still has both. */}
             {view === 'horizon' && shown && now && place && (
-              <div class="hz-surface hz-horizon-view" aria-busy={stale} data-stale={!fresh} data-testid="hz-horizon-view">
+              <div class="hz-horizon-view" aria-busy={stale} data-stale={!fresh} data-testid="hz-horizon-view">
                 {!fresh && <p class="small">{jobError ? 'The numbers below are from the previous inputs; the engine failed for the current ones.' : 'Updating: the numbers below are from the previous inputs.'}</p>}
-                <div style={{ color: 'var(--fg)' }}><MetricTiles m={shown.metrics} rules={scn.rules} /></div>
+                <MetricTiles m={shown.metrics} rules={scn.rules} />
                 <p class="small" data-testid="hz-horizon-note">The sky chart and its equal-scale close-up are in the{' '}
                   <a style={{ color: 'var(--hz-ink, #17181A)' }} href={'?' + encodeScenario(scn, epochMs) + '&ui=classic'}>classic interface</a>; the horizon at the top of this page is the same sky.</p>
               </div>

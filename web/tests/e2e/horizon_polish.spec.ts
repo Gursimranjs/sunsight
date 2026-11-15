@@ -180,7 +180,7 @@ test('Sun and Earth labels do not touch at 375 px on the default link', async ({
   await openHz(page);
   await expect(page.getByTestId('hz-hero')).toHaveAttribute('data-run', 'settled', { timeout: 10_000 });
   const boxes = await page.evaluate(() => ['sun', 'earth'].map((k) => {
-    const r = document.querySelector(`[data-testid=hz-${k}] text`)!.getBoundingClientRect();
+    const r = document.querySelector(`[data-testid=hz-${k}-label]`)!.getBoundingClientRect();
     return { x0: r.left, x1: r.right, y0: r.top, y1: r.bottom };
   }));
   const [a, b] = boxes;

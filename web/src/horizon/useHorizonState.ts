@@ -198,12 +198,19 @@ export function useHorizonState() {
         if (iv.scnView) s0.view = iv.scnView;
         const s1 = clampScenario(s0, d.eph.meta);
         if (Number.isFinite(s0.start_s) && s1.start_s !== s0.start_s) {
-          setMoved({ from_ms: d.eph.start_ms + s0.start_s * 1000, to_ms: d.eph.start_ms + s1.start_s * 1000 });
+          const m = { from_ms: d.eph.start_ms + s0.start_s * 1000, to_ms: d.eph.start_ms + s1.start_s * 1000 };
+          // Fill the note after its (empty) live region has mounted, so screen readers announce it.
+          setTimeout(() => setMoved(m), 300);
         }
         setScn(s1);
       })
       .catch((e) => setError(String(e)));
   }, []);
+
+  // The moved-date note describes the start the link asked for; once the start changes it no longer applies.
+  useEffect(() => {
+    if (moved && scn && data && data.eph.start_ms + scn.start_s * 1000 !== moved.to_ms) setMoved(null);
+  }, [scn?.start_s, moved]);
 
   // Keep the scenario (and the flag, and the game's view and point) in the address bar, at most every URL_WRITE_MS.
   useEffect(() => {

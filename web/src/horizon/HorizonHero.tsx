@@ -111,6 +111,24 @@ function useRun(key: string | null): number {
   return pending ? 0 : f;
 }
 
+/**
+ * A disc's label, drawn in its own layer after the terrain so a label placed below its disc is never painted
+ * over by the ground; a dark halo keeps it readable where it crosses the light terrain.
+ */
+function BodyLabel({ s, az_deg, el_deg, r_deg, kind, side = 'above', hidden = false }: {
+  s: PanoScale; az_deg: number; el_deg: number; r_deg: number; kind: 'sun' | 'earth'; side?: 'above' | 'below'; hidden?: boolean;
+}) {
+  if (hidden) return null;
+  const d = disc(s, az_deg, el_deg, r_deg);
+  const col = kind === 'sun' ? 'var(--hz-sun, #FFD27A)' : 'var(--hz-earth, #4F8FD6)';
+  return (
+    <text class="hz-body-label" data-testid={`hz-${kind}-label`} x={d.cx} y={labelY(d.cy, d.ry, side)} text-anchor="middle"
+      style={{ fill: col, stroke: 'var(--hz-sky, #000000)', strokeWidth: 3, paintOrder: 'stroke', strokeLinejoin: 'round' }}>
+      {kind === 'sun' ? 'Sun' : 'Earth'}
+    </text>
+  );
+}
+
 function Body({ s, az_deg, el_deg, r_deg, kind, settled = true, side = 'above', hidden = false }: {
   s: PanoScale; az_deg: number; el_deg: number; r_deg: number; kind: 'sun' | 'earth'; settled?: boolean;
   side?: 'above' | 'below'; hidden?: boolean;
@@ -123,8 +141,8 @@ function Body({ s, az_deg, el_deg, r_deg, kind, settled = true, side = 'above', 
       data-cx={d.cx.toFixed(1)} data-cy={d.cy.toFixed(1)} data-rx={d.rx} data-ry={d.ry} data-label={hidden ? 'none' : side}>
       <circle cx={d.cx} cy={d.cy} r={RING_PX + Math.max(d.rx, d.ry)} fill="none" stroke={col} stroke-width="1.5" opacity="0.8" />
       <ellipse cx={d.cx} cy={d.cy} rx={Math.max(d.rx, 1.5)} ry={Math.max(d.ry, 0.75)} fill={col} />
-      {/* Under the terrain the label would float over the ridge: the horizon marker names it instead. */}
-      {!hidden && <text x={d.cx} y={labelY(d.cy, d.ry, side)} text-anchor="middle" style={{ fill: col }}>{label}</text>}
+      {/* The label is drawn by BodyLabel after the terrain; under the terrain the horizon marker names the body. */}
+      <title>{label}</title>
     </g>
   );
 }
@@ -183,6 +201,8 @@ export function HorizonHero({ series, now, mask, terrain, horizonLabel, busy }: 
         <Body s={s} az_deg={now.earth_az_deg} el_deg={now.earth_el_deg} r_deg={now.earth_r_deg} kind="earth" side={sides.earth} hidden={earthHidden} />
         <Body s={s} az_deg={sunAz_deg} el_deg={sunEl_deg} r_deg={now.sun_r_deg} kind="sun" settled={settled} side={sides.sun} hidden={sunHidden} />
         <path d={terrainPath(s, mask)} fill="var(--hz-ground, #CFCBC2)" />
+        <BodyLabel s={s} az_deg={now.earth_az_deg} el_deg={now.earth_el_deg} r_deg={now.earth_r_deg} kind="earth" side={sides.earth} hidden={earthHidden} />
+        <BodyLabel s={s} az_deg={sunAz_deg} el_deg={sunEl_deg} r_deg={now.sun_r_deg} kind="sun" side={sides.sun} hidden={sunHidden} />
         {below}
         <rect x="0" y={bottom_px} width={W} height={box.padB} fill="var(--hz-ground, #CFCBC2)" />
         {[0, 90, 180, 270].map((az_deg, i) => (
