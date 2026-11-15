@@ -163,6 +163,9 @@ def main() -> None:
     a("- NASA lunar eclipse table 2021-2030: https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html")
     a("- Gläser et al. 2014, Icarus 243, 78: https://ui.adsabs.harvard.edu/abs/2014Icar..243...78G")
     a("- Site coordinates: see `web/public/data/sites.json` (`source_url` and `source_quote` per site).")
+    a(
+        "- Real-mission events (validation check 9): `pipeline/data/real_missions.json` (Firefly, NASA, NASA GSFC eclipse page, ISRO, LROC, SpacePolicyOnline, SatNews, KSL/Reuters, Scroll; URL and quote per event)."
+    )
     a("")
     a("## Limits to state")
     a("")

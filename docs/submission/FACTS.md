@@ -1,7 +1,7 @@
 <!-- SI-generated: rendered by pipeline/sunsight/factsheet.py (Claude Code, Anthropic) from the shipped data. See SI_USE.md. -->
 # Facts sheet
 
-Verified facts and numbers for the people writing the project page. Rendered 2026-11-15 18:48 UTC from `web/public/data` (manifest built 2026-11-15T18:48:47Z, pipeline 0.1.0+1f2ccba). Every number below comes from a run in this repository or from the cited source. This is not text to paste; write the page in the team's own words.
+Verified facts and numbers for the people writing the project page. Rendered 2026-11-15 19:38 UTC from `web/public/data` (manifest built 2026-11-15T18:54:38Z, pipeline 0.1.0+b3e43ab). Every number below comes from a run in this repository or from the cited source. This is not text to paste; write the page in the team's own words.
 
 ## What the data covers
 
@@ -107,6 +107,7 @@ Found by `pipeline/sunsight/default_scenario.py`, recorded in `docs/submission/d
 - NASA lunar eclipse table 2021-2030: https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html
 - Gläser et al. 2014, Icarus 243, 78: https://ui.adsabs.harvard.edu/abs/2014Icar..243...78G
 - Site coordinates: see `web/public/data/sites.json` (`source_url` and `source_quote` per site).
+- Real-mission events (validation check 9): `pipeline/data/real_missions.json` (Firefly, NASA, NASA GSFC eclipse page, ISRO, LROC, SpacePolicyOnline, SatNews, KSL/Reuters, Scroll; URL and quote per event).
 
 ## Limits to state
 
