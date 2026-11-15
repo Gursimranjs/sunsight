@@ -35,10 +35,14 @@ export function App() {
   const [result, setResult] = useState<{ key: string; answer: WindowAnswer; windowMs: number } | null>(null);
   const [jobError, setJobError] = useState<string | null>(null);
   const reqKey = useRef('');
+  /** Bumped whenever a year of the Sun and Earth table arrives, so main-thread look-ups re-run. */
+  const [tableTick, setTableTick] = useState(0);
+  const prefetched = useRef(false);
 
   useEffect(() => {
     loadAppData(() => setFixtureTick((x) => x + 1))
       .then((d) => {
+        d.store.onFill(() => setTableTick((x) => x + 1));
         setData(d);
         const first = d.sites[0]?.id ?? null;
         const q = typeof location !== 'undefined' ? location.search : '';
@@ -86,12 +90,31 @@ export function App() {
       .catch((e) => { if (reqKey.current === key) setJobError(String(e)); });
   }, [key]);
 
+  // Fetch the year(s) of the Sun and Earth table this stay reads (the engine jobs wait for the same fetch).
+  const stayStart_s = scn?.start_s ?? 0, stayEnd_s = scn ? scn.start_s + scn.stay_s : 0;
+  useEffect(() => {
+    if (!data || !scn) return;
+    data.ensureRange(stayStart_s, stayEnd_s).catch(() => { /* the window job reports the same failure */ });
+  }, [data, stayStart_s, stayEnd_s]);
+
+  // Once the first answer is on screen, fetch the other years while the browser is idle, so later
+  // date changes, calendars and searches do not wait.
+  useEffect(() => {
+    if (!data || !result || prefetched.current) return;
+    prefetched.current = true;
+    const go = () => { data.store.ensureAll().catch(() => { prefetched.current = false; }); };
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+    if (w.requestIdleCallback) w.requestIdleCallback(go, { timeout: 5000 }); else setTimeout(go, 1000);
+  }, [data, result]);
+
   const t_s = scn ? scn.start_s + scn.t_off_s : 0;
   const now = useMemo(() => {
     if (!data || !place || !scn) return null;
+    if (!data.hasRange(t_s, t_s)) return null; // its year is still loading; tableTick re-runs this
+
     const site_km = site_vector(place.lat_deg, place.lon_deg, place.h_m + scn.rules.observer_height_m);
     return sample_at(data.table, t_s, site_km, local_frame(place.lat_deg, place.lon_deg), place.mask, scn.rules);
-  }, [data, place, t_s, scn?.rules]);
+  }, [data, place, t_s, scn?.rules, tableTick]);
 
   if (error) return <main><p role="alert">Could not load data: {error}</p></main>;
   if (!data || !scn) return <main><p>Loading SunSight…</p></main>;

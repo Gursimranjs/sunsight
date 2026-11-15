@@ -2,6 +2,7 @@
 // Guided Athena story: five short steps, built for a 375 px phone. Facts come only from the cited
 // sources (LROC images 1401 and 1408, SpacePolicyOnline); distances are computed here from the
 // cited coordinates.
+import { LOADING_TABLE_TEXT, useTableRange } from './useTableRange';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Site } from '../data/types';
 import { formatUtc, fromInputUtc, toInputUtc } from '../format';
@@ -90,6 +91,7 @@ function MissContrast({ data, scn, update }: Props) {
   const [rows, setRows] = useState<{ key: string; list: { site: Site; r250: ReturnType<typeof litRange>; r500: ReturnType<typeof litRange> }[] } | null>(null);
   const [show, setShow] = useState(sites[0]?.id ?? '');
   const key = JSON.stringify([sites.map((s) => s.id), scn.start_s, scn.stay_s, scn.rules]);
+  const tableReady = useTableRange(data, scn.start_s, scn.start_s + scn.stay_s);
   useEffect(() => {
     let live = true;
     (async () => {
@@ -111,7 +113,7 @@ function MissContrast({ data, scn, update }: Props) {
   return (
     <>
       <h3 class="chart-title">Share of the stay in sunlight, at the target and anywhere within the miss</h3>
-      {!list && <p>Testing every landing point around both targets…</p>}
+      {!list && <p>{tableReady ? 'Testing every landing point around both targets…' : LOADING_TABLE_TEXT}</p>}
       {list && (
         <div class="scroll-x" tabIndex={0} role="region" aria-label="Sunlight at both targets (scrolls sideways)">
           <table data-testid="story-contrast">

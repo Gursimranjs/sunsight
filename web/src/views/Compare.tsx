@@ -1,5 +1,6 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // Compare 2-3 sites on one time axis, and a days x sites calendar of verdicts.
+import { LOADING_TABLE_TEXT, useTableRange } from './useTableRange';
 import { useEffect, useState } from 'preact/hooks';
 import type { Resolved } from '../data/sites';
 import type { Site } from '../data/types';
@@ -41,6 +42,7 @@ export function Compare({ data, scn, update }: Props) {
   const places = useResolved(data, chosen, scn.rules.observer_height_m);
   const [answers, setAnswers] = useState<{ key: string; list: WindowAnswer[] } | null>(null);
   const key = places ? JSON.stringify([chosenIds, places.map((p) => p.maskKey), scn.start_s, scn.stay_s, scn.rules]) : '';
+  const compareReady = useTableRange(data, scn.start_s, scn.start_s + scn.stay_s);
 
   useEffect(() => {
     if (!places) return;
@@ -74,7 +76,7 @@ export function Compare({ data, scn, update }: Props) {
             </label>
           ))}
         </div>
-        {!list && <p>Computing…</p>}
+        {!list && <p>{compareReady ? 'Computing…' : LOADING_TABLE_TEXT}</p>}
         {list && chosen.map((s, i) => (
           <div key={s.id} data-testid="compare-row">
             <p style={{ margin: '8px 0 2px' }}>
@@ -166,6 +168,8 @@ function Calendar({ data, scn, update }: Props) {
   const chosenId = sites.some((s) => s.id === scn.site_id) ? scn.site_id : null;
   const places = useResolved(data, sites, scn.rules.observer_height_m);
   const starts = dayStarts(scn.start_s, days, scn.stay_s, data.eph.meta, data.eph.start_ms);
+  // The calendar may run past the stay's year: say so while the next year loads (the engine waits for it).
+  const calReady = useTableRange(data, starts.length ? starts[0] : 1, starts.length ? starts[starts.length - 1] + scn.stay_s : 0);
   const [ans, setAns] = useState<{ key: string; a: CalendarAnswer } | null>(null);
   const [progress, setProgress] = useState(0);
   const key = places ? JSON.stringify([sites.map((s) => s.id), starts, scn.stay_s, scn.rules]) : '';
@@ -242,12 +246,12 @@ function Calendar({ data, scn, update }: Props) {
           {miss.any
             ? <>Rows marked ◎ have a miss-test grid: a date is good there only if at least {pctLabel} of the grid points within {missRadius} m pass. Other rows still score the single site point.</>
             : <>No site in this calendar has a miss-test grid yet, so every row scores the single site point.</>}
-          {miss.pending && <> Testing landing points… {formatPct(miss.progress)}</>}
+          {miss.pending && (calReady ? <> Testing landing points… {formatPct(miss.progress)}</> : <> {LOADING_TABLE_TEXT}</>)}
           {miss.rows && miss.rows.failed.length > 0 && <> Could not load the grid for {miss.rows.failed.join(', ')}; those rows score the single point.</>}
         </p>
       )}
       {!starts.length && <p>The stay is too long to fit any start date after the selected one in the table.</p>}
-      {!a && starts.length > 0 && <p>Computing {sites.length * starts.length} stays… {formatPct(progress)}</p>}
+      {!a && starts.length > 0 && <p>{calReady ? <>Computing {sites.length * starts.length} stays… {formatPct(progress)}</> : LOADING_TABLE_TEXT}</p>}
       {a && (
         <div class="scroll-x" tabIndex={0} role="region" aria-label="Calendar table (scrolls sideways)">
           <table class="calendar" data-testid="calendar">

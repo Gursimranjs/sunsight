@@ -6,7 +6,7 @@ REGION ?=
 TARGET ?=
 
 PHONY_EXTRA = check-network
-.PHONY: setup check-network manifest capture fixtures kernels ephemeris golden masks miss validate web web-release check check-py check-web e2e deploy
+.PHONY: setup check-network manifest capture fixtures kernels ephemeris ephemeris-years golden masks miss validate web web-release check check-py check-web e2e deploy
 
 setup:
 	cd pipeline && $(UV) sync
@@ -20,6 +20,10 @@ kernels:
 
 ephemeris:
 	$(PY) python -m sunsight.ephemeris
+
+# Cut ephemeris/<year>.bin from the committed table (exact byte slices; no SPICE needed).
+ephemeris-years:
+	$(PY) python -m sunsight.ephemeris --years
 
 golden:
 	$(PY) python -m sunsight.golden

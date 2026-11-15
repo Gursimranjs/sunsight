@@ -1,5 +1,6 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // Miss test: if the lander comes down anywhere near the target, how much of that ground still works?
+import { LOADING_TABLE_TEXT, useTableRange } from './useTableRange';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { MaskSet } from '../data/sites';
 import type { Site } from '../data/types';
@@ -33,7 +34,7 @@ interface Props {
  */
 type BestSearchBase = { key: string; seq: number; from_start_s: number };
 type BestSearch =
-  | (BestSearchBase & { state: 'running'; progress: number; n_days: number })
+  | (BestSearchBase & { state: 'running'; progress: number; n_days: number; loading: boolean })
   | (BestSearchBase & { state: 'done'; start_s: number; verdict: VerdictKind; first_s: number; last_s: number })
   | (BestSearchBase & { state: 'failed'; error: string });
 
@@ -86,6 +87,7 @@ export function MissView({ data, site, scn, onSite, update }: Props) {
   liveKey.current = bestKey;
   startNow.current = scn.start_s;
 
+  const tableReady = useTableRange(data, scn.start_s, scn.start_s + scn.stay_s);
   const key = set ? JSON.stringify([set.meta.id, scn.start_s, scn.stay_s, scn.rules]) : '';
   useEffect(() => {
     if (!set) return;
@@ -145,9 +147,15 @@ export function MissView({ data, site, scn, onSite, update }: Props) {
     const job = bestDateJob(grid, searchI, scn.stay_s, scn.rules, data.eph.meta, data.eph.start_ms);
     if (!job.day_starts_s.length) { setBest({ ...base, state: 'failed', error: noDays }); return; }
     const live = () => searchSeq.current === seq && liveKey.current === k0 && startNow.current === s0;
-    setBest({ ...base, state: 'running', progress: 0, n_days: job.day_starts_s.length });
-    data.engine.calendar(job, (f) => {
-      if (live()) setBest((b) => (b && b.seq === seq && b.state === 'running' ? { ...b, progress: f } : b));
+    // The search spans every year: load the whole range first (shared with the background prefetch).
+    const days = job.day_starts_s;
+    const first_s = days[0], last_s = days[days.length - 1] + job.stay_s;
+    setBest({ ...base, state: 'running', progress: 0, n_days: days.length, loading: !data.hasRange(first_s, last_s) });
+    data.ensureRange(first_s, last_s).then(() => {
+      if (live()) setBest((b) => (b && b.seq === seq && b.state === 'running' ? { ...b, loading: false } : b));
+      return data.engine.calendar(job, (f) => {
+        if (live()) setBest((b) => (b && b.seq === seq && b.state === 'running' ? { ...b, progress: f } : b));
+      });
     }).then((ans) => {
       if (!live()) return;
       const cells = ans.cells[0];
@@ -172,7 +180,9 @@ export function MissView({ data, site, scn, onSite, update }: Props) {
     <div ref={statusRef} role="status" aria-live="polite" tabIndex={-1} class="small" data-testid="miss-best-status" style={{ margin: '4px 0 0' }}>
       {running && (
         <p data-testid="miss-best-progress" style={{ margin: 0 }}>
-          Scoring {searchWhat} for {running.n_days.toLocaleString('en-US')} start dates… <span aria-hidden="true">{formatPct(running.progress)}</span>
+          {running.loading
+            ? LOADING_TABLE_TEXT
+            : <>Scoring {searchWhat} for {running.n_days.toLocaleString('en-US')} start dates… <span aria-hidden="true">{formatPct(running.progress)}</span></>}
         </p>
       )}
       {failed && <p style={{ margin: 0 }}>Could not search for the best date: {failed.error}</p>}
@@ -229,7 +239,7 @@ export function MissView({ data, site, scn, onSite, update }: Props) {
       <div class={`verdict ${a ? (tolerant ? 'go' : 'no-go') : ''}`} style={{ display: 'block', borderLeftWidth: 8, borderLeftStyle: 'solid', paddingLeft: 10, marginBottom: 10 }}>
         <h3 style={{ margin: 0 }} data-testid="miss-headline">
           {a ? <VerdictBadge v={tolerant ? 'go' : 'no-go'} small label={tolerant ? 'MISS-TOLERANT' : 'NOT MISS-TOLERANT'} /> : null}{' '}
-          {a ? <>Land within {radius} m and {formatPct(share)} of the ground still meets the rules</> : <>Testing {pts.length} landing points… {formatPct(progress)}</>}
+          {a ? <>Land within {radius} m and {formatPct(share)} of the ground still meets the rules</> : tableReady ? <>Testing {pts.length} landing points… {formatPct(progress)}</> : <>{LOADING_TABLE_TEXT}</>}
         </h3>
         <p style={{ margin: '4px 0 0' }}>
           {a ? (tolerant ? `That is at least ${formatPct(MISS_TOLERANT_SHARE)}, so this date is miss-tolerant.` : `Below the ${formatPct(MISS_TOLERANT_SHARE)} needed for a miss-tolerant date.`) : ' '}{' '}

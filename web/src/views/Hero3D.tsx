@@ -135,6 +135,8 @@ export function Hero3D({ data, site, place, scn, now, series = null, update }: P
 
   const meta = terrain.meta;
   const t_s = scn.start_s + scn.t_off_s;
+  // The App fetches the stay's year(s) and re-renders when they arrive.
+  if (!data.hasRange(t_s, t_s)) return <section class="card"><p role="status">Loading Sun and Earth positions…</p></section>;
   const sky = skyAt(data.table, t_s, meta.center.lat_deg, meta.center.lon_deg, 0);
   const halfExtent_m = ((meta.size - 1) / 2) * meta.spacing_m;
   let landing: [number, number] | null = null;
