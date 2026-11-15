@@ -1,5 +1,5 @@
 {
- "generated_utc": "2026-11-15T18:27:22Z",
+ "generated_utc": "2026-11-15T18:48:45Z",
  "checks": [
   {
    "id": "ephemeris_horizons",
@@ -112,6 +112,20 @@
    "explanation": "Floor point lit 0.00% of 18.6 years; the ridge at LROC's coordinates 73.6% (above all but 0.0% of region points; the nearest region point, 298 m away, only 39.1%); 433 of 437 PGDA permanently shadowed points are never lit in our run.",
    "data": "validation/known_places.csv",
    "rows": 4
+  },
+  {
+   "id": "real_missions",
+   "title": "Real missions: our predictions beside what landers reported",
+   "what": "For four landings (Blue Ghost 1, IM-1, Chandrayaan-3, IM-2), the Sun at the reported landing time and the reported sunset, eclipse and sleep events, against SunSight's geometry for the same place and time.",
+   "value": 6.0,
+   "unit": "events",
+   "value_label": "events compared",
+   "pass_mark": "None set: reported and predicted values are shown side by side with their sources (review note 004)",
+   "status": "reported",
+   "explanation": "Blue Ghost: Earth hides the whole Sun at the landing site through NASA's totality (full cover starts 8 min before U2 and ends 63 min after U3; geometry only: Earth's atmosphere, which lit the ring in Blue Ghost's photo, is not modelled). Blue Ghost: last data 2.9 h after our half-disc sunset and 2.3 h after the last of the disc set; Firefly said just over 5 h into the lunar night without defining its start. IM-1 Odysseus: our first sunset 2024-03-03 08:12 UTC; standby reported on 2024-02-29 (smooth horizon near the pole: not a fair test). Chandrayaan-3: put to sleep 14 h before our sunset. Chandrayaan-3: our next sunrise 2023-09-19; ISRO expected awakening around 2023-09-22. Athena: at landing our model has the Sun 2.5\u00b0 up and 100% visible at its resting place; the 20 m crater that, per SpacePolicyOnline, kept sunlight off its solar cells is below our map's resolution. Sites without a computed terrain horizon use a smooth horizon; a real local horizon can move a sunset by hours (each row says by how much per degree). Reported times are from mission, NASA, ISRO and news pages (links in the data).",
+   "data": "validation/real_missions.csv",
+   "rows": 9,
+   "source": "https://www.nasa.gov/blogs/missions/2025/03/14/nasa-science-data-received-blue-ghost-captures-eclipse-from-moon"
   }
  ],
  "limits": [

@@ -1044,7 +1044,14 @@ ORDER = [
     "station_geometry",
     "physics_sanity",
     "known_places",
+    "real_missions",
 ]
+
+
+def _check_missions() -> dict:
+    from . import missions_check  # imports this module; keep the import local
+
+    return missions_check.check()
 
 
 HORIZON_LIMIT_ROW = "Terrain search stops at 100 km instead of 300 km"
@@ -1075,9 +1082,17 @@ def main() -> None:
         "--only",
         nargs="*",
         default=None,
-        help="check groups: ephemeris eclipses sanity known glaser pgda sensitivity refine annotate",
+        help="check groups: ephemeris eclipses sanity known glaser pgda missions sensitivity refine annotate",
     )
-    groups = ap.parse_args().only or ["ephemeris", "eclipses", "sanity", "known", "glaser", "pgda"]
+    groups = ap.parse_args().only or [
+        "ephemeris",
+        "eclipses",
+        "sanity",
+        "known",
+        "glaser",
+        "pgda",
+        "missions",
+    ]
     path = OUT / "summary.json"
     have = {c["id"]: c for c in json.loads(path.read_text())["checks"]} if path.exists() else {}
     ensure_illum()
@@ -1097,6 +1112,7 @@ def main() -> None:
         "known": check_known_places,
         "glaser": check_glaser,
         "pgda": check_pgda,
+        "missions": _check_missions,
     }
     for g in groups:
         res = runners[g]()

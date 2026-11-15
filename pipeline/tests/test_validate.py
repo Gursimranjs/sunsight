@@ -21,6 +21,7 @@ IDS = [
     "station_geometry",
     "physics_sanity",
     "known_places",
+    "real_missions",  # review note 004: no pass mark, status "reported"
 ]
 
 
@@ -28,7 +29,8 @@ def test_eight_checks_with_number_mark_status_and_words():
     s = json.loads(PATH.read_text())
     assert [c["id"] for c in s["checks"]] == IDS
     for c in s["checks"]:
-        assert c["status"] in {"pass", "fail", "partial"}, c["id"]
+        allowed = {"reported"} if c["id"] == "real_missions" else {"pass", "fail", "partial"}
+        assert c["status"] in allowed, c["id"]
         assert isinstance(c["value"], (int, float)), c["id"]
         assert c["pass_mark"] and c["title"] and c["what"], c["id"]
         assert len(c["explanation"]) > 20, c["id"]
@@ -71,3 +73,31 @@ def test_glaser_horizon_limit_sentence_note_006():
     assert "raise our figure by 3.7 points" in once["explanation"]
     assert V.annotate_glaser(once, sens) == once  # idempotent
     assert V.annotate_glaser(c, None)["explanation"] == "Base text."
+
+
+def test_real_missions_data_is_cited_note_004():
+    from sunsight import missions_check as M
+
+    data = json.loads(M.MISSIONS.read_text())
+    sites = {s["id"] for s in json.loads((DATA_OUT / "sites.json").read_text())["sites"]}
+    assert len(data["missions"]) == 4
+    for ms in data["missions"]:
+        assert ms["site_id"] in sites
+        assert ms["landing_source"].startswith("https://") and ms["landing_quote"]
+        for ev in ms["events"]:
+            assert ev["source"].startswith("https://"), ev
+            assert ev["quote"] and ev["reported"], ev
+
+
+def test_real_missions_check_in_summary_note_004():
+    s = json.loads(PATH.read_text())
+    c = next(c for c in s["checks"] if c["id"] == "real_missions")
+    assert c["status"] == "reported"
+    assert "None set" in c["pass_mark"]
+    rows = (DATA_OUT / c["data"]).read_text().splitlines()
+    assert len(rows) == c["rows"] + 1
+    text = (DATA_OUT / c["data"]).read_text()
+    assert (
+        "half the disc" in text.lower() and "last of the disc" in text.lower()
+    )  # review note 007, caution 1
+    assert "not a fair test" in text  # review note 007, caution 2 (Odysseus, smooth horizon near the pole)

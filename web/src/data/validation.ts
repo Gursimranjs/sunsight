@@ -3,7 +3,8 @@
 import { DATA_BASE } from './loaders';
 import type { Manifest } from './types';
 
-export type CheckStatus = 'pass' | 'fail' | 'partial' | 'not run';
+/** 'reported': no pass mark; our value is shown beside a reported one for the reader to judge (review note 004). */
+export type CheckStatus = 'pass' | 'fail' | 'partial' | 'reported' | 'not run';
 
 export interface ValidationCheck {
   id: string;
@@ -52,6 +53,7 @@ export const STATUS_INFO: Record<CheckStatus, { sym: string; label: string; cls:
   pass: { sym: '✓', label: 'PASS', cls: 'go' },
   fail: { sym: '✕', label: 'FAIL', cls: 'no-go' },
   partial: { sym: '!', label: 'PARTIAL', cls: 'marginal' },
+  reported: { sym: 'i', label: 'REPORTED', cls: 'reported' },
   'not run': { sym: '–', label: 'NOT RUN', cls: 'notrun' },
 };
 
@@ -126,7 +128,7 @@ export async function loadValidation(m: Manifest, fetcher: Fetcher = fetch, base
 }
 
 export function checkCounts(checks: ValidationCheck[]): Record<CheckStatus, number> {
-  const n: Record<CheckStatus, number> = { pass: 0, fail: 0, partial: 0, 'not run': 0 };
+  const n: Record<CheckStatus, number> = { pass: 0, fail: 0, partial: 0, reported: 0, 'not run': 0 };
   for (const c of checks) n[c.status]++;
   return n;
 }

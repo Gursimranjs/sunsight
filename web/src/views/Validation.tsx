@@ -20,22 +20,29 @@ export function StatusBadge({ s }: { s: CheckStatus }) {
   );
 }
 
-function CsvHead({ path, title }: { path: string; title: string }) {
+/** A cell holding one URL, or several separated by " ; ", becomes links; anything else is plain text. */
+function Cell({ x }: { x: string }) {
+  const parts = x.split(' ; ');
+  if (!parts.every((u) => /^https:\/\/\S+$/.test(u))) return <>{x}</>;
+  return <>{parts.map((u, i) => <span key={i}>{i > 0 && '; '}<a href={u} target="_blank" rel="noopener noreferrer">{u.replace(/^https:\/\//, '')}</a></span>)}</>;
+}
+
+function CsvHead({ path, title, rows = HEAD_ROWS }: { path: string; title: string; rows?: number }) {
   const [t, setT] = useState<{ header: string[]; rows: string[][]; total: number } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
-    loadCsvHead(path, HEAD_ROWS).then((x) => live && setT(x)).catch((e) => live && setErr(String(e)));
+    loadCsvHead(path, rows).then((x) => live && setT(x)).catch((e) => live && setErr(String(e)));
     return () => { live = false; };
-  }, [path]);
+  }, [path, rows]);
   if (err) return <p class="small">The data file could not be read ({err}).</p>;
   if (!t) return <p class="small muted">Reading the data file…</p>;
   return (
     <div class="scroll-x" tabIndex={0} role="region" aria-label={`First rows of the data for ${title} (scrolls sideways)`}>
       <table class="csv-head">
-        <caption class="small muted">First {Math.min(HEAD_ROWS, t.total)} of {t.total} rows of the data for “{title}”</caption>
+        <caption class="small muted">{t.total <= rows ? `All ${t.total}` : `First ${rows} of ${t.total}`} rows of the data for “{title}”</caption>
         <thead><tr>{t.header.map((h, i) => <th key={i} scope="col">{h}</th>)}</tr></thead>
-        <tbody>{t.rows.map((r, i) => <tr key={i}>{r.map((x, j) => <td key={j}>{x}</td>)}</tr>)}</tbody>
+        <tbody>{t.rows.map((r, i) => <tr key={i}>{r.map((x, j) => <td key={j}><Cell x={x} /></td>)}</tr>)}</tbody>
       </table>
     </div>
   );
@@ -55,7 +62,7 @@ function CheckCard({ c }: { c: ValidationCheck }) {
         {c.spread_points !== null && <div><dt>Spread of the differences</dt><dd>{Number(c.spread_points.toPrecision(3))} points</dd></div>}
       </dl>
       <p class="check-why" style={{ margin: '6px 0' }}>
-        <strong>{c.status === 'fail' ? 'Why it fails: ' : c.status === 'partial' ? 'Why only partly: ' : c.status === 'not run' ? 'Note: ' : 'In plain words: '}</strong>
+        <strong>{c.status === 'fail' ? 'Why it fails: ' : c.status === 'partial' ? 'Why only partly: ' : c.status === 'reported' ? 'What we found: ' : c.status === 'not run' ? 'Note: ' : 'In plain words: '}</strong>
         {c.explanation}
       </p>
       {c.data ? (
@@ -63,7 +70,7 @@ function CheckCard({ c }: { c: ValidationCheck }) {
           <p class="small" style={{ margin: '4px 0' }}>
             <a href={DATA_BASE + c.data} download>Download the data ({c.data.split('/').pop()}{c.rows ? `, ${c.rows} rows` : ''})</a>
           </p>
-          <CsvHead path={c.data} title={c.title} />
+          <CsvHead path={c.data} title={c.title} rows={c.status === 'reported' && c.rows <= 12 ? c.rows : HEAD_ROWS} />
         </>
       ) : <p class="small muted" style={{ margin: '4px 0' }}>No data file for this check.</p>}
       {(c.source || c.timing_s !== null) && (
@@ -130,7 +137,7 @@ export function ValidationView({ data }: { data: AppData }) {
       <section class="card" data-testid="validation-missing">
         <h2>Validation not run yet</h2>
         <p>
-          The eight checks that compare SunSight with independent references (JPL Horizons, NASA’s illumination and
+          The checks that compare SunSight with independent references (JPL Horizons, NASA’s illumination and
           Earth-visibility maps, a published Shackleton study, NASA’s eclipse tables) have not produced results for this
           build{v.state === 'error' ? `: the results file could not be read (${v.message})` : ''}. Nothing is shown rather than guessed numbers.
         </p>
@@ -144,7 +151,7 @@ export function ValidationView({ data }: { data: AppData }) {
       <section class="card" aria-label="Validation summary" data-testid="validation-summary">
         <h2>How we check SunSight</h2>
         <p style={{ margin: '0 0 6px' }}>
-          {s.checks.length} independent checks. {n.pass} pass, {n.fail} fail, {n.partial} partly pass, {n['not run']} not run yet.
+          {s.checks.length} independent checks. {n.pass} pass, {n.fail} fail, {n.partial} partly pass{n.reported ? `, ${n.reported} compared with reported mission events (no pass mark)` : ''}, {n['not run']} not run yet.
           Failures stay on this page with their likely cause.
         </p>
         <ul class="legend" aria-label="Status key">

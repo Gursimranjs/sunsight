@@ -104,7 +104,8 @@ describe('validation extras: source, spread, timing, sensitivity', () => {
     let raw: unknown;
     try { raw = JSON.parse(readFileSync(path, 'utf8')); } catch { return; }
     const s = normalizeSummary(raw);
-    expect(s.checks.length).toBe(8);
+    expect(s.checks.length).toBe(9); // eight checks plus "real_missions" (review note 004)
+    expect(s.checks[8].id).toBe('real_missions');
     for (const c of s.checks) {
       expect(c.explanation).not.toMatch(/No explanation/);
       expect(c.pass_mark).not.toBe('not stated');
@@ -112,3 +113,13 @@ describe('validation extras: source, spread, timing, sensitivity', () => {
     if (s.sensitivity) expect(s.sensitivity.rows[0].delta_points).toBe(0);
   });
 });
+
+describe('reported status (review note 004)', () => {
+  it('is kept by the normaliser and counted', () => {
+    const s = normalizeSummary({ checks: [{ id: 'real_missions', title: 'Real missions', value: 7, unit: 'events', pass_mark: 'None set', status: 'reported', explanation: 'x' }] });
+    expect(s.checks[0].status).toBe('reported');
+    expect(checkCounts(s.checks).reported).toBe(1);
+    expect(STATUS_INFO.reported.label).toBe('REPORTED');
+  });
+});
+

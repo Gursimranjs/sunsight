@@ -134,6 +134,7 @@ td.cal.miss button { outline: 2px dashed #000; outline-offset: -5px; }
 
 /* Validation page */
 .vbadge.notrun .sym { background: var(--muted); border-radius: 2px; }
+.vbadge.reported .sym { background: var(--muted); border-radius: 50%; font-style: italic; }
 .vcheck { border-left: 8px solid var(--line); }
 .vcheck.go { border-left-color: var(--go); }
 .vcheck.no-go { border-left-color: var(--nogo); }
