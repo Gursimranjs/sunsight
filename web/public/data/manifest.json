@@ -2,8 +2,8 @@
  "format_version": 2,
  "fixture": false,
  "generated_with": "SunSight pipeline; code written by Claude Code (Anthropic)",
- "pipeline_version": "0.1.0+8b02d1e",
- "build_time_utc": "2026-11-15T18:27:57Z",
+ "pipeline_version": "0.1.0+1f2ccba",
+ "build_time_utc": "2026-11-15T18:48:47Z",
  "kernels": [
   "naif0012.tls",
   "pck00011.tpc",
@@ -276,6 +276,7 @@
    "validation/known_places.csv",
    "validation/pgda_points.csv",
    "validation/physics_sanity.csv",
+   "validation/real_missions.csv",
    "validation/sensitivity.csv",
    "validation/station_geometry.csv"
   ]
@@ -592,6 +593,11 @@
    "sha256": "7e59da7880c289f54978d4feeea871195a26436a346b40b0c422610077678b06"
   },
   {
+   "path": "validation/real_missions.csv",
+   "size_bytes": 5919,
+   "sha256": "919c44f5385f2923600bdbc6c5c3cb9a4b6581717e25312b4f8c10cebe848536"
+  },
+  {
    "path": "validation/sensitivity.csv",
    "size_bytes": 913,
    "sha256": "e33a211efab78e0acc1e6dff688cfdab74667e27b3c5033a2151ecee5ba580f9"
@@ -603,8 +609,8 @@
   },
   {
    "path": "validation/summary.json",
-   "size_bytes": 12155,
-   "sha256": "9038bf331cac11641e5b15ca924d77ccc91483e86b0cf65995c5729202e6084f"
+   "size_bytes": 14027,
+   "sha256": "b74e14d920c15d536bef22e0c85634fa3bcb8263c4545f7bc03af27dd17b21c1"
   }
  ]
 }

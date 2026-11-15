@@ -1,0 +1,102 @@
+{
+  "note": "SI-generated: compiled by Claude Code (Anthropic) for the SunSight team from the pages cited below, read on 2026-11-15 by a research subagent. Each quote is from its URL. Times converted to UTC with CST = UTC-6, CDT = UTC-5, EST = UTC-5, IST = UTC+5:30. Review note 004. See SI_USE.md.",
+  "missions": [
+    {
+      "id": "blue_ghost_m1",
+      "name": "Blue Ghost Mission 1 (Firefly), Mare Crisium",
+      "site_id": "blue_ghost_m1",
+      "landing_utc": "2025-03-02T08:34:00",
+      "landing_source": "https://fireflyspace.com/missions/blue-ghost-mission-1/",
+      "landing_quote": "Landing Date: March 2, 2025 … Landing Time: 2:34 a.m. CST",
+      "landing_note": "NSSDCA (https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=2025-010A) gives 08:45 UT; the two sources differ by 11 minutes.",
+      "events": [
+        {
+          "kind": "eclipse",
+          "label": "Sun hidden by Earth during the 14 March 2025 total lunar eclipse",
+          "u2_utc": "2025-03-14T06:25:59",
+          "u3_utc": "2025-03-14T07:31:23",
+          "reported": "Photographed Earth blocking the Sun from the surface on 14 March 2025; NASA's totality (U2 to U3) 06:25:59 to 07:31:23 UT",
+          "source": "https://www.nasa.gov/blogs/missions/2025/03/14/nasa-science-data-received-blue-ghost-captures-eclipse-from-moon",
+          "quote": "View of Earth blocking the light of the sun, creating a bright ring of light in the lunar sky.",
+          "source2": "https://eclipse.gsfc.nasa.gov/LEplot/LEplot2001/LE2025Mar14T.pdf",
+          "quote2": "U2 = 06:25:59 UT"
+        },
+        {
+          "kind": "last_contact_after_sunset",
+          "label": "Hours of operation after local sunset",
+          "last_contact_utc": "2025-03-16T23:15:00",
+          "reported_hours_after_sunset": "just over 5",
+          "reported": "Final data about 23:15 UTC on 16 March 2025, \"just over 5 hours into the lunar night\"",
+          "source": "https://fireflyspace.com/news/firefly-aerospace-successfully-completes-14-days-of-surface-operations-on-the-moon",
+          "quote": "operating just over 5 hours into the lunar night with the final data received around 6:15 pm CDT on March 16"
+        }
+      ]
+    },
+    {
+      "id": "im1_odysseus",
+      "name": "IM-1 Odysseus (Intuitive Machines), near Malapert A",
+      "site_id": "im1_odysseus_actual",
+      "landing_utc": "2024-02-22T23:24:00",
+      "landing_source": "https://www.nasa.gov/missions/lro/nasas-lro-images-intuitive-machines-odysseus-lander/",
+      "landing_quote": "softly landed near crater Malapert A in the South Pole region of the Moon at 6:24 p.m. EST",
+      "events": [
+        {
+          "kind": "sunset_vs_date",
+          "label": "First sunset after landing vs the day the lander went into standby",
+          "reported_date": "2024-02-29",
+          "reported": "Entered standby on 29 February 2024 as lunar night arrived (no time given)",
+          "source": "https://satnews.com/2024/02/29/intuitive-machines-im-1-mission-success-american-ingenuity-never-gives-up/",
+          "quote": "entered standby mode on February 29, 2024, as we await two to three weeks for the next lunar day",
+          "source2": "https://www.ksl.com/article/50934623/us-moon-lander-odysseus-goes-dormant-a-week-after-lopsided-landing",
+          "quote2": "lost power and went dormant on Thursday as it entered a frigid lunar night"
+        }
+      ]
+    },
+    {
+      "id": "chandrayaan3",
+      "name": "Chandrayaan-3 Vikram (ISRO), Statio Shiv Shakti",
+      "site_id": "chandrayaan3_vikram",
+      "landing_utc": "2023-08-23T12:34:00",
+      "landing_source": "https://scroll.in/latest/1054770/indias-chandrayaan-3-lands-successfully-on-the-moon",
+      "landing_quote": "made a soft landing on the moon at 6.04 pm",
+      "landing_note": "The ISRO pages read give the planned descent start (about 17:45 IST), not the touchdown time; the touchdown time is from a news report.",
+      "events": [
+        {
+          "kind": "sleep_before_sunset",
+          "label": "First sunset after landing vs the lander's sleep time (put to sleep before sunset)",
+          "sleep_utc": "2023-09-04T02:30:00",
+          "reported": "Vikram set into sleep mode around 08:00 IST (02:30 UTC) on 4 September 2023",
+          "source": "https://spacepolicyonline.com/news/india-says-good-night-to-chandrayaan-3/",
+          "quote": "Vikram Lander is set into sleep mode around 08:00 Hrs. IST today."
+        },
+        {
+          "kind": "sunrise_vs_date",
+          "label": "Next sunrise vs ISRO's expected awakening",
+          "reported_date": "2023-09-22",
+          "reported": "Awakening expected around 22 September 2023",
+          "source": "https://www.isro.gov.in/Chandrayaan3.html",
+          "quote": "The lander and rover are in sleep mode. Awaiting their awakening around September 22, 2023."
+        }
+      ]
+    },
+    {
+      "id": "im2_athena",
+      "name": "IM-2 Athena (Intuitive Machines), near Mons Mouton",
+      "site_id": "im2_athena_actual",
+      "landing_utc": "2025-03-06T17:30:00",
+      "landing_source": "https://www.nasa.gov/blogs/missions/2025/03/06/intuitive-machines-mission-lands-near-south-pole-carrying-nasa-science/",
+      "landing_quote": "touched down on the Moon at approximately 11:30 a.m. CST on Thursday",
+      "events": [
+        {
+          "kind": "sun_at_landing",
+          "label": "Sun at the resting place at the reported landing time",
+          "reported": "On its side within a 20 m crater (LROC); in a crater where sunlight could not reach the solar cells (SpacePolicyOnline)",
+          "source": "https://lroc.im-ldi.com/images/1408",
+          "quote": "ended up on its side within a 20-meter diameter crater (84.7906° S, 29.1957° E)",
+          "source2": "https://spacepolicyonline.com/news/im-2-mission-ends-one-day-after-lunar-landing/",
+          "quote2": "Athena is in a crater where sunlight could not reach the solar cells to recharge the batteries."
+        }
+      ]
+    }
+  ]
+}
