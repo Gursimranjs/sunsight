@@ -13,9 +13,11 @@ import { ShareBar } from './views/ShareBar';
 import { Compare } from './views/Compare';
 import { MissView } from './views/MissView';
 import { Panorama } from './views/Panorama';
+import { RankView } from './views/Rank';
 import { asRefined, MetricTiles, RefinedNote, VerdictHero } from './views/ReportCard';
 import { ScenarioControls, TimeBar } from './views/RulesEditor';
 import { SitePicker } from './views/SitePicker';
+import { StartStrip } from './views/StartStrip';
 import { Timeline } from './views/Timeline';
 import { ValidationView } from './views/Validation';
 import { Hero3D } from './views/Hero3D';
@@ -114,6 +116,7 @@ export function App() {
         <h1>SunSight</h1>
         <p class="tagline">Will a lunar landing site have sunlight for power and a line of sight to Earth?</p>
       </header>
+      <StartStrip scn={scn} defaultCompare={data.sites.slice(0, 3).map((s) => s.id)} update={update} />
       <main>
         <VerdictHero
           verdict={fresh ? shown!.verdict : null}
@@ -168,6 +171,12 @@ export function App() {
                 site: { id: scn.site_id, name: placeName, lat_deg: place.lat_deg, lon_deg: place.lon_deg, h_m: place.h_m, horizon: place.horizonLabel },
               }} />
             )}
+          </div>
+        )}
+        {scn.view === 'rank' && (
+          <div role="tabpanel" aria-label="Which sites work?">
+            <RankView data={data} scn={scn} update={update} />
+            <TerrainCredit />
           </div>
         )}
         {scn.view === 'sky' && shown && now && place && (
