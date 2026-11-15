@@ -15,25 +15,27 @@ const MORE: { id: HzView; label: string }[] = [
 /** On a phone the bottom bar keeps the first three; the rest live under More. */
 const PHONE_MAIN = 3;
 
-export function ViewSwitch({ view, onView }: { view: HzView; onView: (v: HzView) => void }) {
+/** `hasGame`: the site has a miss-test grid; "Land it yourself" is offered only then (wiring #9). */
+export function ViewSwitch({ view, onView, hasGame = true }: { view: HzView; onView: (v: HzView) => void; hasGame?: boolean }) {
   const [more, setMore] = useState(false);
+  const main = MAIN.filter((v) => v.id !== 'game' || hasGame || view === 'game');
   const item = (v: { id: HzView; label: string }, cls = '') => (
     <li key={v.id} class={cls}>
       <button type="button" aria-current={view === v.id ? 'true' : undefined} onClick={() => { setMore(false); onView(v.id); }}>{v.label}</button>
     </li>
   );
   const inMore = MORE.some((m) => m.id === view);
-  const phoneMore = inMore || MAIN.slice(PHONE_MAIN).some((m) => m.id === view);
+  const phoneMore = inMore || main.slice(PHONE_MAIN).some((m) => m.id === view);
   return (
     <nav class="hz-views" aria-label="Views">
       <ul>
-        {MAIN.map((v, i) => item(v, i >= PHONE_MAIN ? 'hz-wide' : ''))}
+        {main.map((v, i) => item(v, i >= PHONE_MAIN ? 'hz-wide' : ''))}
         <li class="hz-more">
           <button type="button" aria-expanded={more} aria-controls="hz-more-list" class={inMore ? 'hz-more-on' : phoneMore ? 'hz-more-phone' : ''}
             onClick={() => setMore(!more)}>More</button>
           {more && (
             <ul id="hz-more-list" class="hz-more-list">
-              {MAIN.slice(PHONE_MAIN).map((v) => item(v, 'hz-narrow'))}
+              {main.slice(PHONE_MAIN).map((v) => item(v, 'hz-narrow'))}
               {MORE.map((v) => item(v))}
             </ul>
           )}

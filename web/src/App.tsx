@@ -57,7 +57,10 @@ export function App() {
         d.store.onFill(() => setTableTick((x) => x + 1));
         setData(d);
         const first = d.sites[0]?.id ?? null;
-        const q = typeof location !== 'undefined' ? location.search : '';
+        // The interface flag (?ui=classic) is not part of the scenario: a bare ?ui=classic opens the default link.
+        const qp = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
+        qp.delete('ui');
+        const q = qp.toString();
         const ids = d.sites.map((x) => x.id);
         // No query: open on the computed default scenario (note 003 B) when its site ships, else the first site.
         const q0 = q || (ids.includes(DEFAULT_SITE_ID) ? DEFAULT_QUERY : '');

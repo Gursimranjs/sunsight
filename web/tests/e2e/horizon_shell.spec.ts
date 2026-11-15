@@ -132,7 +132,8 @@ test('views: the switch opens Ground, Miss map, Rank sites, Calendar and the Mor
   await nav.getByRole('button', { name: 'Proof' }).click();
   await expect(page.getByTestId('hz-view').locator('.card').first()).toBeVisible();
   await nav.getByRole('button', { name: 'Horizon' }).click();
-  await expect(page.getByTestId('hz-view').locator('svg').first()).toBeVisible();
+  // Note 010 #2: the Horizon view keeps the whole-stay numbers; the hero is the page's one horizon chart.
+  await expect(page.getByTestId('hz-view').getByTestId('metrics')).toBeVisible();
   // Provenance sits behind one disclosure on the ground panel.
   await page.getByText('Sources and method').click();
   await expect(page.getByTestId('site-source')).toBeVisible();
