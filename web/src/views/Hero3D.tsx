@@ -70,7 +70,7 @@ export function Hero3D({ data, site, place, scn, now, series = null, update }: P
   // use up the jump, so a terrain site picked afterwards still gets it.
   const jump = useRef({ done: scn.t_off_s !== 0, t0_s: scn.t_off_s });
   useEffect(() => {
-    if (!terrainId || !webgl) return;
+    if (!terrainId || !webgl || err) return;
     const j = jump.current;
     if (j.done) return;
     if (scn.t_off_s !== j.t0_s) { j.done = true; return; }
@@ -78,7 +78,7 @@ export function Hero3D({ data, site, place, scn, now, series = null, update }: P
     j.done = true;
     const to_s = firstLitJump_s(series, scn.start_s, scn.t_off_s, scn.rules.lit_threshold);
     if (to_s !== null) update({ t_off_s: to_s });
-  }, [series, scn.t_off_s, scn.start_s, terrainId, webgl]);
+  }, [series, scn.t_off_s, scn.start_s, terrainId, webgl, err]);
 
   // Play: step the shared time across the stay; stops at the end and when the view unmounts.
   useEffect(() => {
@@ -99,7 +99,7 @@ export function Hero3D({ data, site, place, scn, now, series = null, update }: P
   };
 
   useEffect(() => {
-    if (!terrainId || !webgl) return;
+    if (!terrainId || !webgl || err) return;
     let live = true;
     setErr(null);
     loadTerrain(data.manifest, terrainId)
