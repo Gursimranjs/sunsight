@@ -85,6 +85,22 @@ export function targetFailsEverywhere(a: Pick<MissAnswer, 'verdicts' | 'shares'>
   return a.verdicts[target_i] === 'no-go' && a.shares.every((s) => s === 0);
 }
 
+/**
+ * Which "target fails" line the miss view shows, judged from the grid centre (the point the share
+ * circles and the "+ Target" marker are drawn around):
+ * - 'all': the centre fails and no landing point within any miss radius passes (every share is 0);
+ * - 'some': the centre fails but some landing points near it pass;
+ * - 'site': the site borrows another target's grid, the centre passes, and the site's own point fails;
+ * - null: nothing to say.
+ */
+export type MissFailLine = 'all' | 'some' | 'site' | null;
+export function missFailLine(a: Pick<MissAnswer, 'verdicts' | 'shares'>, centre_i: number, site_point_i: number): MissFailLine {
+  if (centre_i < 0 || centre_i >= a.verdicts.length) return null;
+  if (a.verdicts[centre_i] === 'no-go') return targetFailsEverywhere(a, centre_i) ? 'all' : 'some';
+  if (site_point_i >= 0 && site_point_i < a.verdicts.length && site_point_i !== centre_i && a.verdicts[site_point_i] === 'no-go') return 'site';
+  return null;
+}
+
 const VERDICT_RANK: Record<VerdictKind, number> = { go: 2, marginal: 1, 'no-go': 0 };
 
 /**

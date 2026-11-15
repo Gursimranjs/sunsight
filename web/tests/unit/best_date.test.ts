@@ -6,7 +6,7 @@ import { loadMaskSet, missCentreIndex } from '../../src/data/sites';
 import { runCalendar } from '../../src/engine/compute';
 import * as L from '../../src/engine/light';
 import { dayStarts } from '../../src/views/calendar';
-import { bestDayIndex, bestDateJob, missTargetIndex, targetFailsEverywhere } from '../../src/views/missGeometry';
+import { bestDayIndex, bestDateJob, missFailLine, missTargetIndex, targetFailsEverywhere } from '../../src/views/missGeometry';
 import { DATA, fileFetcher, fixtureManifest, fixtureTable } from './helpers';
 
 describe('bestDayIndex', () => {
@@ -60,8 +60,28 @@ describe('target point and best-date job', () => {
     const centre = missCentreIndex(set);
     expect(centre).toBeGreaterThanOrEqual(0);
     expect(missTargetIndex(set, -1)).toBe(centre);
-    const other = (centre + 3) % set.meta.points.length;
-    expect(missTargetIndex(set, other)).toBe(other);
+    // A site point outside the grid falls back to the centre.
+    expect(missTargetIndex(set, set.meta.points.length)).toBe(centre);
+  });
+
+  it('the fail line is judged at the grid centre; a borrowed-grid site point that disagrees gets its own line', async () => {
+    const set = await loadMaskSet(fixtureManifest(), 'miss', 'fixture_target', fileFetcher, DATA);
+    const n = set.meta.points.length;
+    const centre = missTargetIndex(set, -1);
+    const site = (centre + 3) % n;
+    const verdicts = (fail: number[]) => set.meta.points.map((_, i) => (fail.includes(i) ? 'no-go' : 'go') as L.VerdictKind);
+    // Own grid (no site point): centre fails, nothing passes -> 'all'; centre fails, some pass -> 'some'.
+    expect(missFailLine({ verdicts: verdicts(set.meta.points.map((_, i) => i)), shares: [0, 0, 0] }, centre, -1)).toBe('all');
+    expect(missFailLine({ verdicts: verdicts([centre]), shares: [0, 0.5, 0.75] }, centre, -1)).toBe('some');
+    expect(missFailLine({ verdicts: verdicts([site]), shares: [1, 0.99, 0.98] }, centre, -1)).toBe(null);
+    // Borrowed grid: the site point fails but the centre (the marked target) passes -> not a "target fails" line.
+    expect(missFailLine({ verdicts: verdicts([site]), shares: [1, 0.99, 0.98] }, centre, site)).toBe('site');
+    // Borrowed grid: the centre fails but the site point passes -> the target line, from the centre's verdict.
+    expect(missFailLine({ verdicts: verdicts([centre]), shares: [0, 0.5, 0.75] }, centre, site)).toBe('some');
+    // Both pass -> no line.
+    expect(missFailLine({ verdicts: verdicts([]), shares: [1, 1, 1] }, centre, site)).toBe(null);
+    // A site point equal to the centre is the own-grid case.
+    expect(missFailLine({ verdicts: verdicts([centre]), shares: [0, 0, 0] }, centre, centre)).toBe('all');
   });
 
   it('targetFailsEverywhere needs the target to fail and every share to be 0', () => {
@@ -90,12 +110,11 @@ describe('target point and best-date job', () => {
 
     const cells = runCalendar(t, job).cells[0];
     const k = bestDayIndex(cells);
-    // Direct check: no other day beats day k on (verdict, score), and no earlier day ties it.
-    const rank = { go: 2, marginal: 1, 'no-go': 0 } as const;
-    cells.forEach((c, j) => {
-      const better = rank[c.verdict] > rank[cells[k].verdict] || (rank[c.verdict] === rank[cells[k].verdict] && c.score > cells[k].score);
-      expect(better).toBe(false);
-      if (j < k) expect(rank[c.verdict] === rank[cells[k].verdict] && c.score === cells[k].score).toBe(false);
-    });
+    // Declarative check: the best verdict present in the table, the highest score among days with it,
+    // and the first day holding both.
+    const verdicts = new Set(cells.map((c) => c.verdict));
+    const top: L.VerdictKind = verdicts.has('go') ? 'go' : verdicts.has('marginal') ? 'marginal' : 'no-go';
+    const topScore = Math.max(...cells.filter((c) => c.verdict === top).map((c) => c.score));
+    expect(k).toBe(cells.findIndex((c) => c.verdict === top && c.score === topScore));
   }, 60_000);
 });
