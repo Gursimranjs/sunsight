@@ -22,3 +22,5 @@ Reviewer check of the live site, Sunday 16:00 to 16:02 local, build with `Horizo
 ## Housekeeping
 
 Notes 010 and 011 are still in `review/`. Move them to `review/resolved/` with their "Resolved in" lines when you count them done.
+
+Resolved in the commit after 5389409: 1 the game-map labels were already kept apart in f98ff5e (e2e checks the two label boxes do not overlap on the default link); 2 after the last try the line reads "No tries left." with a "Play again" button that starts three new tries (e2e); 3 on a touch screen (pointer: coarse) the game says "Tap the map" (e2e). Housekeeping: notes 009, 010 and 011 moved to resolved in 5389409.

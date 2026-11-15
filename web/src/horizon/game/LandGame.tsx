@@ -148,12 +148,17 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
   const grid = set && (set.meta.id === undefined || set.meta.id === gridId) ? set : null;
   // A new grid, date, stay or rules starts a fresh game.
   const key = JSON.stringify([grid?.meta.id ?? null, scn.start_s, scn.stay_s, scn.rules]);
+  // Note 012 item 2: "Play again" gives three new tries on the same ground.
+  const [round, setRound] = useState(0);
   useEffect(() => {
     seq.current += 1;
     gameEpoch.current += 1;
     setTries([]); setActive(null); setReveal(null); setCopied(false); setNotice('');
     setReticle(grid ? gameTargetIndex(grid) : null);
-  }, [key]);
+  }, [key, round]);
+  // Note 012 item 3: on a touch screen the map is tapped, not clicked.
+  const touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  const pick = touch ? 'Tap the map' : 'Click the map';
   useEffect(() => () => { seq.current += 1; gameEpoch.current += 1; }, []);
 
   /** Set by a click or Enter during a try: the try goes straight to its result once the engine answers. */
@@ -373,7 +378,9 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
       <h2 class="hz-game-title">Land it yourself</h2>
       <p class="hz-game-brief" data-testid="game-brief">{brief}</p>
       <p class="hz-game-small" data-testid="game-tries">
-        {out ? 'No tries left.' : `Try ${tries.length + 1} of ${MAX_TRIES}.`} Click the map, or move the reticle with the arrow keys and press Enter.
+        {out
+          ? <>No tries left.{' '}<button type="button" data-testid="game-play-again" onClick={() => setRound((r) => r + 1)}>Play again</button></>
+          : <>Try {tries.length + 1} of {MAX_TRIES}. {pick}, or move the reticle with the arrow keys and press Enter.</>}
       </p>
       {/* One live region, always mounted: the landing status, then the result and the distance. */}
       <p class="hz-game-small hz-game-live" role="status" aria-live="polite" data-testid="game-live">{notice || (revealed ? `${nHeld} of your ${MAX_TRIES} landings held. Within ${REVEAL_RADIUS_M} m, ${formatPct(share250)} of the ground holds.` : statusText)}</p>
@@ -435,7 +442,7 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
           )}
         </div>
         <div class="hz-game-side">
-          {busy && <p data-testid="game-status" class="hz-game-busy">Playing the stay… Click the map or press Enter to skip to the result.</p>}
+          {busy && <p data-testid="game-status" class="hz-game-busy">Playing the stay… {pick} or press Enter to skip to the result.</p>}
           {done && (
             <div class="hz-game-result" data-testid="game-result" data-verdict={done.answer.verdict.verdict} data-point-id={pts[done.i].id}>
               <p class="hz-game-call"><VerdictBadge v={done.answer.verdict.verdict} small /> <span data-testid="game-result-line">{resultLine(done.failure, scn.stay_s)}</span></p>

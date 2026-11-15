@@ -142,3 +142,29 @@ test('the Sun and Earth labels on the game map do not overlap on the default lin
   const overlap = s.x < e.x + e.width && e.x < s.x + s.width && s.y < e.y + e.height && e.y < s.y + s.height;
   expect(overlap).toBe(false);
 });
+
+test('note 012: after the last try "No tries left." with Play again, which gives three new tries', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openHz(page, `${BASE}&view=game`);
+  const reticle = page.getByTestId('game-reticle');
+  await expect(reticle).toBeVisible({ timeout: 90_000 });
+  for (const k of ['ArrowLeft', 'ArrowRight', 'ArrowDown']) {
+    await reticle.focus();
+    await page.keyboard.press(k);
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('game-map')).toHaveAttribute('aria-busy', 'false', { timeout: 90_000 });
+  }
+  const line = page.getByTestId('game-tries');
+  await expect(line).toHaveText(/^No tries left\.\s*Play again$/, { timeout: 90_000 });
+  await page.getByTestId('game-play-again').click();
+  await expect(line).toContainText('Try 1 of 3.');
+  await expect(page.getByTestId('game-try-list').locator('li')).toHaveCount(0);
+});
+
+test('note 012: on a touch screen the game says "Tap the map"', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+  const page = await ctx.newPage();
+  await openHz(page, `${BASE}&view=game`);
+  await expect(page.getByTestId('game-tries')).toContainText('Tap the map', { timeout: 90_000 });
+  await ctx.close();
+});
