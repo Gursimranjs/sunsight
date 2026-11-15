@@ -1,0 +1,41 @@
+/* SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md. */
+/* "Land it yourself": dark ink on the lit ground, the map and the replay as black sky. */
+.hz-game {
+  background: var(--hz-ground, #CFCBC2);
+  color: var(--hz-ink, #17181A);
+  font-family: var(--hz-font-body, 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif);
+  padding: 16px;
+  border-radius: 4px;
+}
+.hz-game-title { font-family: var(--hz-font-display, 'Barlow Condensed', system-ui, sans-serif); font-weight: 700; font-size: 28px; margin: 0 0 4px; }
+.hz-game-brief { font-size: 18px; margin: 0 0 6px; max-width: 72ch; }
+.hz-game-small { font-size: 14px; margin: 4px 0; max-width: 72ch; }
+.hz-game-call { font-family: var(--hz-font-display, 'Barlow Condensed', system-ui, sans-serif); font-weight: 700; font-size: 24px; margin: 0 0 4px; }
+.hz-game-grid { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 720px) { .hz-game-grid { grid-template-columns: minmax(0, 1fr); } }
+.hz-game-map { display: block; width: 100%; height: auto; cursor: crosshair; touch-action: manipulation; }
+.hz-game-map text { fill: #ffffff; font-size: 12px; font-variant-numeric: tabular-nums; }
+.hz-game-reticle:focus { outline: none; }
+.hz-game-reticle:focus-visible circle:first-child { stroke: var(--hz-sun, #FFD27A); stroke-width: 3; }
+.hz-game-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; align-items: center; }
+.hz-game button {
+  font: inherit; font-size: 16px; min-height: 40px; padding: 6px 12px; cursor: pointer;
+  color: var(--hz-ink, #17181A); background: transparent; border: 2px solid var(--hz-ink, #17181A); border-radius: 4px;
+  transition: background var(--hz-fast, 150ms) var(--hz-ease, ease);
+}
+.hz-game button:hover { background: rgba(23, 24, 26, 0.08); }
+.hz-game button:disabled { opacity: 0.6; cursor: default; }
+.hz-game-link { font: inherit; font-size: 14px; min-height: 40px; flex: 1 1 200px; min-width: 0; padding: 4px 8px; border: 1px solid var(--hz-ground-shade, #8E8A82); background: #ffffff; color: var(--hz-ink, #17181A); }
+.hz-game-tries { margin: 8px 0; padding-left: 20px; font-size: 15px; }
+.hz-game-result { margin-bottom: 8px; }
+.hz-game-replay { margin-top: 16px; background: var(--hz-sky, #000000); color: #e8ebf2; padding: 8px; border-radius: 4px; }
+
+/* The lander drops in 600 ms; the reveal fills outward from the target in 300 ms. */
+@keyframes hz-game-drop { from { transform: translateY(-48px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes hz-game-fade { from { opacity: 0; } to { opacity: 1; } }
+.hz-game-lander.dropping { animation: hz-game-drop 600ms var(--hz-ease, cubic-bezier(0.2, 0.8, 0.2, 1)) both; }
+.hz-game-reveal { animation: hz-game-fade 150ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .hz-game-lander.dropping, .hz-game-reveal { animation: none; }
+  .hz-game button { transition: none; }
+}
