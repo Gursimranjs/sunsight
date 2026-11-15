@@ -130,6 +130,24 @@ test('"I have a site" opens the calendar with the chosen site as its first, mark
   await expect(page.getByTestId('compare-row').first()).toContainText('Shackleton–de Gerlache ridge');
 });
 
+test('choosing another site on the Compare tab reorders the calendar without recomputing it', async ({ page }) => {
+  const errors = watchErrors(page);
+  await openApp(page, `site=shackleton_ridge_rim&${DATE}&view=compare`);
+  const cal = page.getByTestId('calendar');
+  await expect(cal).toBeVisible({ timeout: 90_000 });
+  await expect(cal.getByRole('rowheader').first()).toHaveText(/Shackleton–de Gerlache ridge/);
+  // Tag the rendered table: a recompute unmounts it (the "Computing" line shows instead) and the tag is lost.
+  await cal.evaluate((el) => { (el as HTMLElement & { calTag?: string }).calTag = 'kept'; });
+  const other = shippedSites()[1];
+  await page.getByRole('region', { name: 'Scenario' }).getByRole('combobox').first().selectOption(other.id);
+  await expect(page).toHaveURL(new RegExp(`site=${other.id}(&|$)`));
+  await expect(cal.getByRole('rowheader').first()).toHaveText(other.name);
+  await expect(cal.locator('tbody tr[aria-current="true"]').getByRole('rowheader')).toHaveText(other.name);
+  await expect(page.getByText(/^Computing \d+ stays/)).toHaveCount(0);
+  expect(await cal.evaluate((el) => (el as HTMLElement & { calTag?: string }).calTag)).toBe('kept');
+  expect(errors).toEqual([]);
+});
+
 test('"I have a site" with a custom point says the calendar lists curated sites only', async ({ page }) => {
   const errors = watchErrors(page);
   await openApp(page, `lat=-60.5&lon=20.25&${DATE}`);

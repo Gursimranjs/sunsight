@@ -9,7 +9,7 @@ import * as L from '../../src/engine/light';
 import { clampScenario, defaultScenario, VIEWS } from '../../src/state/scenario';
 import { decodeScenario, encodeScenario } from '../../src/state/url';
 import { resolveForSite, TERRAIN_MISSING_LABEL, type AppData } from '../../src/state/data';
-import { calendarSites } from '../../src/views/Compare';
+import { calendarOrder } from '../../src/views/Compare';
 import { mayHaveTerrain, rankRows, sortRanked, splitForRanking, VERDICT_ORDER } from '../../src/views/rankOrder';
 import { DATA, fileFetcher, fixtureManifest, fixtureTable } from './helpers';
 
@@ -111,9 +111,11 @@ describe('which sites are ranked (splitForRanking)', () => {
 describe('calendar rows for "I have a site: which dates work?"', () => {
   it('puts the chosen site first and keeps the others in order', async () => {
     const { sites } = await fixtureRankInputs();
-    expect(calendarSites(sites, 'fixture_target').map((s) => s.id)).toEqual(['fixture_target', 'fixture_ridge', 'fixture_equator', 'fixture_broken']);
-    expect(calendarSites(sites, null)).toEqual(sites);
-    expect(calendarSites(sites, 'unknown')).toEqual(sites);
+    const order = calendarOrder(sites, 'fixture_target');
+    expect(order.map((i) => sites[i].id)).toEqual(['fixture_target', 'fixture_ridge', 'fixture_equator', 'fixture_broken']);
+    expect([...order].sort((x, y) => x - y)).toEqual(sites.map((_, i) => i));
+    expect(calendarOrder(sites, null)).toEqual([0, 1, 2, 3]);
+    expect(calendarOrder(sites, 'unknown')).toEqual([0, 1, 2, 3]);
   });
 });
 

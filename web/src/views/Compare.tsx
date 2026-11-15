@@ -132,12 +132,27 @@ function useMissRows(data: AppData, sites: Site[], on: boolean, starts: number[]
 
 /** Set by "I have a site: which dates work?": scroll the chosen site's row into view once the table shows. */
 let scrollChosenRowPending = false;
-export function requestChosenRowScroll() { scrollChosenRowPending = true; }
+export function requestChosenRowScroll() {
+  scrollChosenRowPending = true;
+  // The table may already be computed (the effect in Calendar then never fires again): scroll now if the row is there.
+  setTimeout(() => {
+    const row = document.querySelector('[data-testid="calendar"] tr[aria-current="true"]');
+    if (row) {
+      row.scrollIntoView?.({ block: 'center' });
+      scrollChosenRowPending = false;
+    }
+  }, 0);
+}
 
-/** Calendar rows: the chosen site first (when it is a curated site), then the others in list order, at most 30. */
-export function calendarSites(all: Site[], chosenId: string | null): Site[] {
-  const chosen = chosenId ? all.find((s) => s.id === chosenId) : undefined;
-  return (chosen ? [chosen, ...all.filter((s) => s !== chosen)] : all).slice(0, 30);
+/**
+ * Display order of the calendar rows, as indices into `sites`: the chosen site first (when it is in
+ * the list), then the others in list order. Only the display order depends on the choice; the
+ * computed rows stay in list order, so choosing another site does not recompute the calendar.
+ */
+export function calendarOrder(sites: Site[], chosenId: string | null): number[] {
+  const all = sites.map((_, i) => i);
+  const k = chosenId ? sites.findIndex((s) => s.id === chosenId) : -1;
+  return k < 0 ? all : [k, ...all.filter((i) => i !== k)];
 }
 
 function Calendar({ data, scn, update }: Props) {
@@ -145,7 +160,9 @@ function Calendar({ data, scn, update }: Props) {
   const [missOn, setMissOn] = useState(false);
   const [missRadius, setMissRadius] = useState(250);
   const [missPct, setMissPct] = useState(MISS_TOLERANT_SHARE * 100);
-  const sites = calendarSites(data.sites, scn.site_id);
+  // Fixed order (not the chosen site first): the resolve, the calendar and the miss rows key on it.
+  const sites = data.sites.slice(0, 30);
+  const order = calendarOrder(sites, scn.site_id);
   const chosenId = sites.some((s) => s.id === scn.site_id) ? scn.site_id : null;
   const places = useResolved(data, sites, scn.rules.observer_height_m);
   const starts = dayStarts(scn.start_s, days, scn.stay_s, data.eph.meta, data.eph.start_ms);
@@ -172,6 +189,8 @@ function Calendar({ data, scn, update }: Props) {
     scrollChosenRowPending = false;
     document.querySelector('[data-testid="calendar"] tr[aria-current="true"]')?.scrollIntoView?.({ block: 'center' });
   }, [a]);
+  // A pending scroll belongs to this calendar: never let it fire later on an unrelated render.
+  useEffect(() => () => { scrollChosenRowPending = false; }, []);
   const dayLabel = (s: number) => formatUtc(data.eph.start_ms + s * 1000).slice(5, 10);
   const missDays = (id: string) => (missOn ? miss.rows?.bySite.get(id) ?? null : null);
   const passCount = a ? sites.map((s, i) => {
@@ -236,7 +255,8 @@ function Calendar({ data, scn, update }: Props) {
               <tr><th scope="col">Site \ start (UTC)</th>{starts.map((s) => <th key={s} scope="col" class="small">{dayLabel(s)}</th>)}</tr>
             </thead>
             <tbody>
-              {sites.map((site, i) => {
+              {order.map((i) => {
+                const site = sites[i];
                 const md = missDays(site.id);
                 return (
                   <tr key={site.id} data-miss={md ? 'on' : undefined} aria-current={site.id === chosenId ? 'true' : undefined} class={site.id === chosenId ? 'cal-chosen' : undefined}>
@@ -282,7 +302,7 @@ function Calendar({ data, scn, update }: Props) {
       </ul>
       {a && (
         <p class="takeaway">
-          {sites.map((s, i) => `${s.name}: ${passCount[i]} of ${starts.length} start dates ${missDays(s.id) ? 'miss-tolerant' : 'pass'}`).join('; ')}.
+          {order.map((i) => `${sites[i].name}: ${passCount[i]} of ${starts.length} start dates ${missDays(sites[i].id) ? 'miss-tolerant' : 'pass'}`).join('; ')}.
         </p>
       )}
     </section>

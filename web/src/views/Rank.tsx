@@ -90,7 +90,9 @@ export function RankView({ data, scn, update }: Props) {
             : <>Scoring {prog.total} {plural(prog.total, 'site', 'sites')}… {formatPct(prog.total ? prog.done / prog.total : 0)}</>}
         </p>
       )}
-      {r && r.rows.length === 0 && <p>No curated site in this data set has terrain horizon masks, so there is nothing to rank.</p>}
+      {r && r.rows.length === 0 && (r.failed.length > 0
+        ? <p>No site could be ranked: no terrain horizon masks could be used.</p>
+        : <p>No curated site in this data set has terrain horizon masks, so there is nothing to rank.</p>)}
       {r && r.rows.length > 0 && (
         <>
           <p class="takeaway" style={{ margin: '0 0 8px' }} data-testid="rank-summary">

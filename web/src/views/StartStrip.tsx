@@ -22,8 +22,9 @@ export function StartStrip({ scn, defaultCompare, update }: Props) {
     // to it once computed. A custom point is not in the calendar, which says so.
     const compare = scn.site_id ? uniqueCompareIds([scn.site_id, ...(scn.compare.length ? scn.compare : defaultCompare)]) : scn.compare;
     update({ view: 'compare', compare });
-    if (scn.site_id) requestChosenRowScroll();
+    // Panel first, then the chosen row (timeouts fire in order), so the row scroll is not undone.
     scrollToLabel('Calendar');
+    if (scn.site_id) requestChosenRowScroll();
   };
   const tour = () => { update({ view: 'story' }); scrollToLabel('Athena story'); };
   return (
