@@ -7,6 +7,7 @@ import json
 
 import pytest
 
+from sunsight import validate as V
 from sunsight.contracts import DATA_OUT
 
 PATH = DATA_OUT / "validation" / "summary.json"
@@ -58,3 +59,15 @@ def test_manifest_lists_the_pgda_reference_maps():
         "AVGVISIB_85S_060M_201608_EARTH.TIF",
         "LPSR_85S_060M_201608.TIF",
     } <= names
+
+
+def test_glaser_horizon_limit_sentence_note_006():
+    sens = {"rows": [{"change": V.HORIZON_LIMIT_ROW, "lit_pct": 90.0, "delta_points": 3.678}]}
+    c = {"id": "glaser_ridge", "explanation": "Base text."}
+    once = V.annotate_glaser(c, sens)
+    assert once["explanation"].startswith(
+        "Base text. The horizon search distance used in the 2014 study is not stated"
+    )
+    assert "raise our figure by 3.7 points" in once["explanation"]
+    assert V.annotate_glaser(once, sens) == once  # idempotent
+    assert V.annotate_glaser(c, None)["explanation"] == "Base text."
