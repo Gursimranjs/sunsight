@@ -1,0 +1,344 @@
+/* SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md. */
+/*
+ * Horizon interface tokens (review note 009): colour, type and motion, scoped to the .hz root so the
+ * classic interface is untouched. Fonts are self-hosted (web/public/fonts, SIL Open Font License,
+ * see OFL.txt and README.md there); no font CDN, no network call at run time.
+ *
+ * Contrast (WCAG 2.x relative luminance, computed for this file; AA = 4.5 for text, 3 for large
+ * text and non-text marks):
+ *   ink #17181A on ground #CFCBC2 ........ 10.98  pass (text)
+ *   ink #17181A on ground shade #8E8A82 ..  5.17  pass (text)
+ *   go #1F7A4D on ground #CFCBC2 .........  3.29  fails text, passes non-text (3:1)
+ *   no-go #B4421E on ground #CFCBC2 ......  3.47  fails text, passes non-text (3:1)
+ *     -> adjusted minimally for words: --hz-go-ink #19623E (4.54) and --hz-nogo-ink #973719 (4.51),
+ *        the same hues scaled darker. The contract colours stay for fills, shapes and marks.
+ *   white #FFFFFF on go #1F7A4D ..........  5.32  pass (label on a go fill)
+ *   white #FFFFFF on no-go #B4421E .......  5.62  pass (label on a no-go fill)
+ *   Sun #FFD27A on sky #000000 ........... 14.75  pass (text)
+ *   Earth #4F8FD6 on sky #000000 .........  6.23  pass (text)
+ *   ground #CFCBC2 on sky #000000 ........ 12.97  pass (text on the sky)
+ *   ground shade #8E8A82 on sky #000000 ..  6.11  pass (secondary text on the sky)
+ *   ground shade #8E8A82 on ground ........  2.12  surface only, never text
+ */
+
+/* Barlow 400 and 600, Barlow Condensed 700: latin subset woff2 from @fontsource 5.3.0. */
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/barlow-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/barlow-latin-600-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/barlow-condensed-latin-700-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+.hz {
+  --hz-sky: #000000;
+  --hz-ground: #CFCBC2;
+  --hz-ground-shade: #8E8A82;
+  --hz-ink: #17181A;
+  --hz-sun: #FFD27A;
+  --hz-earth: #4F8FD6;
+  --hz-go: #1F7A4D;
+  --hz-nogo: #B4421E;
+  /* Text on the ground surface: the go / no-go hues darkened just enough for 4.5:1 (see above). */
+  --hz-go-ink: #19623E;
+  --hz-nogo-ink: #973719;
+  --hz-font-display: 'Barlow Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  --hz-font-body: 'Barlow', 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --hz-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --hz-fast: 150ms;
+  --hz-focus: 0 0 0 3px var(--hz-sun);
+
+  font-family: var(--hz-font-body);
+  font-weight: 400;
+  color: var(--hz-ink);
+}
+
+.hz .hz-display {
+  font-family: var(--hz-font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.hz .hz-num {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hz {
+    --hz-fast: 0ms;
+  }
+}
+
+/* ---- Pickers (SiteMapPicker, DateStrip, ScenarioCards) ---- */
+
+.hz-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 16px;
+  background: rgba(0, 0, 0, 0.6);
+  overflow-y: auto;
+}
+
+.hz-dialog {
+  width: min(640px, 100%);
+  background: var(--hz-ground, #CFCBC2);
+  color: var(--hz-ink, #17181A);
+  font-family: var(--hz-font-body, 'Barlow', system-ui, sans-serif);
+  border-radius: 6px;
+  padding: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.hz-dialog h2 {
+  margin: 0 0 8px;
+  font-family: var(--hz-font-display, 'Barlow Condensed', sans-serif);
+  font-weight: 700;
+  font-size: 1.6rem;
+}
+
+.hz-dialog-close {
+  float: right;
+}
+
+.hz-polar-map {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  margin: 0 auto 8px;
+  background: var(--hz-sky, #000000);
+  border-radius: 50%;
+}
+
+.hz-polar-map .hz-pin {
+  cursor: pointer;
+}
+
+.hz-polar-map .hz-pin:focus {
+  outline: none;
+}
+
+.hz-polar-map .hz-pin:focus .hz-pin-ring,
+.hz-polar-map .hz-pin:hover .hz-pin-ring {
+  stroke: var(--hz-sun, #FFD27A);
+  stroke-width: 3;
+}
+
+.hz-site-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hz button.hz-chip,
+.hz-dialog button.hz-chip,
+.hz-dialog button,
+.hz-strip button,
+.hz-cards button {
+  font: inherit;
+  color: var(--hz-ink, #17181A);
+  background: transparent;
+  border: 1px solid var(--hz-ink, #17181A);
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  min-height: 32px;
+}
+
+.hz-dialog button:focus-visible,
+.hz-strip button:focus-visible,
+.hz-cards button:focus-visible {
+  outline: 3px solid var(--hz-ink, #17181A);
+  outline-offset: 2px;
+}
+
+.hz-dialog button[aria-current='true'],
+.hz-dialog button[aria-pressed='true'] {
+  background: var(--hz-ink, #17181A);
+  color: var(--hz-ground, #CFCBC2);
+}
+
+.hz-custom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+  margin-top: 12px;
+}
+
+.hz-custom label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+}
+
+.hz-custom input {
+  font: inherit;
+  width: 8rem;
+  padding: 4px 6px;
+  border: 1px solid var(--hz-ink, #17181A);
+  background: #FFFFFF;
+  color: var(--hz-ink, #17181A);
+}
+
+.hz-strip {
+  font-family: var(--hz-font-body, 'Barlow', system-ui, sans-serif);
+  color: var(--hz-ink, #17181A);
+}
+
+.hz-strip-days {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 4px;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.hz-strip-days button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 44px;
+  padding: 4px 2px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.hz-strip-days .hz-day-sym {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.hz-strip-days .hz-day-word {
+  font-size: 0.7rem;
+}
+
+.hz-strip-days .go button {
+  background: var(--hz-go, #1F7A4D);
+  border-color: var(--hz-go, #1F7A4D);
+  color: #FFFFFF;
+}
+
+.hz-strip-days .no-go button {
+  background: var(--hz-nogo, #B4421E);
+  border-color: var(--hz-nogo, #B4421E);
+  color: #FFFFFF;
+}
+
+/* Marginal: ink with a hatched mark (never colour alone). */
+.hz-strip-days .marginal button {
+  background: repeating-linear-gradient(135deg, transparent 0 4px, rgba(23, 24, 26, 0.18) 4px 6px);
+  border-style: dashed;
+}
+
+.hz-strip-days button[aria-current='date'] {
+  box-shadow: 0 0 0 2px var(--hz-ground, #CFCBC2), 0 0 0 5px var(--hz-ink, #17181A);
+  transform: translateY(-2px);
+}
+
+.hz-strip-days {
+  padding-top: 6px;
+  padding-left: 6px;
+}
+
+.hz-strip-nav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 6px;
+}
+
+.hz-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.hz-cards button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 10px 12px;
+  gap: 2px;
+}
+
+.hz-cards .hz-card-title {
+  font-family: var(--hz-font-display, 'Barlow Condensed', sans-serif);
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.hz-cards button[aria-pressed='true'] {
+  background: var(--hz-ink, #17181A);
+  color: var(--hz-ground, #CFCBC2);
+}
+
+.hz-rules summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.hz-rules .rules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px 12px;
+  margin-top: 8px;
+}
+
+.hz-rules .field {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2px;
+  font-size: 0.9rem;
+}
+
+.hz-rules input,
+.hz-rules select {
+  font: inherit;
+  padding: 4px 6px;
+  border: 1px solid var(--hz-ink, #17181A);
+  border-radius: 3px;
+  background: #FFFFFF;
+  color: var(--hz-ink, #17181A);
+  max-width: 100%;
+}
+
+.hz-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
