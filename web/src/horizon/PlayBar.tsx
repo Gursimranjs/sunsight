@@ -44,12 +44,14 @@ export function intoStay(t_off_s: number): string {
 }
 
 /** Controls that own their keys: the play bar's page-wide shortcuts leave them alone. */
-const OWN_KEYS = '[role=slider],[role=application],[role=dialog],[role=menu],[role=listbox],dialog,canvas,input,select,textarea,a[href],summary,[contenteditable=""],[contenteditable=true]';
+const OWN_KEYS = '[role=region][tabindex],[role=slider],[role=application],[role=dialog],[role=menu],[role=listbox],dialog,canvas,input,select,textarea,a[href],summary,[contenteditable=""],[contenteditable=true]';
 
 /**
  * True when a page-wide Space or arrow key should not move the playhead: another handler already used
  * it, a modifier is held, or focus is on a control that owns those keys (a slider, the 3D canvas, a
- * form field, a dialog, a link, or any button other than Play; Space on Play is the button's own click).
+ * form field, a dialog, a link, a scrollable table region, or any button other than Play; Space on Play is
+ * the button's own click). Otherwise the keys belong to the play bar only when focus is on the page body
+ * or inside the play bar or the hero; anywhere else (a focusable region, a table) the browser keeps them.
  */
 export function ignorePlayKey(e: Pick<KeyboardEvent, 'defaultPrevented' | 'altKey' | 'ctrlKey' | 'metaKey' | 'key' | 'target'>): boolean {
   if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return true;
@@ -57,9 +59,9 @@ export function ignorePlayKey(e: Pick<KeyboardEvent, 'defaultPrevented' | 'altKe
   if (!t || typeof t.closest !== 'function') return false;
   if (t.isContentEditable || t.closest(OWN_KEYS)) return true;
   const b = t.closest('button');
-  if (!b) return false;
-  if (!b.classList.contains('hz-play')) return true;
-  return e.key === ' ' || e.key === 'Enter';
+  if (b) return !b.classList.contains('hz-play') || e.key === ' ' || e.key === 'Enter';
+  if (typeof (t as Element).matches === 'function' && (t as Element).matches('body,html')) return false;
+  return !t.closest('.hz-playbar,.hz-hero');
 }
 
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -81,7 +83,8 @@ function Strips({ series, lit_threshold }: { series: Series; lit_threshold: numb
   const w = (r: { a: number; b: number }) => (100 * (r.b - r.a)) / Math.max(1, n);
   const row = (vals: ArrayLike<number>, col: string, cls: string) => (
     <svg class={`hz-strip-row ${cls}`} viewBox="0 0 100 4" preserveAspectRatio="none" aria-hidden="true">
-      <rect x="0" y="0" width="100" height="4" fill="var(--hz-ground-shade, #8E8A82)" />
+      {/* Off: ink, so the Sun (12.6:1) and Earth (5.3:1) runs stand out on any surface (WCAG 1.4.11). */}
+      <rect x="0" y="0" width="100" height="4" fill="var(--hz-ink, #17181A)" />
       {runs(vals).filter((r) => r.v > 0).map((r) => (
         <rect key={r.a} x={(100 * r.a) / Math.max(1, n)} y={0} width={w(r)} height={4} fill={col} />
       ))}

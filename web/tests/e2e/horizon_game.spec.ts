@@ -77,11 +77,19 @@ test('three landings, then the whole ground: each landing has the Miss map verdi
   await expect(page.getByTestId('game-tries')).toContainText('No tries left.');
 
   await page.getByTestId('game-show-ground').click();
+  // While scoring runs the button is aria-disabled, not disabled, so it keeps focus (polish review #7).
+  await expect(page.getByTestId('game-show-ground')).toHaveAttribute('aria-disabled', 'true');
   await expect(page.getByTestId('game-share-line')).toHaveText(/^Within 250 m, \d+% of the ground holds\.$/, { timeout: 120_000 });
   await expect(page.getByTestId('game-robustness-label')).toBeVisible();
-  // Focus moves to the share line; the button stays (disabled) so focus never falls to the page.
+  // Focus moves to the share line (the user was still on the button); the button stays, aria-disabled.
   await expect(page.getByTestId('game-share-line')).toBeFocused();
   await expect(page.getByTestId('game-show-ground')).toBeDisabled();
+  // The reveal fades in; with reduced motion the same marks have no animation at all (polish review #5).
+  const revealAnim = () => page.locator('.hz-game-reveal').first().evaluate((el) => getComputedStyle(el).animationName);
+  expect(await revealAnim()).toBe('hz-game-fade');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(await revealAnim()).toBe('none');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   // Legend and a text alternative with the counts; the reticle now says whether its point holds.
   await expect(page.getByTestId('game-legend')).toContainText('Holds');
   await expect(page.getByTestId('game-map')).toHaveAttribute('aria-label', /^Map of \d+ landing points\. \d+ hold, \d+ fail\.$/);
@@ -100,16 +108,26 @@ test('a shared link lands on the same point; Athena\'s target switches the groun
   const map = page.getByTestId('game-map');
   await expect(map).toBeVisible({ timeout: 60_000 });
   const box = (await map.boundingBox())!;
+  // Watch the dropping lander from the moment it is mounted: with reduced motion it must not animate.
+  await page.evaluate(() => {
+    const w = window as unknown as { dropSeen: { anim: string; n: number }[] };
+    w.dropSeen = [];
+    const look = () => {
+      const el = document.querySelector('.hz-game-lander.dropping');
+      if (el && !w.dropSeen.length) w.dropSeen.push({ anim: getComputedStyle(el).animationName, n: document.getAnimations().length });
+    };
+    new MutationObserver(look).observe(document.body, { subtree: true, childList: true, attributes: true });
+  });
   await page.mouse.click(box.x + box.width * 0.62, box.y + box.height * 0.4);
+  // During the drop: the lander is there, with no CSS animation and no Web Animations on the page.
+  await expect.poll(() => page.evaluate(() => (window as unknown as { dropSeen: unknown[] }).dropSeen.length)).toBe(1);
+  expect(await page.evaluate(() => (window as unknown as { dropSeen: unknown[] }).dropSeen[0])).toEqual({ anim: 'none', n: 0 });
   const t = await waitResult(page, 1);
   const link = await page.getByTestId('game-share-link').inputValue();
   expect(new URL(link).searchParams.get('game_pt')).toBe(t.id);
   // Reduced motion: the replay ends at once and nothing animates (no CSS or Web Animations at all).
   expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
   await expect(page.getByTestId('game-replay')).toBeVisible();
-  // The landing itself started no drop animation either.
-  const box2 = (await map.boundingBox())!;
-  expect(box2.width).toBeGreaterThan(0);
 
   await page.goto(link);
   const t2 = await waitResult(page, 1);
