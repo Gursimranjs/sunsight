@@ -71,6 +71,7 @@ Status is one of: todo, doing, done, cut.
 
 ## Log
 
+- **Note 009 M2 (15:05, on time).** "Land it yourself" is reachable in `?ui=horizon` (ground panel and Miss map), with the engine's verdict for the chosen point; pickers (site map, date strip, scenario cards), self-hosted Barlow fonts, tokens, load motion and reduced-motion path merged. Each interface is now its own chunk: first-load JS classic 56.4 kB, horizon 39.7 kB (budget 60). Classic stays the default. Fix round for the second reviews and note 010 is running.
 - **Note 009 M1 (14:36, 6 min late).** Shell behind `?ui=horizon` (mission line with three pickers, horizon hero, ground panel with call, miss line, readouts, Play), game and pickers merged but not yet wired; classic default unchanged. make check, 199 unit and 96 e2e pass. Reviews found focus, keyboard and stale-state defects; being fixed in the M2/M3 round.
 - **Note 009, horizon interface (Sunday 14:15).** BLOCKING note from the reviewer on the owner's request: a new interface behind `?ui=horizon`, milestones M1 14:30, M2 15:45, M3 16:45, M4 17:15, hard stop 17:30 (no flip unless M4 is green). Fallback tag `pre-polish` (c17ab94) pushed. Started 14:13; M1 will be late. Shell, game, and tokens/pickers built in parallel worktrees, each reviewed.
 - **Freeze (Sunday 12:40).** No new features from here. Live site checked as a visitor: the default link shows GO with the miss line on the first screen, fetches only 2029.bin first, no console errors. Review note 004 stays open for its remaining part (see Gate 2).
