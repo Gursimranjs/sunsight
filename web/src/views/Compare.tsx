@@ -130,12 +130,23 @@ function useMissRows(data: AppData, sites: Site[], on: boolean, starts: number[]
   return { rows: rows && rows.key === key ? rows : null, progress, pending: key !== '' && !(rows && rows.key === key), any: targets.length > 0 };
 }
 
+/** Set by "I have a site: which dates work?": scroll the chosen site's row into view once the table shows. */
+let scrollChosenRowPending = false;
+export function requestChosenRowScroll() { scrollChosenRowPending = true; }
+
+/** Calendar rows: the chosen site first (when it is a curated site), then the others in list order, at most 30. */
+export function calendarSites(all: Site[], chosenId: string | null): Site[] {
+  const chosen = chosenId ? all.find((s) => s.id === chosenId) : undefined;
+  return (chosen ? [chosen, ...all.filter((s) => s !== chosen)] : all).slice(0, 30);
+}
+
 function Calendar({ data, scn, update }: Props) {
   const [days, setDays] = useState(14);
   const [missOn, setMissOn] = useState(false);
   const [missRadius, setMissRadius] = useState(250);
   const [missPct, setMissPct] = useState(MISS_TOLERANT_SHARE * 100);
-  const sites = data.sites.slice(0, 30);
+  const sites = calendarSites(data.sites, scn.site_id);
+  const chosenId = sites.some((s) => s.id === scn.site_id) ? scn.site_id : null;
   const places = useResolved(data, sites, scn.rules.observer_height_m);
   const starts = dayStarts(scn.start_s, days, scn.stay_s, data.eph.meta, data.eph.start_ms);
   const [ans, setAns] = useState<{ key: string; a: CalendarAnswer } | null>(null);
@@ -156,6 +167,11 @@ function Calendar({ data, scn, update }: Props) {
   }, [key]);
 
   const a = ans && ans.key === key ? ans.a : null;
+  useEffect(() => {
+    if (!a || !scrollChosenRowPending) return;
+    scrollChosenRowPending = false;
+    document.querySelector('[data-testid="calendar"] tr[aria-current="true"]')?.scrollIntoView?.({ block: 'center' });
+  }, [a]);
   const dayLabel = (s: number) => formatUtc(data.eph.start_ms + s * 1000).slice(5, 10);
   const missDays = (id: string) => (missOn ? miss.rows?.bySite.get(id) ?? null : null);
   const passCount = a ? sites.map((s, i) => {
@@ -168,7 +184,13 @@ function Calendar({ data, scn, update }: Props) {
       <h3 class="chart-title">Calendar: which start dates work at which sites</h3>
       <p class="small muted" style={{ margin: '0 0 6px' }}>
         Each cell is a {Number((scn.stay_s / 86400).toFixed(2))}-day stay starting at 00:00 UTC on that day (month-day), scored with the current rules. Click a cell to open its report card.
+        {chosenId && <> The chosen site is the first row.</>}
       </p>
+      {!scn.site_id && (
+        <p class="small" style={{ margin: '0 0 6px' }} data-testid="cal-custom-note">
+          The calendar lists curated sites only; your custom point is not in it.
+        </p>
+      )}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end', marginBottom: 8 }}>
         <label class="field" style={{ display: 'inline-flex' }}>
           <span>Days shown</span>
@@ -217,7 +239,7 @@ function Calendar({ data, scn, update }: Props) {
               {sites.map((site, i) => {
                 const md = missDays(site.id);
                 return (
-                  <tr key={site.id} data-miss={md ? 'on' : undefined}>
+                  <tr key={site.id} data-miss={md ? 'on' : undefined} aria-current={site.id === chosenId ? 'true' : undefined} class={site.id === chosenId ? 'cal-chosen' : undefined}>
                     <th scope="row" class="small">{md ? '◎ ' : ''}{site.name}</th>
                     {a.cells[i].map((c, j) => {
                       const open = () => { update({ site_id: site.id, start_s: starts[j], t_off_s: 0, view: 'report' }); window.scrollTo({ top: 0 }); };

@@ -1,6 +1,7 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // The three plain entry choices under the header (note 003 A), always visible.
 import { uniqueCompareIds, type Scenario } from '../state/scenario';
+import { requestChosenRowScroll } from './Compare';
 
 interface Props {
   scn: Scenario;
@@ -17,9 +18,11 @@ function scrollToLabel(label: string) {
 export function StartStrip({ scn, defaultCompare, update }: Props) {
   const byDate = () => { update({ view: 'rank' }); scrollToLabel('Which sites work on this date'); };
   const bySite = () => {
-    // Put the current site first in the compare slots; the calendar below lists every site.
+    // Put the current site first in the compare slots; the calendar shows its row first and scrolls
+    // to it once computed. A custom point is not in the calendar, which says so.
     const compare = scn.site_id ? uniqueCompareIds([scn.site_id, ...(scn.compare.length ? scn.compare : defaultCompare)]) : scn.compare;
     update({ view: 'compare', compare });
+    if (scn.site_id) requestChosenRowScroll();
     scrollToLabel('Calendar');
   };
   const tour = () => { update({ view: 'story' }); scrollToLabel('Athena story'); };
@@ -31,7 +34,7 @@ export function StartStrip({ scn, defaultCompare, update }: Props) {
         <button type="button" onClick={tour}>Take the Athena tour</button>
       </div>
       <p class="small muted start-lead" data-testid="start-lead">
-        A miss of a few hundred metres can matter a lot on a ridge and hardly at all on a plain; the Miss test shows where.
+        A miss of a few hundred metres can matter a lot on the Shackleton ridge and hardly at all around Athena's target; the Miss test shows where.
       </p>
     </nav>
   );

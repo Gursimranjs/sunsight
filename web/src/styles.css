@@ -108,6 +108,7 @@ th, td { padding: 4px 8px; border-bottom: 1px solid var(--line); text-align: lef
 /* Calendar heatmap: verdict by symbol and colour */
 table.calendar { border-collapse: separate; border-spacing: 2px; }
 table.calendar th { white-space: nowrap; font-weight: 600; }
+table.calendar tr.cal-chosen th[scope=row] { font-weight: 800; box-shadow: inset 4px 0 0 var(--oi-sky); padding-left: 8px; }
 table.calendar td { padding: 0; border: none; }
 table.calendar td button { width: 2.25rem; height: 2.25rem; min-height: 0; padding: 0; border-radius: 4px; font-weight: 800; color: #000; border: 1px solid transparent; }
 td.cal.go button { background: var(--go); }

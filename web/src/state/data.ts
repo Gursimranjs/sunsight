@@ -49,6 +49,9 @@ export async function loadAppData(onFixture: () => void): Promise<AppData> {
   };
 }
 
+/** Horizon label of a site whose terrain file failed to load (smooth horizon used instead). */
+export const TERRAIN_MISSING_LABEL = 'Terrain file missing: smooth horizon used';
+
 /**
  * Coordinates and horizon mask for a curated site, loading its miss grid or region file as needed.
  * Same priority as `resolveSite`. A file that fails to load falls through to the next option; if
@@ -75,5 +78,5 @@ export async function resolveForSite(data: AppData, site: Site, observer_height_
     if (grid) return resolveSite(site, null, observer_height_m, grid);
   }
   const smooth = resolveSite(site, null, observer_height_m);
-  return failed ? { ...smooth, horizonLabel: 'Terrain file missing: smooth horizon used' } : smooth;
+  return failed ? { ...smooth, horizonLabel: TERRAIN_MISSING_LABEL } : smooth;
 }

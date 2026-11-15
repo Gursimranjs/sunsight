@@ -1,6 +1,6 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // Note 003 A: the start strip's three entry choices and the "which sites work?" ranking.
-import AxeBuilder from '@axe-core/playwright';
+import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { openApp, shippedSites, watchErrors } from './helpers';
 
@@ -8,13 +8,33 @@ import { openApp, shippedSites, watchErrors } from './helpers';
 const DATE = 'start=2027-10-13T00:00Z&preset=crew';
 const ORDER: Record<string, number> = { go: 0, marginal: 1, 'no-go': 2 };
 
+/**
+ * Ids of the shipped sites that have terrain horizon masks, by the same rules the app resolves them:
+ * a miss grid listed in the manifest with the site's point at most 40 m away, a listed region, or a
+ * listed miss-grid target (for a site with no miss_grid_id).
+ */
+function expectedRanked(): Set<string> {
+  const dir = new URL('../../public/data/', import.meta.url).pathname;
+  const m = JSON.parse(readFileSync(dir + 'manifest.json', 'utf8')) as { files: { sites: string; miss?: { id: string }[]; regions?: { id: string }[] } };
+  const s = JSON.parse(readFileSync(dir + m.files.sites, 'utf8')) as { sites: Record<string, unknown>[] };
+  const grids = new Set((m.files.miss ?? []).map((x) => x.id));
+  const regions = new Set((m.files.regions ?? []).map((x) => x.id));
+  const str = (x: unknown) => (typeof x === 'string' && x !== '' ? x : null);
+  return new Set(s.sites.filter((x) => {
+    const grid = str(x.miss_grid_id), region = str(x.region_id), target = str(x.miss_target_id);
+    const offset_m = typeof x.miss_point_offset_m === 'number' ? x.miss_point_offset_m : 0;
+    return (grid && grids.has(grid) && offset_m <= 40) || (region && regions.has(region)) || (!grid && target && grids.has(target));
+  }).map((x) => x.id as string));
+}
+
 test('the start strip shows three choices and the honest miss contrast', async ({ page }) => {
   await openApp(page);
   const strip = page.getByRole('navigation', { name: 'Start here' });
   await expect(strip.getByRole('button', { name: 'I have a date: which sites work?' })).toBeVisible();
   await expect(strip.getByRole('button', { name: 'I have a site: which dates work?' })).toBeVisible();
   await expect(strip.getByRole('button', { name: 'Take the Athena tour' })).toBeVisible();
-  await expect(page.getByTestId('start-lead')).toContainText('matter a lot on a ridge and hardly at all on a plain');
+  await expect(page.getByTestId('start-lead')).toHaveText(
+    "A miss of a few hundred metres can matter a lot on the Shackleton ridge and hardly at all around Athena's target; the Miss test shows where.");
 });
 
 test('"I have a date" ranks every site with terrain masks within 2 seconds, sorted by verdict', async ({ page }) => {
@@ -30,22 +50,48 @@ test('"I have a date" ranks every site with terrain masks within 2 seconds, sort
 
   await expect(page.getByRole('tab', { name: 'Which sites work?' })).toHaveAttribute('aria-selected', 'true');
   await expect(page).toHaveURL(/view=rank/);
+  // Exactly the sites with terrain masks are ranked: no more, no fewer.
+  const expected = expectedRanked();
   const n = await rows.count();
-  expect(n).toBeGreaterThanOrEqual(5);
+  expect(n).toBe(expected.size);
   const verdicts: string[] = [];
+  const scores: number[] = [];
+  const ids = new Set<string>();
   for (let i = 0; i < n; i++) {
     const r = rows.nth(i);
     await expect(r.getByTestId('rank-n')).toHaveText(String(i + 1));
     await expect(r.locator('.vbadge')).toHaveText(/GO|MARGINAL|NO-GO/);
     await expect(r.getByTestId('rank-reason')).not.toBeEmpty();
+    await expect(r.getByTestId('rank-horizon')).toContainText('Terrain horizon');
     verdicts.push((await r.getAttribute('data-verdict')) ?? '');
+    scores.push(Number(await r.getAttribute('data-score')));
+    ids.add((await r.getAttribute('data-site')) ?? '');
   }
-  // No no-go above a marginal or go, and go above marginal.
-  for (let i = 1; i < verdicts.length; i++) expect(ORDER[verdicts[i - 1]]).toBeLessThanOrEqual(ORDER[verdicts[i]]);
-  // Every ranked site is a curated site that ships terrain (a region or a miss grid).
-  type Raw = { id: string; region_id?: string | null; miss_grid_id?: string | null; miss_target_id: string | null };
-  const terrainIds = new Set((shippedSites() as unknown as Raw[]).filter((s) => s.region_id || s.miss_grid_id || s.miss_target_id).map((s) => s.id));
-  for (let i = 0; i < n; i++) expect(terrainIds.has((await rows.nth(i).getAttribute('data-site')) ?? '')).toBe(true);
+  expect([...ids].sort()).toEqual([...expected].sort());
+  // Verdict order (go, marginal, no-go); within one verdict the score never increases.
+  for (let i = 1; i < n; i++) {
+    expect(ORDER[verdicts[i - 1]]).toBeLessThanOrEqual(ORDER[verdicts[i]]);
+    if (verdicts[i - 1] === verdicts[i]) expect(scores[i - 1]).toBeGreaterThanOrEqual(scores[i]);
+  }
+  // The footnote counts the other curated sites, none of which failed to load.
+  const others = shippedSites().length - expected.size;
+  await expect(page.getByTestId('rank-unranked')).toHaveText(new RegExp(`^${others} other curated sites? ha(s|ve) no terrain horizon masks`));
+  await expect(page.getByTestId('rank-unranked')).not.toContainText('could not be loaded');
+  expect(errors).toEqual([]);
+});
+
+test('when every ranked site is no-go, the summary names no "best" site', async ({ page }) => {
+  const errors = watchErrors(page);
+  // Robotic preset from 2027-01-01 (the old default link): the shipped data gives no go or marginal site.
+  await openApp(page, 'start=2027-01-01T00:00Z&preset=robotic&view=rank');
+  await expect(page.getByTestId('rank-list')).toBeVisible({ timeout: 30_000 });
+  const verdicts = await page.getByTestId('rank-row').evaluateAll((els) => els.map((e) => e.getAttribute('data-verdict')));
+  expect(verdicts.length).toBeGreaterThan(0);
+  expect(verdicts.every((v) => v === 'no-go')).toBe(true);
+  const summary = page.getByTestId('rank-summary');
+  await expect(summary).not.toContainText('Best:');
+  const top = await page.getByTestId('rank-name').first().textContent();
+  await expect(summary).toContainText(`No ranked site meets the rules for this stay. Highest score: ${top} (still no-go).`);
   expect(errors).toEqual([]);
 });
 
@@ -67,14 +113,34 @@ test('a ranked row opens the report card for that site', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('"I have a site" opens the calendar with the current site', async ({ page }) => {
+test('"I have a site" opens the calendar with the chosen site as its first, marked row', async ({ page }) => {
   await openApp(page, `site=shackleton_ridge_rim&${DATE}`);
   await page.getByRole('button', { name: 'I have a site: which dates work?' }).click();
   await expect(page.getByRole('tab', { name: 'Compare & calendar' })).toHaveAttribute('aria-selected', 'true');
   const cal = page.getByTestId('calendar');
   await expect(cal).toBeVisible({ timeout: 90_000 });
-  await expect(cal.getByRole('rowheader', { name: /Shackleton–de Gerlache ridge/ })).toBeVisible();
+  // shackleton_ridge_rim is not first in sites.json, so this row order comes from the choice.
+  expect(shippedSites()[0].id).not.toBe('shackleton_ridge_rim');
+  await expect(cal.getByRole('rowheader').first()).toHaveText(/Shackleton–de Gerlache ridge/);
+  const marked = cal.locator('tbody tr[aria-current="true"]');
+  await expect(marked).toHaveCount(1);
+  await expect(marked.getByRole('rowheader')).toHaveText(/Shackleton–de Gerlache ridge/);
+  await expect(marked).toBeInViewport();
+  await expect(page.getByTestId('cal-custom-note')).toHaveCount(0);
   await expect(page.getByTestId('compare-row').first()).toContainText('Shackleton–de Gerlache ridge');
+});
+
+test('"I have a site" with a custom point says the calendar lists curated sites only', async ({ page }) => {
+  const errors = watchErrors(page);
+  await openApp(page, `lat=-60.5&lon=20.25&${DATE}`);
+  await page.getByRole('button', { name: 'I have a site: which dates work?' }).click();
+  await expect(page.getByRole('tab', { name: 'Compare & calendar' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('cal-custom-note')).toHaveText('The calendar lists curated sites only; your custom point is not in it.');
+  const cal = page.getByTestId('calendar');
+  await expect(cal).toBeVisible({ timeout: 90_000 });
+  await expect(cal.locator('tbody tr[aria-current="true"]')).toHaveCount(0);
+  await expect(cal.getByRole('rowheader').first()).toHaveText(shippedSites()[0].name);
+  expect(errors).toEqual([]);
 });
 
 test('"Take the Athena tour" opens the Athena story', async ({ page }) => {
@@ -84,22 +150,4 @@ test('"Take the Athena tour" opens the Athena story', async ({ page }) => {
   await expect(page.getByTestId('story')).toBeVisible();
 });
 
-test('axe: no serious or critical findings on "Which sites work?"', async ({ page }) => {
-  await openApp(page, `${DATE}&view=rank`);
-  await expect(page.getByTestId('rank-list')).toBeVisible({ timeout: 30_000 });
-  const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
-  const bad = r.violations.filter((x) => x.impact === 'serious' || x.impact === 'critical');
-  const summary = bad.map((x) => `${x.impact} ${x.id}: ${x.help} (${x.nodes.length}) e.g. ${x.nodes[0]?.target.join(' ')}`);
-  console.log(`axe "Which sites work?": ${r.violations.length} findings (${r.violations.map((x) => `${x.impact} ${x.id}`).join(', ') || 'none'})`);
-  expect(summary).toEqual([]);
-});
-
-test('375 px: the start strip and ranking cause no horizontal page scroll', async ({ browser }) => {
-  const ctx = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
-  const page = await ctx.newPage();
-  await openApp(page, `${DATE}&view=rank`);
-  await expect(page.getByTestId('rank-list')).toBeVisible({ timeout: 30_000 });
-  const [sw, cw] = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]);
-  expect(sw).toBeLessThanOrEqual(cw);
-  await ctx.close();
-});
+// Axe, 375 px layout and minimum text size for "Which sites work?" run in quality.spec.ts with the other views.
