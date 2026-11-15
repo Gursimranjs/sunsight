@@ -27,6 +27,29 @@ export function splitSites(sites: Site[], edge_lat_deg = MAP_EDGE_LAT_DEG): { po
   return { polar, other };
 }
 
+/** The plain headings of the site list (note 010 #9), in order. */
+export const SITE_GROUPS = ['South pole candidates', 'Commercial landers', 'Apollo', 'Other countries', 'Other'] as const;
+export type SiteGroup = (typeof SITE_GROUPS)[number];
+
+/**
+ * A site's heading, from its id and name in sites.json: Apollo missions; commercial landers (Intuitive
+ * Machines IM-1 and IM-2, Firefly Blue Ghost, ispace HAKUTO-R); other countries' landers (Chandrayaan,
+ * SLIM, Chang'e, Luna); any other site south of the map edge is a south pole candidate; the rest is Other.
+ */
+export function siteGroup(s: Pick<Site, 'id' | 'name' | 'lat_deg'>, edge_lat_deg = MAP_EDGE_LAT_DEG): SiteGroup {
+  const id = s.id.toLowerCase(), name = s.name.toLowerCase();
+  if (/^apollo_/.test(id) || /^apollo\b/.test(name)) return 'Apollo';
+  if (/^(im\d|blue_ghost|hakuto)/.test(id) || /\b(im-\d|blue ghost|hakuto)/.test(name)) return 'Commercial landers';
+  if (/^(chandrayaan|slim|change_|luna_|luna\d)/.test(id) || /\b(chandrayaan|slim|chang'e|luna \d)/.test(name)) return 'Other countries';
+  if (s.lat_deg < edge_lat_deg) return 'South pole candidates';
+  return 'Other';
+}
+
+/** Sites under their headings, in SITE_GROUPS order, each keeping list order; empty groups left out. */
+export function groupSites(sites: Site[]): { group: SiteGroup; sites: Site[] }[] {
+  return SITE_GROUPS.map((group) => ({ group, sites: sites.filter((s) => siteGroup(s) === group) })).filter((g) => g.sites.length > 0);
+}
+
 /**
  * Where to draw each pin so that no two overlap: start at the true positions and push pairs closer
  * than min_dist apart, a few rounds. The true position keeps its own dot, with a leader line to the
@@ -91,7 +114,8 @@ export const CHOSEN_RING = '0 0 0 2px #000000, 0 0 0 4px #FFD27A';
 
 export function SiteMapPicker({ sites, siteId, onSite, onClose, lat_deg, lon_deg, onCustom }: Props) {
   const box = useRef<HTMLDivElement>(null);
-  const { polar, other } = splitSites(sites);
+  const { polar } = splitSites(sites);
+  const customLat = useRef<HTMLInputElement>(null);
   const [lat, setLat] = useState(lat_deg !== undefined ? String(lat_deg) : '');
   const [lon, setLon] = useState(lon_deg !== undefined ? String(lon_deg) : '');
   const [hover, setHover] = useState<string | null>(null);
@@ -182,34 +206,36 @@ export function SiteMapPicker({ sites, siteId, onSite, onClose, lat_deg, lon_deg
         <p data-testid="site-map-name" style={{ minHeight: '1.4em', margin: '4px 0 8px', fontWeight: 600 }}>
           {named ? sites.find((s) => s.id === named)?.name ?? '' : ''}
         </p>
-        <ol class="hz-map-list" aria-label="Pins on the map">
-          {polar.map((s, i) => (
-            <li key={s.id}>
-              <button type="button" class="hz-chip" data-site-id={s.id} aria-current={s.id === siteId ? 'true' : undefined} onClick={() => pick(s.id)}>
-                {i + 1}. {s.name}
-              </button>
-            </li>
-          ))}
-        </ol>
-        {other.length > 0 && (
-          <>
-            <h3 style={{ margin: '12px 0 6px', fontSize: '1rem' }}>Elsewhere on the Moon</h3>
-            <ul class="hz-map-list" aria-label="Sites elsewhere on the Moon">
-              {other.map((s) => (
-                <li key={s.id}>
-                  <button type="button" class="hz-chip" data-site-id={s.id} aria-current={s.id === siteId ? 'true' : undefined} onClick={() => pick(s.id)}>
-                    {s.name}
-                  </button>
-                </li>
-              ))}
+        {onCustom && (
+          <p style={{ margin: '0 0 6px' }}>
+            <button type="button" class="hz-chip" data-testid="site-custom-jump" onClick={() => customLat.current?.focus()}>Custom latitude and longitude</button>
+          </p>
+        )}
+        {groupSites(sites).map(({ group, sites: list }, g) => (
+          <section key={group} class="hz-site-group" data-testid="site-group" data-group={group} aria-labelledby={`hz-site-group-${g}`}>
+            <h3 id={`hz-site-group-${g}`} style={{ margin: '12px 0 6px', fontSize: '1rem' }}>{group}</h3>
+            <ul class="hz-map-list">
+              {list.map((s) => {
+                const pin = polar.indexOf(s);
+                return (
+                  <li key={s.id}>
+                    <button type="button" class="hz-chip" data-site-id={s.id} aria-current={s.id === siteId ? 'true' : undefined} onClick={() => pick(s.id)}>
+                      {pin >= 0 ? `${pin + 1}. ` : ''}{s.name}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
-          </>
+          </section>
+        ))}
+        {onCustom && (
+          <h3 id="hz-site-custom" style={{ margin: '12px 0 0', fontSize: '1rem' }}>Custom latitude and longitude</h3>
         )}
         {onCustom && (
-          <form class="hz-custom" onSubmit={(e) => { e.preventDefault(); if (customOk) { onCustom(latN, lonN); onClose(); } }}>
+          <form class="hz-custom" aria-labelledby="hz-site-custom" onSubmit={(e) => { e.preventDefault(); if (customOk) { onCustom(latN, lonN); onClose(); } }}>
             <label>
               <span>Latitude (°, south negative)</span>
-              <input type="number" inputMode="decimal" step="any" min={-90} max={90} value={lat} onInput={(e) => setLat((e.target as HTMLInputElement).value)} />
+              <input ref={customLat} type="number" inputMode="decimal" step="any" min={-90} max={90} value={lat} onInput={(e) => setLat((e.target as HTMLInputElement).value)} />
             </label>
             <label>
               <span>Longitude (°, east positive)</span>

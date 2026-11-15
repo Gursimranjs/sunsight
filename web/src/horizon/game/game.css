@@ -17,6 +17,8 @@
 .hz-game-map text { fill: #ffffff; font-size: 12px; font-variant-numeric: tabular-nums; }
 .hz-game-reticle:focus { outline: none; }
 .hz-game-reticle:focus-visible circle:first-child { stroke: var(--hz-sun, #FFD27A); stroke-width: 3; }
+.hz-game-halo { visibility: hidden; }
+.hz-game-reticle:focus-visible .hz-game-halo { visibility: visible; }
 .hz-game-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; align-items: center; }
 .hz-game button {
   font: inherit; font-size: 16px; min-height: 40px; padding: 6px 12px; cursor: pointer;
@@ -24,7 +26,8 @@
   transition: background var(--hz-fast, 150ms) var(--hz-ease, ease);
 }
 .hz-game button:hover { background: rgba(23, 24, 26, 0.08); }
-.hz-game button:disabled { opacity: 0.6; cursor: default; }
+.hz-game button:disabled, .hz-game button[aria-disabled=true] { opacity: 0.6; cursor: default; }
+.hz-game button[aria-disabled=true]:hover { background: transparent; }
 .hz-game-link { font: inherit; font-size: 14px; min-height: 40px; flex: 1 1 200px; min-width: 0; padding: 4px 8px; border: 1px solid var(--hz-ground-shade, #8E8A82); background: #ffffff; color: var(--hz-ink, #17181A); }
 .hz-game-tries { margin: 8px 0; padding-left: 20px; font-size: 15px; }
 .hz-game-result { margin-bottom: 8px; }
