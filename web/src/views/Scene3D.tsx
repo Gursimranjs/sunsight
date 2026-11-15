@@ -4,7 +4,7 @@
 // horizon engine; shadows here come from the graphics engine and the nearby terrain cut.
 import { useEffect, useRef } from 'preact/hooks';
 import {
-  AmbientLight, BufferAttribute, BufferGeometry, CanvasTexture, Color, CylinderGeometry, DirectionalLight,
+  AmbientLight, BufferAttribute, BufferGeometry, CanvasTexture, Color, CylinderGeometry, DirectionalLight, Group, HemisphereLight,
   LineBasicMaterial, LineLoop, Mesh, MeshBasicMaterial, MeshLambertMaterial, PCFShadowMap, PerspectiveCamera,
   Scene, SRGBColorSpace, Sprite, SpriteMaterial, Vector3, WebGLRenderer,
 } from 'three';
@@ -26,11 +26,23 @@ export interface Scene3DProps {
   /** Bumped by the "look toward" buttons: which body to face. */
   look: { body: 'sun' | 'earth'; n: number };
   missRadius_m: number;
+  /**
+   * The Sun lights nothing at this moment: add a faint, shadowless fill light so the terrain's shape
+   * stays visible. Off whenever the Sun is up, so the shadows stay those the Sun casts.
+   */
+  fill: boolean;
   onFps: (fps: number) => void;
   onError: (msg: string) => void;
 }
 
 const SKY_DIST_M = 60_000;
+/**
+ * Fill light used only while the Sun is down: a dim, cool, shadowless light from high in the scene's
+ * -X/-Z quarter (the usual hillshade direction, not the Sun's) plus a little even light, so slopes
+ * read as shape. Display choices only; no number on screen depends on them.
+ */
+const FILL_KEY_INTENSITY = 1.1;
+const FILL_EVEN_INTENSITY = 0.25;
 const D = Math.PI / 180;
 
 function discTexture(inner: string, outer: string): CanvasTexture {
@@ -54,6 +66,7 @@ interface World {
   camera: PerspectiveCamera;
   controls: OrbitControls;
   sunLight: DirectionalLight;
+  fillLight: Group;
   sunSprite: Sprite;
   earthSprite: Sprite;
   pin: Mesh;
@@ -128,6 +141,12 @@ export default function Scene3D(p: Scene3DProps) {
     sunLight.shadow.bias = -0.0004;
     sunLight.shadow.normalBias = 4;
     scene.add(sunLight, sunLight.target);
+    const fillLight = new Group();
+    const fillKey = new DirectionalLight(0xc8d2e0, FILL_KEY_INTENSITY);
+    fillKey.position.set(-1, 1.4, -1); // direction only; the target stays at the origin
+    fillLight.add(fillKey, new HemisphereLight(0xc8d2e0, 0x1a1918, FILL_EVEN_INTENSITY));
+    fillLight.visible = false;
+    scene.add(fillLight);
 
     const sunSprite = new Sprite(new SpriteMaterial({ map: discTexture('#fffbe8', '#ffd27a'), depthWrite: false, fog: false }));
     const earthSprite = new Sprite(new SpriteMaterial({ map: discTexture('#9fd3ff', '#2f6fb3'), depthWrite: false, fog: false }));
@@ -145,7 +164,7 @@ export default function Scene3D(p: Scene3DProps) {
 
     // Look around in astronaut mode: drag or arrow keys turn the head.
     const w: World = {
-      renderer, scene, camera, controls, sunLight, sunSprite, earthSprite, pin, ring, base_m, yaw_rad: 0, pitch_rad: 0,
+      renderer, scene, camera, controls, sunLight, fillLight, sunSprite, earthSprite, pin, ring, base_m, yaw_rad: 0, pitch_rad: 0,
       dispose: () => {},
     };
     let drag: { x: number; y: number } | null = null;
@@ -235,6 +254,7 @@ export default function Scene3D(p: Scene3DProps) {
     w.sunLight.position.set(v[0] * 50_000, v[1] * 50_000, v[2] * 50_000);
     // Below the horizon (whole disc under the level horizon) the Sun lights nothing.
     w.sunLight.intensity = p.sun.el_deg + p.sun.r_deg < 0 ? 0 : 3.2;
+    w.fillLight.visible = p.fill;
     const [lx, lz] = p.landing ?? [0, 0];
     const g = groundHeight(p.heights, p.meta, lx, lz) ?? w.base_m;
     w.pin.visible = !!p.landing && p.mode === 'overview';
@@ -247,7 +267,7 @@ export default function Scene3D(p: Scene3DProps) {
     }
     w.ring.geometry.setAttribute('position', new BufferAttribute(new Float32Array(pts), 3));
     w.ring.visible = !!p.landing && p.mode === 'overview';
-  }, [p.sun.az_deg, p.sun.el_deg, p.landing?.[0], p.landing?.[1], p.mode, p.missRadius_m, p.heights]);
+  }, [p.sun.az_deg, p.sun.el_deg, p.landing?.[0], p.landing?.[1], p.mode, p.missRadius_m, p.heights, p.fill]);
 
   useEffect(() => {
     const w = world.current;
