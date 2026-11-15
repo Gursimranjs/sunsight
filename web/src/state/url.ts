@@ -7,6 +7,30 @@ const H = 3600;
 const num = (v: string | null) => (v === null || v.trim() === '' ? NaN : Number(v));
 const fmt = (x: number) => String(Number(x.toFixed(6)));
 
+/** True when the query names a place: a site, or both lat and lon. */
+export function hasPlace(query: string): boolean {
+  const q = new URLSearchParams(query);
+  return q.has('site') || (q.has('lat') && q.has('lon'));
+}
+
+/**
+ * The query a page opens with (note 011 #9). A query that names no place (no site, no lat and lon) opens on
+ * the default link, whatever else it carries: social sites and mail programs add parameters such as fbclid
+ * or utm_source to shared links, and those alone must not skip the default scenario. Scenario parameters the
+ * query does carry (a start, a preset, a view) are laid over the default link, so a site-less link such as
+ * the ranking for a date still opens that date. `defaultQuery` is '' when the default site does not ship;
+ * the query is then returned as it is.
+ */
+export function startQuery(query: string, defaultQuery: string): string {
+  if (hasPlace(query) || !defaultQuery) return query;
+  const d = new URLSearchParams(defaultQuery);
+  for (const [k, v] of new URLSearchParams(query)) d.set(k, v);
+  return d.toString();
+}
+
+/** The interface flag of the classic interface; links exported from it carry it so they reopen it. */
+export const UI_CLASSIC_PARAM = 'ui=classic';
+
 /** Query string for a scenario. Rules are written only where they differ from the preset. */
 export function encodeScenario(s: Scenario, epoch_ms: number): string {
   const q = new URLSearchParams();

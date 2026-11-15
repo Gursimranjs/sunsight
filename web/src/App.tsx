@@ -9,7 +9,7 @@ import { MISS_TOLERANT_SHARE, missSig, type MissShare } from './views/missGeomet
 import { loadAppData, resolveForSite, type AppData } from './state/data';
 import { currentPlace, freshAnswer, placeRequestKey, windowKey, type TaggedPlace } from './state/freshness';
 import { clampScenario, DEFAULT_QUERY, DEFAULT_SITE_ID, defaultScenario, tableRange, VIEWS, type Scenario } from './state/scenario';
-import { decodeScenario, encodeScenario } from './state/url';
+import { decodeScenario, encodeScenario, startQuery, UI_CLASSIC_PARAM } from './state/url';
 import { ShareBar } from './views/ShareBar';
 import { Compare } from './views/Compare';
 import { MissView } from './views/MissView';
@@ -62,8 +62,9 @@ export function App() {
         qp.delete('ui');
         const q = qp.toString();
         const ids = d.sites.map((x) => x.id);
-        // No query: open on the computed default scenario (note 003 B) when its site ships, else the first site.
-        const q0 = q || (ids.includes(DEFAULT_SITE_ID) ? DEFAULT_QUERY : '');
+        // No place in the query (none at all, or only other parameters such as fbclid, note 011 #9): open on the
+        // computed default scenario (note 003 B) when its site ships, else the first site.
+        const q0 = startQuery(q, ids.includes(DEFAULT_SITE_ID) ? DEFAULT_QUERY : '');
         const s0 = q0 ? decodeScenario(q0, d.eph.start_ms, first, ids) : defaultScenario(first);
         setScn(clampScenario(s0, d.eph.meta));
       })
@@ -250,7 +251,8 @@ export function App() {
               <ShareBar answer={shown} ctx={{
                 fixture, epoch_ms: epochMs, preset: scn.preset, rules: scn.rules, stay_s: scn.stay_s,
                 start_utc: new Date(epochMs + scn.start_s * 1000).toISOString().slice(0, 16) + 'Z',
-                link: location.origin + location.pathname + '?' + encodeScenario(scn, epochMs),
+                // Carries ui=classic so a link exported from the classic interface reopens it after the flip.
+                link: location.origin + location.pathname + '?' + encodeScenario(scn, epochMs) + '&' + UI_CLASSIC_PARAM,
                 site: { id: scn.site_id, name: placeName, lat_deg: place.lat_deg, lon_deg: place.lon_deg, h_m: place.h_m, horizon: place.horizonLabel },
               }} />
             )}

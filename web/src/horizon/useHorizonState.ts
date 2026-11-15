@@ -12,7 +12,7 @@ import { local_frame, sample_at, site_vector } from '../engine/light';
 import { loadAppData, resolveForSite, type AppData } from '../state/data';
 import { currentPlace, freshAnswer, placeRequestKey, windowKey, type TaggedPlace } from '../state/freshness';
 import { clampScenario, DEFAULT_QUERY, DEFAULT_SITE_ID, defaultScenario, type Scenario, type View } from '../state/scenario';
-import { decodeScenario, encodeScenario } from '../state/url';
+import { decodeScenario, encodeScenario, startQuery } from '../state/url';
 import { MISS_RADII_M, missJob, missSig, type MissShare } from '../views/missGeometry';
 import { useTableRange, type TableRange } from '../views/useTableRange';
 
@@ -192,7 +192,8 @@ export function useHorizonState() {
         const first = d.sites[0]?.id ?? null;
         const q = stripUi(location.search);
         const ids = d.sites.map((x) => x.id);
-        const q0 = q || (ids.includes(DEFAULT_SITE_ID) ? DEFAULT_QUERY : '');
+        // A query that names no place opens the default link, whatever else it carries (note 011 #9).
+        const q0 = startQuery(q, ids.includes(DEFAULT_SITE_ID) ? DEFAULT_QUERY : '');
         const s0 = q0 ? decodeScenario(q0, d.eph.start_ms, first, ids) : defaultScenario(first);
         const iv = initialView(q);
         if (iv.scnView) s0.view = iv.scnView;
