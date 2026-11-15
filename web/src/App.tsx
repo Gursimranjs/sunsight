@@ -191,7 +191,7 @@ export function App() {
         )}
         {scn.view === '3d' && (
           <div role="tabpanel" aria-label="3D view">
-            <Hero3D data={data} site={site} place={place} scn={scn} now={now} update={update} />
+            <Hero3D data={data} site={site} place={place} scn={scn} now={now} series={answer?.series ?? null} update={update} />
             <TerrainCredit />
           </div>
         )}

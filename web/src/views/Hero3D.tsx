@@ -1,16 +1,20 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // 3D hero view shell: loads the terrain cut, checks WebGL and imports the Three.js scene on demand.
 import type { ComponentType } from 'preact';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { DATA_BASE } from '../data/loaders';
 import type { Resolved } from '../data/sites';
 import type { Manifest, Site } from '../data/types';
+import type { Series } from '../engine/compute';
 import type { Sample } from '../engine/light';
 import { skyAt } from '../engine/sky';
 import { formatDeg, formatPct, formatUtc } from '../format';
 import type { AppData } from '../state/data';
 import type { Scenario } from '../state/scenario';
 import type { Scene3DProps } from './Scene3D';
+import {
+  FILL_LIGHT_LABEL, firstLitJump_s, needsFillLight, nextPlayOffset_s, PLAY_TICK_MS, playStep_s, TIME3D_STEP_S,
+} from './hero3dTime';
 import { decodeTerrain, latLonToMap, mapToScene, terrainCentreMap, type TerrainMeta } from './terrain3d';
 
 export const ILLUSTRATIVE_LABEL = 'Illustrative: shadows come from the graphics engine and nearby terrain only; the numbers come from the horizon engine.';
@@ -21,6 +25,8 @@ interface Props {
   place: Resolved | null;
   scn: Scenario;
   now: Sample | null;
+  /** The engine's series for the current stay (fresh answers only), or null while it is computing. */
+  series?: Series | null;
   update: (patch: Partial<Scenario>) => void;
 }
 
@@ -44,7 +50,7 @@ async function loadTerrain(m: Manifest, id: string): Promise<{ meta: TerrainMeta
 
 let sceneModule: Promise<{ default: ComponentType<Scene3DProps> }> | null = null;
 
-export function Hero3D({ data, site, place, scn, now, update }: Props) {
+export function Hero3D({ data, site, place, scn, now, series = null, update }: Props) {
   const terrainId = site?.terrain_id ?? null;
   const [terrain, setTerrain] = useState<{ id: string; meta: TerrainMeta; heights: Int16Array } | null>(null);
   const [Scene, setScene] = useState<ComponentType<Scene3DProps> | null>(null);
@@ -53,6 +59,44 @@ export function Hero3D({ data, site, place, scn, now, update }: Props) {
   const [look, setLook] = useState<{ body: 'sun' | 'earth'; n: number }>({ body: 'sun', n: 0 });
   const [fps, setFps] = useState<number | null>(null);
   const [webgl] = useState(() => hasWebGL());
+  const [playing, setPlaying] = useState(false);
+  const latest = useRef({ scn, update });
+  latest.current = { scn, update };
+
+  // Opening at the start of the stay on a dark moment: jump once to the stay's first lit moment, if it
+  // has one. A view opened at any other time (a shared link with t_h, a time picked in another view)
+  // keeps it. Any change of time before the engine's answer arrives (slider, Play) counts as the user's
+  // choice. Nothing happens while no 3D scene is drawn (no terrain cut, no WebGL), and that does not
+  // use up the jump, so a terrain site picked afterwards still gets it.
+  const jump = useRef({ done: scn.t_off_s !== 0, t0_s: scn.t_off_s });
+  useEffect(() => {
+    if (!terrainId || !webgl) return;
+    const j = jump.current;
+    if (j.done) return;
+    if (scn.t_off_s !== j.t0_s) { j.done = true; return; }
+    if (!series) return;
+    j.done = true;
+    const to_s = firstLitJump_s(series, scn.start_s, scn.t_off_s, scn.rules.lit_threshold);
+    if (to_s !== null) update({ t_off_s: to_s });
+  }, [series, scn.t_off_s, scn.start_s, terrainId, webgl]);
+
+  // Play: step the shared time across the stay; stops at the end and when the view unmounts.
+  useEffect(() => {
+    if (!playing) return;
+    const id = setInterval(() => {
+      const { scn: s, update: up } = latest.current;
+      const next_s = nextPlayOffset_s(s.t_off_s, s.stay_s, playStep_s(s.stay_s));
+      up({ t_off_s: next_s });
+      if (next_s >= s.stay_s) setPlaying(false);
+    }, PLAY_TICK_MS);
+    return () => clearInterval(id);
+  }, [playing]);
+  const togglePlay = () => {
+    jump.current.done = true;
+    if (playing) { setPlaying(false); return; }
+    if (scn.t_off_s >= scn.stay_s) update({ t_off_s: 0 });
+    setPlaying(true);
+  };
 
   useEffect(() => {
     if (!terrainId || !webgl) return;
@@ -99,6 +143,7 @@ export function Hero3D({ data, site, place, scn, now, update }: Props) {
     if (Math.abs(x) <= halfExtent_m && Math.abs(z) <= halfExtent_m) landing = [x, z];
   }
   const size_km = (2 * halfExtent_m) / 1000;
+  const fill = needsFillLight(sky.sun, now ? now.sun_frac : null);
   return (
     <section class="card" aria-label="3D view" data-testid="hero3d">
       <p class="illustrative" data-testid="illustrative-label"><strong>{ILLUSTRATIVE_LABEL}</strong></p>
@@ -114,15 +159,22 @@ export function Hero3D({ data, site, place, scn, now, update }: Props) {
         )}
       </div>
       <Scene heights={terrain.heights} meta={meta} landing={landing} sun={sky.sun} earth={sky.earth} lon_deg={meta.center.lon_deg}
-        mode={landing ? mode : 'overview'} look={look} missRadius_m={250} onFps={setFps} onError={setErr} />
+        mode={landing ? mode : 'overview'} look={look} missRadius_m={250} fill={fill} onFps={setFps} onError={setErr} />
+      {/* The live region stays mounted so screen readers announce the label when it appears. */}
+      <p class="small" role="status" aria-live="polite" style={{ margin: fill ? '6px 0 0' : 0 }}>
+        {fill && <span data-testid="fill-light-label">{FILL_LIGHT_LABEL}</span>}
+      </p>
+      <div class="btnrow" style={{ marginTop: 8, marginBottom: 0 }}>
+        <button type="button" data-testid="play3d" onClick={togglePlay}>{playing ? 'Pause' : 'Play'}</button>
+      </div>
       <label class="field" style={{ marginTop: 8 }}>
         <span>Time in the stay: {formatUtc(data.eph.start_ms + t_s * 1000)}</span>
-        <input type="range" min={0} max={scn.stay_s} step={600} value={scn.t_off_s} data-testid="time3d"
+        <input type="range" min={0} max={scn.stay_s} step={TIME3D_STEP_S} value={scn.t_off_s} data-testid="time3d"
           aria-valuetext={formatUtc(data.eph.start_ms + t_s * 1000)}
-          onInput={(e) => update({ t_off_s: Number((e.target as HTMLInputElement).value) })} />
+          onInput={(e) => { jump.current.done = true; update({ t_off_s: Number((e.target as HTMLInputElement).value) }); }} />
       </label>
       <ul class="legend">
-        <li>Sun in the sky (true size): azimuth {formatDeg(sky.sun.az_deg, 1)}, elevation {formatDeg(sky.sun.el_deg, 2)} at the cut’s centre{sky.sun.el_deg + sky.sun.r_deg < 0 ? ' (below the level horizon, so the scene is dark)' : ''}</li>
+        <li>Sun in the sky (true size): azimuth {formatDeg(sky.sun.az_deg, 1)}, elevation {formatDeg(sky.sun.el_deg, 2)} at the cut’s centre{sky.sun.el_deg + sky.sun.r_deg < 0 ? ' (below the level horizon, so the Sun lights nothing here)' : ''}</li>
         <li>Blue disc: Earth (true size), elevation {formatDeg(sky.earth.el_deg, 2)}</li>
         {landing && <li>White pin and ring: landing point and a 250 m miss radius</li>}
       </ul>
