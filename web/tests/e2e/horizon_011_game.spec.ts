@@ -36,6 +36,22 @@ test('g161: no "Now the Sun is" in the game; the strip marks the failure at touc
   expect(errors).toEqual([]);
 });
 
+test('375 px, reduced motion: the failure mark sits on the strip plot at touchdown, measured at the real strip width', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openHz(page, `${BASE}&view=game&game_pt=g161`);
+  await expect(page.getByTestId('game-result')).toBeVisible({ timeout: 90_000 });
+  const game = page.getByTestId('land-game');
+  const mark = page.getByTestId('game-failure-marker');
+  await expect(mark).toBeVisible();
+  await page.waitForTimeout(500);
+  const plot = (await game.locator('.hz-game-strip svg rect').first().boundingBox())!;
+  const mb = (await mark.boundingBox())!;
+  expect(Math.abs(mb.x - plot.x)).toBeLessThan(3);
+  // No sideways scroll on the phone.
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+});
+
 test('g117: the reason says the Sun never rises and no station is in view; the failure is marked', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openHz(page, `${BASE}&view=game&game_pt=g117`);
@@ -72,8 +88,9 @@ test('a click while a try plays shows the busy state and skips to the result', a
   await expect(page.getByTestId('game-status')).toContainText('Playing the stay…');
   await page.waitForTimeout(1000);
   await page.mouse.click(box.x + box.width * 0.6, box.y + box.height * 0.5);
-  // The second click skips: the first try ends with its result, well before the 5 s replay is over.
-  await expect(page.getByTestId('game-result')).toBeVisible({ timeout: 90_000 });
+  // The second click skips: the first try ends with its result, well before the 5 s replay is over
+  // (a click that was ignored would only show the result after the full replay).
+  await expect(page.getByTestId('game-result')).toBeVisible({ timeout: 3000 });
   await expect(map).toHaveAttribute('aria-busy', 'false');
   await expect(page.getByTestId('game-try-list').locator('li')).toHaveCount(1);
   await expect(page.getByTestId('game-tries')).toContainText('Try 2 of 3.');

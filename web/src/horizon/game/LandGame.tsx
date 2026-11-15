@@ -54,6 +54,19 @@ function reducedMotion(): boolean {
 function FailureMark({ f, stay_s, children }: { f: FirstFailure | null; stay_s: number; children: ComponentChildren }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState<{ left: number; top: number; height: number } | null>(null);
+  // The strip (Timeline) can redraw at its real width after this mark has measured it, without re-rendering
+  // this component, and phones resize or turn: watch the strip and measure again whenever it changes.
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const w = wrap.current;
+    if (!w) return;
+    const bump = () => setTick((x) => x + 1);
+    const mo = typeof MutationObserver === 'function' ? new MutationObserver(bump) : null;
+    mo?.observe(w, { subtree: true, attributes: true, childList: true, attributeFilter: ['x', 'width', 'viewBox'] });
+    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(bump) : null;
+    ro?.observe(w);
+    return () => { mo?.disconnect(); ro?.disconnect(); };
+  }, []);
   useLayoutEffect(() => {
     const w = wrap.current, svg = w?.querySelector('svg'), rect = svg?.querySelector('rect');
     if (!w || !svg || !rect || !f) { if (box) setBox(null); return; }
@@ -63,14 +76,14 @@ function FailureMark({ f, stay_s, children }: { f: FirstFailure | null; stay_s: 
     const left = W.left - O.left + (x0 + (f.at_s / stay_s) * pw) * sx;
     const next = { left: Math.round(left * 10) / 10, top: Math.round(W.top - O.top), height: Math.round(W.height) };
     if (!box || box.left !== next.left || box.top !== next.top || box.height !== next.height) setBox(next);
-  });
+  }, [f, stay_s, tick]);
   const label = f ? (f.kind === 'power' ? 'Power lost' : 'Contact lost') : '';
   const when = f ? (f.at_s === 0 ? 'at touchdown' : `${formatHoursText(f.at_s)} into the stay`) : '';
   return (
     <div ref={wrap} class="hz-game-strip">
       {children}
       {f && box && (
-        <div class="hz-game-fail-mark" data-testid="game-failure-marker" data-at-s={String(f.at_s)} data-kind={f.kind}
+        <div class={`hz-game-fail-mark${f.at_s / stay_s > 0.6 ? ' flip' : ''}`} data-testid="game-failure-marker" data-at-s={String(f.at_s)} data-kind={f.kind}
           aria-hidden="true" style={{ left: `${box.left}px`, top: `${box.top}px`, height: `${box.height}px` }}>
           <span>{label}</span>
         </div>
@@ -235,7 +248,7 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
     if (reveal?.state === 'done') {
       // Shown already (automatically after the third try): the button plays the reveal again.
       setRevealRun((n) => n + 1);
-      requestAnimationFrame(() => shareLineRef.current?.focus());
+      requestAnimationFrame(() => shareLineRef.current?.focus({ preventScroll: true }));
       return;
     }
     if (!grid || reveal?.state === 'running') return;
@@ -250,7 +263,7 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
       // the reveal found, only if the user is still on that button (or focus fell to the page body).
       requestAnimationFrame(() => {
         const at = document.activeElement;
-        if (at === showGroundRef.current || at === document.body || at === null) shareLineRef.current?.focus();
+        if (at === showGroundRef.current || at === document.body || at === null) shareLineRef.current?.focus({ preventScroll: true });
       });
     })
       .catch((e) => { if (gameEpoch.current === my) setReveal({ state: 'failed', error: String(e) }); });
@@ -353,7 +366,7 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
         {out ? 'No tries left.' : `Try ${tries.length + 1} of ${MAX_TRIES}.`} Click the map, or move the reticle with the arrow keys and press Enter.
       </p>
       {/* One live region, always mounted: the landing status, then the result and the distance. */}
-      <p class="hz-game-small hz-game-live" role="status" aria-live="polite" data-testid="game-live">{notice || statusText}</p>
+      <p class="hz-game-small hz-game-live" role="status" aria-live="polite" data-testid="game-live">{notice || (revealed ? `${nHeld} of your ${MAX_TRIES} landings held. Within ${REVEAL_RADIUS_M} m, ${formatPct(share250)} of the ground holds.` : statusText)}</p>
       {revealed && (
         <p class="hz-game-call" data-testid="game-share-line" tabIndex={-1} ref={shareLineRef}>
           {nHeld} of your {MAX_TRIES} landings held. Within {REVEAL_RADIUS_M} m, {formatPct(share250)} of the ground holds.

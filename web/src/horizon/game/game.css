@@ -69,6 +69,8 @@
   position: absolute; top: -2px; left: 4px; white-space: nowrap; font-size: 13px; font-weight: 600;
   background: var(--hz-nogo, #B4421E); color: #FFFFFF; padding: 0 4px; border-radius: 2px;
 }
+/* Late failures: the label sits left of the line so it stays inside the strip. */
+.hz-game-fail-mark.flip span { left: auto; right: 1px; }
 /* Note 011 item 5: while a try plays the map is busy; its dots dim and a click or Enter skips ahead. */
 .hz-game-map.busy .hz-game-dots { opacity: 0.4; }
 .hz-game-busy { font-weight: 600; }
