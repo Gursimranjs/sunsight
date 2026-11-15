@@ -4,10 +4,13 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { MaskSet } from '../data/sites';
 import type { Site } from '../data/types';
 import type { MissAnswer } from '../engine/compute';
-import { formatPct } from '../format';
+import { formatPct, formatUtc } from '../format';
 import type { AppData } from '../state/data';
+import type { VerdictKind } from '../engine/light';
 import type { Scenario } from '../state/scenario';
-import { MISS_RADII_M, MISS_TOLERANT_SHARE, missJob, nearestGridPoint, stepGridPoint } from './missGeometry';
+import {
+  bestDateJob, bestDayIndex, MISS_RADII_M, MISS_TOLERANT_SHARE, missJob, missTargetIndex, nearestGridPoint, stepGridPoint, targetFailsEverywhere,
+} from './missGeometry';
 import { VerdictBadge } from './ReportCard';
 import { Term } from './Term';
 import { useWidth } from './useWidth';
@@ -17,7 +20,18 @@ interface Props {
   site: Site | null;
   scn: Scenario;
   onSite: (id: string) => void;
+  /**
+   * Scenario update, used by "Jump to this site's best date" to set start_s and t_off_s. Without it
+   * (an embedded map whose site is not the scenario's site) the button is not shown.
+   */
+  update?: (patch: Partial<Scenario>) => void;
 }
+
+/** State of the best-date search for one (grid, point, stay, rules) key. */
+type BestSearch =
+  | { key: string; state: 'running'; progress: number; n_days: number }
+  | { key: string; state: 'done'; start_s: number; verdict: VerdictKind; first_s: number; last_s: number }
+  | { key: string; state: 'failed'; error: string };
 
 function Cross({ x, y, r, col }: { x: number; y: number; r: number; col: string }) {
   return (
@@ -28,7 +42,7 @@ function Cross({ x, y, r, col }: { x: number; y: number; r: number; col: string 
   );
 }
 
-export function MissView({ data, site, scn, onSite }: Props) {
+export function MissView({ data, site, scn, onSite, update }: Props) {
   const [set, setSet] = useState<MaskSet | null>(null);
   const [answer, setAnswer] = useState<{ key: string; a: MissAnswer } | null>(null);
   const [progress, setProgress] = useState(0);
@@ -37,6 +51,8 @@ export function MissView({ data, site, scn, onSite }: Props) {
   const [radius, setRadius] = useState(250);
   const [ref, W] = useWidth<HTMLDivElement>();
   const dragging = useRef(false);
+  const [best, setBest] = useState<BestSearch | null>(null);
+  const bestKeyNow = useRef('');
   // A site with its own grid uses it; a site that lies inside another target's grid (miss_grid_id, e.g. Athena's
   // resting place inside the Athena-target grid) uses that grid, with the pin starting at the site's own point.
   const ownGrid = site?.miss_target_id ?? null;
@@ -92,6 +108,49 @@ export function MissView({ data, site, scn, onSite }: Props) {
   const tolerant = share >= MISS_TOLERANT_SHARE;
   const sitePointI = !ownGrid && typeof site?.miss_point_id === 'string' ? pts.findIndex((p) => p.id === site.miss_point_id) : -1;
   const pinI = pin ?? (sitePointI >= 0 ? sitePointI : nearestGridPoint(pts, 0, 0));
+  // The point that stands for the target: the site's own point in a borrowed grid, else the grid centre.
+  const targetI = missTargetIndex(set, sitePointI);
+  const targetFails = a ? a.verdicts[targetI] === 'no-go' : false;
+  const allFail = a ? targetFailsEverywhere(a, targetI) : false;
+  const bestKey = JSON.stringify([set.meta.id, targetI, scn.stay_s, scn.rules]);
+  bestKeyNow.current = bestKey;
+  const search = best && best.key === bestKey ? best : null;
+  const jumpToBest = () => {
+    const job = bestDateJob(set, targetI, scn.stay_s, scn.rules, data.eph.meta, data.eph.start_ms);
+    if (!job.day_starts_s.length) return;
+    const k0 = bestKey;
+    setBest({ key: k0, state: 'running', progress: 0, n_days: job.day_starts_s.length });
+    data.engine.calendar(job, (f) => {
+      if (bestKeyNow.current === k0) setBest((b) => (b && b.key === k0 && b.state === 'running' ? { ...b, progress: f } : b));
+    }).then((ans) => {
+      if (bestKeyNow.current !== k0) return;
+      const cells = ans.cells[0];
+      const k = bestDayIndex(cells);
+      if (k < 0) { setBest({ key: k0, state: 'failed', error: 'no start date fits in the table' }); return; }
+      const start_s = job.day_starts_s[k];
+      setBest({ key: k0, state: 'done', start_s, verdict: cells[k].verdict, first_s: job.day_starts_s[0], last_s: job.day_starts_s[job.day_starts_s.length - 1] });
+      update?.({ start_s, t_off_s: 0 });
+    }).catch((e) => { if (bestKeyNow.current === k0) setBest({ key: k0, state: 'failed', error: String(e) }); });
+  };
+  const year = (s: number) => formatUtc(data.eph.start_ms + s * 1000).slice(0, 4);
+  const bestBox = update && (
+    <div data-testid="miss-best-date">
+      <button type="button" data-testid="miss-best-button" disabled={search?.state === 'running'} onClick={jumpToBest}>Jump to this site's best date</button>
+      {search?.state === 'running' && (
+        <p class="small" role="status" data-testid="miss-best-progress" style={{ margin: '4px 0 0' }}>
+          Scoring the target for {search.n_days} start dates… {formatPct(search.progress)}
+        </p>
+      )}
+      {search?.state === 'failed' && <p class="small" role="alert" style={{ margin: '4px 0 0' }}>Could not search for the best date: {search.error}</p>}
+    </div>
+  );
+  const bestNote = search?.state === 'done' && (
+    <p class="small" data-testid="miss-best-note" style={{ margin: '4px 0 0' }}>
+      {search.verdict === 'no-go'
+        ? <>No start date from {year(search.first_s)} to {year(search.last_s)} passes at the target with these rules; the start was set to its highest-scoring date, {formatUtc(data.eph.start_ms + search.start_s * 1000)}.</>
+        : <>Best start date for the target from {year(search.first_s)} to {year(search.last_s)} with these rules: {formatUtc(data.eph.start_ms + search.start_s * 1000)} (best verdict, then best score, earliest on ties).</>}
+    </p>
+  );
   const pinP = pts[pinI];
   const ticks = [-500, -250, 0, 250, 500].filter((t) => Math.abs(t) <= R * 1.05);
 
@@ -199,7 +258,20 @@ export function MissView({ data, site, scn, onSite }: Props) {
         </p>
       )}
 
-      {a && (
+      {a && allFail && (
+        <div class="takeaway" data-testid="miss-target-fails" style={{ marginTop: 10 }}>
+          <p style={{ margin: '0 0 6px' }}>The target itself fails on this date, so every miss fails too.</p>
+          {bestBox}
+        </div>
+      )}
+      {a && targetFails && !allFail && (
+        <div class="small" data-testid="miss-target-fails-some" style={{ marginTop: 10 }}>
+          <p style={{ margin: '0 0 6px' }}>The target itself fails on this date; some landing points near it pass.</p>
+          {bestBox}
+        </div>
+      )}
+      {bestNote}
+      {a && !allFail && (
         <div class="scroll-x" style={{ marginTop: 10 }} tabIndex={0} role="region" aria-label="Shares by miss radius (scrolls sideways)">
           <table data-testid="miss-shares">
             <caption class="small muted" style={{ textAlign: 'left' }}>Share of landing points that meet the rules, by miss radius</caption>
