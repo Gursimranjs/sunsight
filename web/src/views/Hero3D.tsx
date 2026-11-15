@@ -63,10 +63,14 @@ export function Hero3D({ data, site, place, scn, now, series = null, update }: P
   const latest = useRef({ scn, update });
   latest.current = { scn, update };
 
-  // Opening on a dark moment: jump once to the stay's first lit moment, if it has one. Any change
-  // of time before the engine's answer arrives (slider, Play) counts as the user's choice.
-  const jump = useRef({ done: false, t0_s: scn.t_off_s });
+  // Opening at the start of the stay on a dark moment: jump once to the stay's first lit moment, if it
+  // has one. A view opened at any other time (a shared link with t_h, a time picked in another view)
+  // keeps it. Any change of time before the engine's answer arrives (slider, Play) counts as the user's
+  // choice. Nothing happens while no 3D scene is drawn (no terrain cut, no WebGL), and that does not
+  // use up the jump, so a terrain site picked afterwards still gets it.
+  const jump = useRef({ done: scn.t_off_s !== 0, t0_s: scn.t_off_s });
   useEffect(() => {
+    if (!terrainId || !webgl) return;
     const j = jump.current;
     if (j.done) return;
     if (scn.t_off_s !== j.t0_s) { j.done = true; return; }
@@ -74,7 +78,7 @@ export function Hero3D({ data, site, place, scn, now, series = null, update }: P
     j.done = true;
     const to_s = firstLitJump_s(series, scn.start_s, scn.t_off_s, scn.rules.lit_threshold);
     if (to_s !== null) update({ t_off_s: to_s });
-  }, [series, scn.t_off_s, scn.start_s]);
+  }, [series, scn.t_off_s, scn.start_s, terrainId, webgl]);
 
   // Play: step the shared time across the stay; stops at the end and when the view unmounts.
   useEffect(() => {
@@ -156,7 +160,10 @@ export function Hero3D({ data, site, place, scn, now, series = null, update }: P
       </div>
       <Scene heights={terrain.heights} meta={meta} landing={landing} sun={sky.sun} earth={sky.earth} lon_deg={meta.center.lon_deg}
         mode={landing ? mode : 'overview'} look={look} missRadius_m={250} fill={fill} onFps={setFps} onError={setErr} />
-      {fill && <p class="small" role="status" data-testid="fill-light-label" style={{ margin: '6px 0 0' }}>{FILL_LIGHT_LABEL}</p>}
+      {/* The live region stays mounted so screen readers announce the label when it appears. */}
+      <p class="small" role="status" aria-live="polite" style={{ margin: fill ? '6px 0 0' : 0 }}>
+        {fill && <span data-testid="fill-light-label">{FILL_LIGHT_LABEL}</span>}
+      </p>
       <div class="btnrow" style={{ marginTop: 8, marginBottom: 0 }}>
         <button type="button" data-testid="play3d" onClick={togglePlay}>{playing ? 'Pause' : 'Play'}</button>
       </div>

@@ -4,7 +4,7 @@
 // horizon engine; shadows here come from the graphics engine and the nearby terrain cut.
 import { useEffect, useRef } from 'preact/hooks';
 import {
-  AmbientLight, BufferAttribute, BufferGeometry, CanvasTexture, Color, CylinderGeometry, DirectionalLight, Group, HemisphereLight,
+  AmbientLight, BufferAttribute, BufferGeometry, CanvasTexture, Color, CylinderGeometry, DirectionalLight, HemisphereLight,
   LineBasicMaterial, LineLoop, Mesh, MeshBasicMaterial, MeshLambertMaterial, PCFShadowMap, PerspectiveCamera,
   Scene, SRGBColorSpace, Sprite, SpriteMaterial, Vector3, WebGLRenderer,
 } from 'three';
@@ -45,6 +45,12 @@ const FILL_KEY_INTENSITY = 1.1;
 const FILL_EVEN_INTENSITY = 0.25;
 const D = Math.PI / 180;
 
+/** The canvas's text for screen readers; says when the fill light, not the Sun, shows the terrain. */
+function canvasLabel(fill: boolean): string {
+  const base = 'Illustrative 3D terrain around the landing point, lit from the Sun’s direction at the selected time';
+  return fill ? `${base}; the Sun is below the horizon, so a faint fill light shows the terrain.` : `${base}.`;
+}
+
 function discTexture(inner: string, outer: string): CanvasTexture {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
@@ -66,7 +72,9 @@ interface World {
   camera: PerspectiveCamera;
   controls: OrbitControls;
   sunLight: DirectionalLight;
-  fillLight: Group;
+  /** The fill light's two parts; switched by intensity, never by visibility (see the props effect). */
+  fillKey: DirectionalLight;
+  fillEven: HemisphereLight;
   sunSprite: Sprite;
   earthSprite: Sprite;
   pin: Mesh;
@@ -97,7 +105,7 @@ export default function Scene3D(p: Scene3DProps) {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = PCFShadowMap;
     renderer.domElement.setAttribute('role', 'img');
-    renderer.domElement.setAttribute('aria-label', 'Illustrative 3D terrain around the landing point, lit from the Sun’s direction at the selected time.');
+    renderer.domElement.setAttribute('aria-label', canvasLabel(p.fill));
     renderer.domElement.setAttribute('data-testid', 'scene3d-canvas');
     el.appendChild(renderer.domElement);
 
@@ -141,12 +149,10 @@ export default function Scene3D(p: Scene3DProps) {
     sunLight.shadow.bias = -0.0004;
     sunLight.shadow.normalBias = 4;
     scene.add(sunLight, sunLight.target);
-    const fillLight = new Group();
-    const fillKey = new DirectionalLight(0xc8d2e0, FILL_KEY_INTENSITY);
+    const fillKey = new DirectionalLight(0xc8d2e0, 0);
     fillKey.position.set(-1, 1.4, -1); // direction only; the target stays at the origin
-    fillLight.add(fillKey, new HemisphereLight(0xc8d2e0, 0x1a1918, FILL_EVEN_INTENSITY));
-    fillLight.visible = false;
-    scene.add(fillLight);
+    const fillEven = new HemisphereLight(0xc8d2e0, 0x1a1918, 0);
+    scene.add(fillKey, fillEven);
 
     const sunSprite = new Sprite(new SpriteMaterial({ map: discTexture('#fffbe8', '#ffd27a'), depthWrite: false, fog: false }));
     const earthSprite = new Sprite(new SpriteMaterial({ map: discTexture('#9fd3ff', '#2f6fb3'), depthWrite: false, fog: false }));
@@ -164,7 +170,7 @@ export default function Scene3D(p: Scene3DProps) {
 
     // Look around in astronaut mode: drag or arrow keys turn the head.
     const w: World = {
-      renderer, scene, camera, controls, sunLight, fillLight, sunSprite, earthSprite, pin, ring, base_m, yaw_rad: 0, pitch_rad: 0,
+      renderer, scene, camera, controls, sunLight, fillKey, fillEven, sunSprite, earthSprite, pin, ring, base_m, yaw_rad: 0, pitch_rad: 0,
       dispose: () => {},
     };
     let drag: { x: number; y: number } | null = null;
@@ -254,7 +260,11 @@ export default function Scene3D(p: Scene3DProps) {
     w.sunLight.position.set(v[0] * 50_000, v[1] * 50_000, v[2] * 50_000);
     // Below the horizon (whole disc under the level horizon) the Sun lights nothing.
     w.sunLight.intensity = p.sun.el_deg + p.sun.r_deg < 0 ? 0 : 3.2;
-    w.fillLight.visible = p.fill;
+    // Switch the fill light by intensity only: the lights stay in the scene, so the number of lights
+    // the terrain shader is built for never changes and no shader is recompiled at sunrise or sunset.
+    w.fillKey.intensity = p.fill ? FILL_KEY_INTENSITY : 0;
+    w.fillEven.intensity = p.fill ? FILL_EVEN_INTENSITY : 0;
+    w.renderer.domElement.setAttribute('aria-label', canvasLabel(p.fill));
     const [lx, lz] = p.landing ?? [0, 0];
     const g = groundHeight(p.heights, p.meta, lx, lz) ?? w.base_m;
     w.pin.visible = !!p.landing && p.mode === 'overview';
