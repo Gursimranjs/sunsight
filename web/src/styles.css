@@ -108,6 +108,7 @@ th, td { padding: 4px 8px; border-bottom: 1px solid var(--line); text-align: lef
 /* Calendar heatmap: verdict by symbol and colour */
 table.calendar { border-collapse: separate; border-spacing: 2px; }
 table.calendar th { white-space: nowrap; font-weight: 600; }
+table.calendar tr.cal-chosen th[scope=row] { font-weight: 800; box-shadow: inset 4px 0 0 var(--oi-sky); padding-left: 8px; }
 table.calendar td { padding: 0; border: none; }
 table.calendar td button { width: 2.25rem; height: 2.25rem; min-height: 0; padding: 0; border-radius: 4px; font-weight: 800; color: #000; border: 1px solid transparent; }
 td.cal.go button { background: var(--go); }
@@ -177,3 +178,16 @@ table.sens td.num { text-align: right; white-space: nowrap; font-variant-numeric
 .refined { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--line); }
 /* Long file names and identifiers in validation text must wrap on phones. */
 .vcheck p, .vcheck dd, .vcheck h3, #sens-title + p { overflow-wrap: anywhere; }
+
+/* Start strip (note 003 A) and the "which sites work?" ranking */
+.start-strip { max-width: 1100px; margin: 0 auto; padding: 4px 16px 10px; }
+.start-choices { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.start-choices button { flex: 1 1 14rem; min-width: 0; text-align: left; background: var(--panel); border-color: var(--oi-sky); }
+.start-lead { margin: 6px 0 0; }
+.rank-list { list-style: none; margin: 0; padding: 0; }
+.rank-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 0 8px 10px; border-bottom: 1px solid var(--line); border-left: 6px solid var(--line); }
+.rank-row.go { border-left-color: var(--go); }
+.rank-row.marginal { border-left-color: var(--marginal); }
+.rank-row.no-go { border-left-color: var(--nogo); }
+.rank-n { font-weight: 800; min-width: 1.6rem; text-align: right; }
+.rank-body { flex: 1 1 16rem; min-width: 0; }

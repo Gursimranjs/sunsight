@@ -7,6 +7,7 @@ import { openApp, tab, watchErrors } from './helpers';
 /** Each main view, with what to wait for before checking it. */
 const VIEWS: { tab: string; query: string; ready: string }[] = [
   { tab: 'Report card', query: 'site=shackleton_ridge_rim&start=2027-10-13T00:00Z', ready: 'metrics' },
+  { tab: 'Which sites work?', query: 'start=2027-10-13T00:00Z&preset=crew&view=rank', ready: 'rank-list' },
   { tab: 'Sky panorama', query: 'site=shackleton_ridge_rim&start=2027-10-13T00:00Z&view=sky', ready: 'panorama' },
   { tab: 'Miss test', query: 'site=a3_malapert_massif&start=2027-10-13T00:00Z&preset=crew&view=miss', ready: 'miss-shares' },
   { tab: 'Compare & calendar', query: 'site=apollo_11&start=2027-10-13T00:00Z&view=compare', ready: 'calendar' },

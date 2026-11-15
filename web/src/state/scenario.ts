@@ -3,9 +3,10 @@
 import type { EphemerisMeta } from '../data/types';
 import { makeRules, PRESETS, type PresetId, type Rules } from '../engine/light';
 
-export type View = 'report' | 'sky' | 'miss' | 'compare' | '3d' | 'story' | 'validation';
+export type View = 'report' | 'rank' | 'sky' | 'miss' | 'compare' | '3d' | 'story' | 'validation';
 export const VIEWS: { id: View; label: string }[] = [
   { id: 'report', label: 'Report card' },
+  { id: 'rank', label: 'Which sites work?' },
   { id: 'sky', label: 'Sky panorama' },
   { id: 'miss', label: 'Miss test' },
   { id: 'compare', label: 'Compare & calendar' },
