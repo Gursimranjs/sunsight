@@ -45,6 +45,8 @@ interface HeroProps {
   nowMs: number;
   /** Extra line about the site (e.g. the computed best-lit point nearby). */
   siteNote?: preact.ComponentChildren;
+  /** One line under the reason with the miss-test share (note 008). */
+  missLine?: preact.ComponentChildren;
 }
 
 /** Pipeline-computed best-lit point near a curated site (sites.json `refined`). Computed, not cited. */
@@ -78,7 +80,7 @@ export function RefinedNote({ r }: { r: Refined }) {
   );
 }
 
-export function VerdictHero({ verdict, busy, placeName, horizonLabel, terrain, sunElDeg, sunVisible, countdowns, epochMs, nowMs, siteNote }: HeroProps) {
+export function VerdictHero({ verdict, busy, placeName, horizonLabel, terrain, sunElDeg, sunVisible, countdowns, epochMs, nowMs, siteNote, missLine }: HeroProps) {
   const v = verdict?.verdict;
   return (
     <section class={`card verdict ${v ?? ''}`} aria-live="polite" aria-busy={busy} data-testid="verdict">
@@ -90,6 +92,7 @@ export function VerdictHero({ verdict, busy, placeName, horizonLabel, terrain, s
           <>
             <h2 class="verdict-badge" data-testid="verdict-word"><VerdictBadge v={verdict.verdict} /></h2>
             <p class="verdict-reason" data-testid="verdict-reason">{verdict.reason}</p>
+            {missLine}
           </>
         ) : (
           <h2 class="verdict-badge">Computing…</h2>

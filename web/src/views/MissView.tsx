@@ -10,7 +10,7 @@ import type { AppData } from '../state/data';
 import type { VerdictKind } from '../engine/light';
 import type { Scenario } from '../state/scenario';
 import {
-  bestDateJob, bestDayIndex, MISS_RADII_M, MISS_TOLERANT_SHARE, missFailLine, missJob, missTargetIndex, nearestGridPoint, stepGridPoint,
+  bestDateJob, bestDayIndex, MISS_RADII_M, MISS_TOLERANT_SHARE, missFailLine, missJob, missTargetIndex, nearestGridPoint, stepGridPoint, missSig, type MissShare,
 } from './missGeometry';
 import { VerdictBadge } from './ReportCard';
 import { Term } from './Term';
@@ -31,6 +31,8 @@ interface Props {
    * or the site has no grid. The App starts the background fetch of the other table years only after this.
    */
   onSettled?: () => void;
+  /** Reports the current share for the selected radius to the verdict card (note 008). */
+  onShare?: (m: MissShare | null) => void;
 }
 
 /**
@@ -52,7 +54,7 @@ function Cross({ x, y, r, col }: { x: number; y: number; r: number; col: string 
   );
 }
 
-export function MissView({ data, site, scn, onSite, update, onSettled }: Props) {
+export function MissView({ data, site, scn, onSite, update, onSettled, onShare }: Props) {
   const [set, setSet] = useState<MaskSet | null>(null);
   const [answer, setAnswer] = useState<{ key: string; a: MissAnswer } | null>(null);
   const [progress, setProgress] = useState(0);
@@ -110,6 +112,12 @@ export function MissView({ data, site, scn, onSite, update, onSettled }: Props) 
   const answered = !!(answer && answer.key === key);
   const settled = !targetId || !!err || answered || !!jobError || table.state === 'error';
   useEffect(() => { if (settled) onSettled?.(); }, [settled]);
+  const sig = missSig(site?.id ?? null, scn.start_s, scn.stay_s, scn.rules);
+  const shareNow = answer && answer.key === key ? answer.a.shares[MISS_RADII_M.indexOf(radius)] : NaN;
+  useEffect(() => {
+    if (!onShare) return;
+    onShare(Number.isFinite(shareNow) ? { sig, share: shareNow, radius_m: radius } : null);
+  }, [sig, shareNow, radius]);
 
   if (!targetId) {
     const withGrid = data.sites.filter((s) => s.miss_target_id);

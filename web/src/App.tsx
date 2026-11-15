@@ -4,7 +4,8 @@ import { resolveCustom } from './data/sites';
 import type { WindowAnswer } from './engine/compute';
 import { countdownsAt } from './engine/countdown';
 import { local_frame, sample_at, site_vector } from './engine/light';
-import { formatDeg } from './format';
+import { formatDeg, formatPct } from './format';
+import { MISS_TOLERANT_SHARE, missSig, type MissShare } from './views/missGeometry';
 import { loadAppData, resolveForSite, type AppData } from './state/data';
 import { currentPlace, freshAnswer, placeRequestKey, windowKey, type TaggedPlace } from './state/freshness';
 import { clampScenario, DEFAULT_QUERY, DEFAULT_SITE_ID, defaultScenario, tableRange, VIEWS, type Scenario } from './state/scenario';
@@ -48,6 +49,7 @@ export function App() {
   const [prefetchTry, setPrefetchTry] = useState(0);
   /** The miss test on the first screen has its answer (or has nothing to compute); see the prefetch below. */
   const [missSettled, setMissSettled] = useState(false);
+  const [missShare, setMissShare] = useState<MissShare | null>(null);
 
   useEffect(() => {
     loadAppData(() => setFixtureTick((x) => x + 1))
@@ -190,6 +192,21 @@ export function App() {
           countdowns={cds}
           epochMs={epochMs}
           nowMs={epochMs + t_s * 1000}
+          missLine={site && (site.miss_target_id || (typeof site.miss_grid_id === 'string' && site.miss_grid_id)) ? (() => {
+            // Note 008: the miss-test result on the verdict card, from the Miss test view's own job, shown only
+            // while it belongs to the current site, dates and rules; otherwise a button to run it.
+            const ms = missShare && missShare.sig === missSig(scn.site_id, scn.start_s, scn.stay_s, scn.rules) ? missShare : null;
+            const ok = ms ? ms.share >= MISS_TOLERANT_SHARE : false;
+            const open = () => { update({ view: 'miss' }); requestAnimationFrame(() => document.getElementById('views')?.scrollIntoView({ behavior: 'smooth', block: 'start' })); };
+            return (
+              <p class={`miss-line ${ms ? (ok ? 'ok' : 'warn') : ''}`} data-testid="verdict-miss-line">
+                {ms
+                  ? <><span class="sym" aria-hidden="true">{ok ? '✓' : '!'}</span> <strong>Miss test:</strong> within {ms.radius_m} m, <span data-testid="verdict-miss-share">{formatPct(ms.share)}</span> of the ground still passes{ok ? ' (miss-tolerant)' : ' (not miss-tolerant)'}. </>
+                  : scn.view === 'miss' ? <><strong>Miss test:</strong> computing… </> : <><strong>Miss test:</strong> how much ground near the target still passes? </>}
+                <button type="button" class="link-button" onClick={open}>{ms ? 'See the map' : 'Open the Miss test'}</button>
+              </p>
+            );
+          })() : undefined}
           siteNote={site ? <>
             {asRefined(site.refined) && <RefinedNote r={asRefined(site.refined)!} />}
             <SiteSource site={site} />
@@ -213,7 +230,7 @@ export function App() {
 
         <TimeBar scn={scn} epochMs={epochMs} onTime={(t_off_s) => update({ t_off_s })} />
 
-        <nav class="tabs" role="tablist" aria-label="Views">
+        <nav class="tabs" role="tablist" aria-label="Views" id="views">
           {VIEWS.map((v) => (
             <button key={v.id} role="tab" aria-selected={scn.view === v.id} onClick={() => update({ view: v.id })}>{v.label}</button>
           ))}
@@ -249,7 +266,7 @@ export function App() {
         )}
         {scn.view === 'miss' && (
           <div role="tabpanel" aria-label="Miss test">
-            <MissView data={data} site={site} scn={scn} onSite={(id) => update({ site_id: id })} update={update} onSettled={() => setMissSettled(true)} />
+            <MissView data={data} site={site} scn={scn} onSite={(id) => update({ site_id: id })} update={update} onSettled={() => setMissSettled(true)} onShare={setMissShare} />
             <TerrainCredit />
           </div>
         )}

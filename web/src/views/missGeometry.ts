@@ -137,3 +137,12 @@ export function bestDateJob(
     stay_s, rules,
   };
 }
+
+/** Which scenario a miss share belongs to: the verdict card shows the share only while this still matches (note 008). */
+export function missSig(site_id: string | null, start_s: number, stay_s: number, rules: Rules): string {
+  return JSON.stringify([site_id, start_s, stay_s, rules]);
+}
+
+/** The miss share the Miss test view last computed, for the verdict card. */
+export interface MissShare { sig: string; share: number; radius_m: number }
+

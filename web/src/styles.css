@@ -192,3 +192,10 @@ table.sens td.num { text-align: right; white-space: nowrap; font-variant-numeric
 .rank-row.no-go { border-left-color: var(--nogo); }
 .rank-n { font-weight: 800; min-width: 1.6rem; text-align: right; }
 .rank-body { flex: 1 1 16rem; min-width: 0; }
+/* Note 008: miss-test line on the verdict card (shape and words, never colour alone) */
+.miss-line { margin: 6px 0 0; padding: 4px 8px; border-left: 4px solid var(--line); }
+.miss-line.warn { border-left-color: var(--warn-bg); }
+.miss-line.ok { border-left-color: var(--go); }
+.miss-line .sym { font-weight: 800; }
+.link-button { background: none; border: none; padding: 0 2px; min-height: 24px; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+

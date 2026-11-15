@@ -25,7 +25,10 @@ test.describe('screenshots', () => {
     await tab(page, 'Sky panorama');
     await page.waitForTimeout(800);
     await page.screenshot({ path: OUT + 'shots/2_sky_panorama.png', fullPage: true });
-    await open(page, 'site=shackleton_ridge_rim&start=2027-10-13T00:00Z&preset=crew&view=miss');
+    await page.goto('./'); // the default link (note 003 B)
+    await expect(page.getByTestId('verdict-miss-share')).toBeVisible({ timeout: 90_000 });
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: OUT + 'shots/0_first_screen.png', fullPage: false });
     await expect(page.getByTestId('miss-shares')).toBeVisible();
     await page.waitForTimeout(800);
     await page.screenshot({ path: OUT + 'shots/3_miss_map.png', fullPage: true });
@@ -34,9 +37,30 @@ test.describe('screenshots', () => {
     await page.screenshot({ path: OUT + 'shots/4_validation.png', fullPage: true });
   });
 
+  test('ranking and 3D views (desktop)', async ({ page }) => {
+    await open(page, 'site=shackleton_ridge_rim&start=2027-10-13T00:00Z&preset=crew&view=rank');
+    await expect(page.getByTestId('rank-list')).toBeVisible({ timeout: 60_000 });
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: OUT + 'shots/7_which_sites_work.png', fullPage: true });
+    await open(page, 'site=shackleton_ridge_rim&start=2027-10-13T00:00Z&preset=crew&view=3d&t_h=30');
+    await expect(page.getByTestId('scene3d-canvas')).toBeVisible({ timeout: 60_000 });
+    await page.waitForTimeout(2500);
+    await page.getByTestId('hero3d').scrollIntoViewIfNeeded();
+    await page.getByTestId('hero3d').screenshot({ path: OUT + 'shots/8_3d_lit.png' });
+    await open(page, 'site=shackleton_crater&start=2027-06-01T00:00Z&view=3d&t_h=24');
+    await expect(page.getByTestId('fill-light-label')).toBeVisible({ timeout: 60_000 });
+    await page.waitForTimeout(2500);
+    await page.getByTestId('hero3d').scrollIntoViewIfNeeded();
+    await page.getByTestId('hero3d').screenshot({ path: OUT + 'shots/9_3d_night_fill_light.png' });
+  });
+
   test('phone views (375 px)', async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: { width: 375, height: 812 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, colorScheme: 'dark' });
     const page = await ctx.newPage();
+    await page.goto('./'); // the default link: verdict card with the miss line on the first phone screen
+    await expect(page.getByTestId('verdict-miss-share')).toBeVisible({ timeout: 90_000 });
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: OUT + 'shots/5_phone_first_screen.png' });
     await open(page, 'site=im2_athena_target&start=2027-03-01T00:00Z&days=14&preset=robotic');
     await page.waitForTimeout(800);
     await page.screenshot({ path: OUT + 'shots/5_phone_report_card.png' });
@@ -59,6 +83,17 @@ async function recorded(browser: import('@playwright/test').Browser, name: strin
 }
 
 test.describe('raw clips of the three journeys', () => {
+  test('first visit: default link, then "I have a date"', async ({ browser }) => {
+    await recorded(browser, 'journey_0_first_visit', async (page) => {
+      await page.goto('./');
+      await expect(page.getByTestId('verdict-miss-share')).toBeVisible({ timeout: 90_000 });
+      await page.waitForTimeout(3000);
+      await page.getByRole('button', { name: 'I have a date: which sites work?' }).click();
+      await expect(page.getByTestId('rank-list')).toBeVisible({ timeout: 60_000 });
+      await page.waitForTimeout(3000);
+    });
+  });
+
   test('journey a: date to sites', async ({ browser }) => {
     await recorded(browser, 'journey_a_date_to_sites', async (page) => {
       await open(page, 'site=a3_malapert_massif&start=2027-10-13T00:00Z&days=14&preset=robotic');
