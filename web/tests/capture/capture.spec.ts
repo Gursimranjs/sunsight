@@ -194,7 +194,7 @@ async function openGame(page: Page) {
 const TRY1 = ['ArrowRight', 'ArrowRight', 'ArrowUp'];
 const TRY2 = ['ArrowLeft', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft', 'ArrowDown'];
 const TRY3 = ['ArrowDown', 'ArrowDown', 'ArrowDown', 'ArrowRight'];
-const SHARE_LINE = /^Within 250 m, \d+% of the ground holds\.$/;
+const SHARE_LINE = /^\d of your 3 landings held\. Within 250 m, \d+% of the ground holds\.$/;
 
 test.describe('horizon interface screenshots', () => {
   test('first screen, Play mid-stay, pickers and Rank sites (1280 x 720)', async ({ browser }) => {

@@ -353,6 +353,16 @@ export function LandGame({ data, scn, site, update, onShowMissMap }: LandGamePro
     const anchor = sx > 0.35 ? 'end' : sx < -0.35 ? 'start' : 'middle';
     return { ...m, x, y, lx: x - sx * 12, ly: y + cy * 16 + 4, anchor };
   }) : [];
+  // When the Sun and Earth sit close on the ring their labels would run into each other: move the Sun's
+  // label one line further towards the centre of the map.
+  if (skyMarks.length === 2) {
+    const [sm, em] = skyMarks as unknown as { lx: number; ly: number; y: number; text: string }[];
+    const w = (t: string) => t.length * 7;
+    if (Math.abs(sm.lx - em.lx) < (w(sm.text) + w(em.text)) / 2 && Math.abs(sm.ly - em.ly) < 24) {
+      const inward = Y(tp.north_m ?? 0) >= sm.y ? 1 : -1;
+      sm.ly = em.ly + 24 * inward;
+    }
+  }
   const fmtAz = (az_deg: number) => `${Math.round(((az_deg % 360) + 360) % 360) % 360}°`;
   const skyText = touchdown
     ? ` Sun at touchdown at azimuth ${fmtAz(touchdown.sun_az_deg)}, Earth at azimuth ${fmtAz(touchdown.earth_az_deg)}, marked on the ${Math.round(R)} m ring.`

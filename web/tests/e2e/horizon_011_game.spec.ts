@@ -133,3 +133,12 @@ test('scenario cards: the rules note says the limits are our own starting assump
   await expect(page.getByTestId('scenario-rules-source')).toHaveText(
     /^These limits are our own starting assumptions\. Only continuous sunlight for a 6\.5-day crew stay comes from NASA\./);
 });
+
+test('the Sun and Earth labels on the game map do not overlap on the default link', async ({ page }) => {
+  await openHz(page, `${BASE}&view=game`);
+  await expect(page.getByTestId('game-map')).toBeVisible({ timeout: 90_000 });
+  const s = (await page.getByTestId('game-sun-marker').locator('text').boundingBox())!;
+  const e = (await page.getByTestId('game-earth-marker').locator('text').boundingBox())!;
+  const overlap = s.x < e.x + e.width && e.x < s.x + s.width && s.y < e.y + e.height && e.y < s.y + s.height;
+  expect(overlap).toBe(false);
+});
