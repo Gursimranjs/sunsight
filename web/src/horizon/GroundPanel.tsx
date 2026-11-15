@@ -24,6 +24,8 @@ interface Props {
   series: Series | null;
   onTime: (t_off_s: number) => void;
   missLine?: ComponentChildren;
+  /** "Land it yourself": shown only for sites with a miss-test grid. */
+  gameEntry?: ComponentChildren;
   /** "Sources and method": horizon label, site source, refined note, terrain credit. */
   sources: ComponentChildren;
   status?: ComponentChildren;
@@ -33,9 +35,12 @@ function Readout({ k, children, id }: { k: string; children: ComponentChildren; 
   return <div class="hz-readout" data-testid={id}><div class="hz-k">{k}</div><div class="hz-v">{children}</div></div>;
 }
 
-function next(c: Countdown, downWord: string, upWord: string, epochMs: number, testid: string) {
+/** Next change from the playhead on; the test ids match the classic verdict card's (cd-sunset, cd-contact-loss, …). */
+function next(c: Countdown, downWord: string, upWord: string, epochMs: number, ids: [string, string]) {
   const word = c.up ? downWord : upWord;
-  if (c.in_s === null || c.at_s === null) return <>{word}: not during the stay</>;
+  // Countdowns look forward from the playhead, so mid-stay "none" means none from here to the end (shell #2).
+  if (c.in_s === null || c.at_s === null) return <>{word}: none before the stay ends</>;
+  const testid = `cd-${c.up ? ids[0] : ids[1]}`;
   return <>{word} in <strong class="hz-num" data-testid={testid}>{formatDuration(c.in_s)}</strong><span class="hz-at">{formatUtc(epochMs + c.at_s * 1000)}</span></>;
 }
 
@@ -55,14 +60,15 @@ export function GroundPanel(p: Props) {
         ) : <h2 class="hz-word">Computing…</h2>}
       </div>
       {v && p.missLine}
+      {v && p.gameEntry}
       {p.status}
       <div class="hz-readouts">
         <Readout k="Sun now">
           <span class="hz-big" data-testid="sun-el">{p.now ? formatDeg(p.now.sun_el_deg, 2) : '—'}</span>
           {p.now && <span class="hz-sub">{formatPct(p.now.sun_frac)} of the disc visible</span>}
         </Readout>
-        <Readout k="Sunlight" id="hz-sunset">{cds ? next(cds.sun, 'Sunset', 'Sunrise', p.epochMs, 'cd-sunset') : '—'}</Readout>
-        <Readout k="Earth contact" id="hz-contact">{cds ? next(cds.contact, 'Contact lost', 'Contact back', p.epochMs, 'cd-contact') : '—'}</Readout>
+        <Readout k="Sunlight" id="hz-sunset">{cds ? next(cds.sun, 'Sunset', 'Sunrise', p.epochMs, ['sunset', 'sunrise']) : '—'}</Readout>
+        <Readout k="Earth contact" id="hz-contact">{cds ? next(cds.contact, 'Contact lost', 'Contact back', p.epochMs, ['contact-loss', 'contact-back']) : '—'}</Readout>
       </div>
       <PlayBar t_off_s={p.t_off_s} stay_s={p.stay_s} startMs={p.epochMs + p.start_s * 1000} series={p.series} lit_threshold={p.lit_threshold} onTime={p.onTime} />
       <details class="hz-sources">

@@ -37,7 +37,7 @@ describe('views', () => {
     expect(hzViewFor('story')).toBe('tour');
     expect(hzViewFor('validation')).toBe('proof');
     for (const v of ['horizon', 'ground', 'miss', 'rank', 'calendar', 'tour', 'proof'] as const) expect(hzViewFor(scnViewFor(v))).toBe(v);
-    expect(scnViewFor('compare')).toBe('compare');
+    expect(scnViewFor('calendar')).toBe('compare');
   });
 });
 

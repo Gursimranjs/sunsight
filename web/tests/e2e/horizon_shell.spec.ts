@@ -33,8 +33,8 @@ test('?ui=horizon opens the default link with no console errors and keeps the fl
   await expect(page.getByTestId('hz-site-button')).toContainText('Shackleton');
   await expect(page.getByTestId('hz-scenario-button')).toContainText('crew sortie, 6.5 days');
   await expect(page.getByTestId('verdict-miss-share')).toBeVisible({ timeout: 90_000 });
-  expect(page.url()).toContain('ui=horizon');
-  expect(page.url()).toContain('site=shackleton_ridge_rim');
+  await expect(page).toHaveURL(/ui=horizon/);
+  await expect(page).toHaveURL(/site=shackleton_ridge_rim/);
   await expect(page.getByTestId('fixture-banner')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
@@ -75,18 +75,17 @@ test('Play moves the Sun marker and the clock; Space pauses; arrow keys step 10 
 
 test('the three pickers in the mission line change the site, the date and the scenario', async ({ page }) => {
   await openHz(page, 'site=shackleton_ridge_rim&start=2029-07-24T00:00Z&preset=crew');
-  // Site
+  // Site: the map dialog (Apollo 11 is in the list of sites elsewhere on the Moon).
   await page.getByTestId('hz-site-button').click();
-  await page.getByTestId('hz-picker').getByRole('button', { name: /Apollo 11/ }).click();
+  await page.getByTestId('site-map-picker').getByRole('button', { name: /Apollo 11/ }).click();
   await expect(page.getByTestId('hz-site-button')).toContainText('Apollo 11');
   await expect(page).toHaveURL(/site=apollo_11/);
-  // Date
+  // Date: the strip of start days.
   await page.getByTestId('hz-date-button').click();
-  await page.getByLabel('Start (UTC)').fill('2027-10-13T00:00');
-  await page.getByLabel('Start (UTC)').dispatchEvent('change');
-  await expect(page.getByTestId('hz-date-button')).toContainText('13 Oct 2027');
-  await expect(page).toHaveURL(/start=2027-10-13T00%3A00Z/);
-  // Scenario
+  await page.getByTestId('strip-day').nth(2).click({ timeout: 90_000 });
+  await expect(page.getByTestId('hz-date-button')).toContainText('26 Jul 2029');
+  await expect(page).toHaveURL(/start=2029-07-26T00%3A00Z/);
+  // Scenario: the cards.
   await page.getByTestId('hz-scenario-button').click();
   await page.getByTestId('hz-picker').getByRole('button', { name: /Robotic lander/ }).click();
   await expect(page.getByTestId('hz-scenario-button')).toContainText('robotic lander, 14 days');
@@ -95,19 +94,31 @@ test('the three pickers in the mission line change the site, the date and the sc
   await expect(page.getByTestId('verdict-word')).toBeVisible();
 });
 
-test('the same link shows the same verdict, Sun elevation and miss share in both interfaces', async ({ page }) => {
+test('the same link shows the same verdict, Sun elevation, countdowns, metric tiles and miss share in both interfaces', async ({ page }) => {
+  const CD = ['cd-sunset', 'cd-sunrise', 'cd-contact-loss', 'cd-contact-back'];
   const read = async () => {
     await expect(page.getByTestId('verdict-miss-share')).toBeVisible({ timeout: 90_000 });
     const word = ((await page.getByTestId('verdict-word').textContent()) ?? '').match(/NO-GO|MARGINAL|GO/)?.[0];
-    return { word, el: (await page.getByTestId('sun-el').textContent())?.trim(), share: (await page.getByTestId('verdict-miss-share').textContent())?.trim() };
+    const cds: Record<string, string | null> = {};
+    for (const id of CD) cds[id] = (await page.getByTestId(id).count()) ? (await page.getByTestId(id).first().textContent())?.trim() ?? null : null;
+    return { word, el: (await page.getByTestId('sun-el').textContent())?.trim(), share: (await page.getByTestId('verdict-miss-share').textContent())?.trim(), cds };
+  };
+  const tiles = async () => {
+    await expect(page.getByTestId('metrics')).toBeVisible({ timeout: 60_000 });
+    return (await page.getByTestId('metrics').innerText()).replace(/\s+/g, ' ').trim();
   };
   await openApp(page, PARITY);
   const classic = await read();
+  await page.getByRole('tab', { name: 'Report card' }).click();
+  const classicTiles = await tiles();
   await openHz(page, PARITY);
   const horizon = await read();
   expect(classic.word).toBeTruthy();
   expect(classic.el).toMatch(/°$/);
+  expect(Object.values(classic.cds).some((v) => v !== null)).toBe(true);
   expect(horizon).toEqual(classic);
+  await page.getByRole('navigation', { name: 'Views' }).getByRole('button', { name: 'Horizon' }).click();
+  expect(await tiles()).toBe(classicTiles);
 });
 
 test('views: the switch opens Ground, Miss map, Rank sites, Calendar and the More views', async ({ page }) => {
@@ -130,6 +141,9 @@ test('views: the switch opens Ground, Miss map, Rank sites, Calendar and the Mor
 test('axe: no serious or critical findings on ?ui=horizon', async ({ page }) => {
   await openHz(page);
   await expect(page.getByTestId('verdict-miss-share')).toBeVisible({ timeout: 90_000 });
+  // Check the settled page: not the dimmed "Updating" state, and not mid colour transition of the ground panel.
+  await expect(page.locator('header [data-stale]')).toHaveAttribute('data-stale', 'false');
+  await page.waitForTimeout(400);
   const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   const bad = r.violations.filter((x) => x.impact === 'serious' || x.impact === 'critical');
   expect(bad.map((x) => `${x.impact} ${x.id}: ${x.help} (${x.nodes.length}) e.g. ${x.nodes[0]?.target.join(' ')}`)).toEqual([]);

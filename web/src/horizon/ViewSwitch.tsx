@@ -1,15 +1,16 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
-// The view switch that replaces the eight tabs: Horizon, Ground, Miss map, Rank sites, Calendar and
-// More (Compare, Tour, Proof, Export). On a phone, a bottom bar: Horizon, Ground, Miss map, More.
+// The view switch that replaces the eight tabs: Horizon, Ground, Miss map, Land it yourself, Rank sites,
+// Calendar and compare, and More (Tour, Proof, Export). On a phone, a bottom bar: Horizon, Ground, Miss map,
+// More. Calendar and Compare are one view (the classic Compare tab holds both), so they are one entry.
 import { useState } from 'preact/hooks';
 import type { HzView } from './useHorizonState';
 
 const MAIN: { id: HzView; label: string }[] = [
   { id: 'horizon', label: 'Horizon' }, { id: 'ground', label: 'Ground' }, { id: 'miss', label: 'Miss map' },
-  { id: 'rank', label: 'Rank sites' }, { id: 'calendar', label: 'Calendar' },
+  { id: 'game', label: 'Land it yourself' }, { id: 'rank', label: 'Rank sites' }, { id: 'calendar', label: 'Calendar & compare' },
 ];
 const MORE: { id: HzView; label: string }[] = [
-  { id: 'compare', label: 'Compare' }, { id: 'tour', label: 'Tour' }, { id: 'proof', label: 'Proof' }, { id: 'export', label: 'Export' },
+  { id: 'tour', label: 'Tour' }, { id: 'proof', label: 'Proof' }, { id: 'export', label: 'Export' },
 ];
 /** On a phone the bottom bar keeps the first three; the rest live under More. */
 const PHONE_MAIN = 3;
