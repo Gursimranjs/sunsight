@@ -235,3 +235,26 @@ describe('loader', () => {
     expect(s.table.loaded.every((v) => v === 1)).toBe(true);
   });
 });
+
+describe('failure paths (review of b3eda3d)', () => {
+  const mask = L.flat_mask(L.smooth_horizon_deg(2));
+  const place = { lat_deg: -89.45, lon_deg: -137.31, h_m: 1800 };
+
+  it('an Engine job rejects when its year cannot be fetched, and the same job succeeds on retry', async () => {
+    const { s, calls } = store(true);
+    const e = new Engine(s.table, s);
+    const job = { place, mask, start_s: jan1(2029) + 86400, end_s: jan1(2029) + 3 * 86400, rules: L.PRESETS.crew };
+    await expect(e.window(job)).rejects.toThrow('network down');
+    expect(s.has(job.start_s, job.end_s)).toBe(false);
+    const r = await e.window(job);
+    expect(calls).toEqual([2029, 2029]);
+    expect(r.metrics).toStrictEqual(runWindow(fullTable(), job).metrics);
+  });
+
+  it('jobRange handles a day list too long to spread into Math.min (loop, not spread)', () => {
+    const n = 300_000;
+    const day_starts_s = Array.from({ length: n }, (_, k) => (k * 7919) % n);
+    const cal = { sites: [{ place, mask }], day_starts_s, stay_s: 3600, rules: L.PRESETS.crew };
+    expect(jobRange({ type: 'calendar', job: cal })).toEqual([0, n - 1 + 3600]);
+  });
+});

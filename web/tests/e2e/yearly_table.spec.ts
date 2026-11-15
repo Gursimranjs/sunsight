@@ -21,8 +21,25 @@ async function recordTraffic(page: Page) {
   return { log, order };
 }
 
+/**
+ * Records, in the page, when the miss headline first shows its answer (performance.now(), ms), so request
+ * start times from Resource Timing can be compared with it without a race against the test runner.
+ */
+async function markMissHeadline(page: Page) {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __missShownAt?: number };
+    const check = () => {
+      if (w.__missShownAt !== undefined) return;
+      const h = document.querySelector('[data-testid="miss-headline"]');
+      if (h && h.textContent && h.textContent.includes('Land within')) w.__missShownAt = performance.now();
+    };
+    new MutationObserver(check).observe(document, { subtree: true, childList: true, characterData: true });
+  });
+}
+
 test('first load of the default link fetches the 2029 year file and not the 2027-2030 table', async ({ page }) => {
   const errors = watchErrors(page);
+  await markMissHeadline(page);
   const { log, order } = await recordTraffic(page);
   await openApp(page);
   await expect(page).toHaveURL(/start=2029-07-24/);
@@ -34,14 +51,25 @@ test('first load of the default link fetches the 2029 year file and not the 2027
   const table = firstScreen.filter((r) => /\/data\/ephemeris\/[^/]+\.bin$/.test(r.url)).reduce((a, r) => a + r.bytes, 0);
   console.log(`first-load bytes (default link, first screen, no cache): ${bytes} total, of which ${table} ephemeris`);
   console.log(firstScreen.slice().sort((a, b) => b.bytes - a.bytes).slice(0, 8).map((r) => `  ${r.bytes}  ${r.url.replace(/^.*\/sunsight\//, '')}`).join('\n'));
-  const years = order.filter((u) => YEAR_FILE.test(u)).map((u) => YEAR_FILE.exec(u)![1]);
-  expect(years[0]).toBe('2029');
+  expect(order.filter((u) => YEAR_FILE.test(u)).map((u) => YEAR_FILE.exec(u)![1])[0]).toBe('2029');
   // Background prefetch fills the other years once the page is idle.
   await expect.poll(() => new Set(order.filter((u) => YEAR_FILE.test(u))).size, { timeout: 30_000 }).toBe(4);
+  const years = order.filter((u) => YEAR_FILE.test(u)).map((u) => YEAR_FILE.exec(u)![1]);
+  // The prefetch never competes with the first screen: no other year file starts before the miss headline.
+  const timing = await page.evaluate(() => ({
+    shown_ms: (window as unknown as { __missShownAt?: number }).__missShownAt ?? null,
+    starts: performance.getEntriesByType('resource').filter((r) => /\/data\/ephemeris\/\d{4}\.bin$/.test(r.name))
+      .map((r) => ({ name: r.name, start_ms: r.startTime })),
+  }));
+  expect(timing.shown_ms).not.toBeNull();
+  const others = timing.starts.filter((r) => !r.name.endsWith('/2029.bin'));
+  expect(others.length).toBe(3);
+  for (const r of others) expect(r.start_ms, r.name).toBeGreaterThan(timing.shown_ms!);
   await page.waitForLoadState('networkidle');
   expect(order.filter((u) => FULL_TABLE.test(u))).toEqual([]);
-  // Each year file is fetched once.
-  expect(years.slice(0, 4).sort()).toEqual(['2027', '2028', '2029', '2030']);
+  // Each year file is fetched once: exactly four year-file requests in all.
+  expect(order.filter((u) => YEAR_FILE.test(u)).length).toBe(4);
+  expect(years.slice().sort()).toEqual(['2027', '2028', '2029', '2030']);
   expect(errors).toEqual([]);
 });
 
@@ -82,4 +110,93 @@ test('switching to a date in another year updates the report card', async ({ pag
   await tab(page, 'Compare & calendar');
   await expect(page.getByTestId('calendar')).toBeVisible({ timeout: 90_000 });
   expect(errors).toEqual([]);
+});
+
+// Failure paths: a year file that cannot be fetched shows an error with a Retry button (never an endless
+// "Loading Sun and Earth positions…"), and Retry recovers once the file is reachable again.
+test.describe('a year file that fails to load', () => {
+  const fail500 = (page: Page, year: number) => page.route(`**/data/ephemeris/${year}.bin`, (r) => r.fulfill({ status: 500, body: 'down' }));
+
+  test('default link: the report card and the miss test show the error, and Retry recovers', async ({ page }) => {
+    await fail500(page, 2029);
+    await page.goto('./');
+    const missErr = page.getByTestId('miss-headline').getByTestId('table-error');
+    await expect(missErr).toContainText('Could not load the Sun and Earth positions', { timeout: 60_000 });
+    await expect(page.getByTestId('table-status').getByTestId('table-error')).toContainText(/2029\.bin|HTTP|500/);
+    await expect(page.getByText('Loading Sun and Earth positions…')).toHaveCount(0);
+    // Let every job that was waiting on the failed year settle first, so none of them refetches it after the unroute.
+    await page.waitForLoadState('networkidle');
+    await page.unroute('**/data/ephemeris/2029.bin');
+    await page.getByTestId('table-status').getByTestId('table-retry').click();
+    await expect(page.getByTestId('verdict-word')).toHaveText(/GO|MARGINAL/, { timeout: 60_000 });
+    await expect(page.getByTestId('miss-headline')).toContainText('Land within 250 m', { timeout: 90_000 });
+    await expect(page.getByTestId('table-error')).toHaveCount(0);
+  });
+
+  test('miss test: after a failed year, choosing another date tries again without Retry', async ({ page }) => {
+    await fail500(page, 2029);
+    await page.goto('./');
+    await expect(page.getByTestId('miss-headline').getByTestId('table-error')).toBeVisible({ timeout: 60_000 });
+    // Let every job that was waiting on the failed year settle first, so none of them refetches it after the unroute.
+    await page.waitForLoadState('networkidle');
+    await page.unroute('**/data/ephemeris/2029.bin');
+    const start = page.getByLabel('Start (UTC)');
+    await start.fill('2029-07-25T00:00');
+    await start.dispatchEvent('change');
+    await expect(page.getByTestId('miss-headline')).toContainText('Land within 250 m', { timeout: 90_000 });
+  });
+
+  test('compare and calendar show the error, and Retry recovers', async ({ page }) => {
+    await fail500(page, 2030);
+    await page.goto('./?site=shackleton_ridge_rim&start=2030-03-01T00:00Z&preset=robotic&view=compare');
+    const card = page.getByLabel('Compare sites');
+    await expect(card.getByTestId('table-error')).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole('region', { name: 'Calendar', exact: true }).getByTestId('table-error')).toBeVisible();
+    // Let every job that was waiting on the failed year settle first, so none of them refetches it after the unroute.
+    await page.waitForLoadState('networkidle');
+    await page.unroute('**/data/ephemeris/2030.bin');
+    await card.getByTestId('table-retry').click();
+    await expect(page.getByTestId('compare-row').first()).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId('calendar')).toBeVisible({ timeout: 90_000 });
+    await expect(page.getByTestId('table-error')).toHaveCount(0);
+  });
+
+  test('ranking shows the error, and Retry recovers', async ({ page }) => {
+    await fail500(page, 2030);
+    await page.goto('./?site=shackleton_ridge_rim&start=2030-03-01T00:00Z&preset=robotic&view=rank');
+    const rank = page.getByTestId('rank');
+    await expect(rank.getByTestId('table-error')).toBeVisible({ timeout: 60_000 });
+    // Let every job that was waiting on the failed year settle first, so none of them refetches it after the unroute.
+    await page.waitForLoadState('networkidle');
+    await page.unroute('**/data/ephemeris/2030.bin');
+    await rank.getByTestId('table-retry').click();
+    await expect(page.getByTestId('rank-summary')).toBeVisible({ timeout: 90_000 });
+    await expect(rank.getByText('The ranking failed')).toHaveCount(0);
+  });
+
+  test('3D view shows the App\'s error instead of loading forever, and Retry recovers', async ({ page }) => {
+    await fail500(page, 2027);
+    await page.goto('./?site=shackleton_ridge_rim&start=2027-10-13T00:00Z&view=3d');
+    await expect(page.getByTestId('hero3d-table-error')).toContainText('Could not load the Sun and Earth positions', { timeout: 60_000 });
+    // Let every job that was waiting on the failed year settle first, so none of them refetches it after the unroute.
+    await page.waitForLoadState('networkidle');
+    await page.unroute('**/data/ephemeris/2027.bin');
+    await page.getByTestId('hero3d-table-error').getByTestId('table-retry').click();
+    await expect(page.getByTestId('hero3d-table-error')).toHaveCount(0, { timeout: 60_000 });
+    await expect(page.getByTestId('verdict-word')).toHaveText(/GO|MARGINAL|NO-GO/, { timeout: 60_000 });
+  });
+
+  test('Athena story contrast shows the error, and Retry recovers', async ({ page }) => {
+    await fail500(page, 2030);
+    await page.goto('./?site=shackleton_ridge_rim&start=2030-03-01T00:00Z&view=story');
+    await page.getByRole('button', { name: /^Step 5:/ }).click();
+    const step = page.getByTestId('story-step-5');
+    // The step holds the contrast table and, below it, a miss map: both say the year failed.
+    await expect(step.getByTestId('table-error')).toHaveCount(2, { timeout: 60_000 });
+    // Let every job that was waiting on the failed year settle first, so none of them refetches it after the unroute.
+    await page.waitForLoadState('networkidle');
+    await page.unroute('**/data/ephemeris/2030.bin');
+    await step.getByTestId('table-retry').first().click();
+    await expect(page.getByTestId('story-contrast')).toBeVisible({ timeout: 90_000 });
+  });
 });

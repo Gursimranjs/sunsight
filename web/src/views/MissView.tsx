@@ -1,6 +1,6 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // Miss test: if the lander comes down anywhere near the target, how much of that ground still works?
-import { LOADING_TABLE_TEXT, useTableRange } from './useTableRange';
+import { LOADING_TABLE_TEXT, TableStatus, useTableRange } from './useTableRange';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { MaskSet } from '../data/sites';
 import type { Site } from '../data/types';
@@ -26,6 +26,11 @@ interface Props {
    * (an embedded map whose site is not the scenario's site) the button is not shown.
    */
   update?: (patch: Partial<Scenario>) => void;
+  /**
+   * Called once the miss test has nothing more to load for the first screen: its answer is shown, it failed,
+   * or the site has no grid. The App starts the background fetch of the other table years only after this.
+   */
+  onSettled?: () => void;
 }
 
 /**
@@ -47,11 +52,14 @@ function Cross({ x, y, r, col }: { x: number; y: number; r: number; col: string 
   );
 }
 
-export function MissView({ data, site, scn, onSite, update }: Props) {
+export function MissView({ data, site, scn, onSite, update, onSettled }: Props) {
   const [set, setSet] = useState<MaskSet | null>(null);
   const [answer, setAnswer] = useState<{ key: string; a: MissAnswer } | null>(null);
   const [progress, setProgress] = useState(0);
+  /** The grid file could not be loaded (per target). */
   const [err, setErr] = useState<string | null>(null);
+  /** The miss job failed for `key` only: another date, stay or rules (or the table year arriving) tries again. */
+  const [jobErr, setJobErr] = useState<{ key: string; text: string } | null>(null);
   const [pin, setPin] = useState<number | null>(null);
   const [radius, setRadius] = useState(250);
   const [ref, W] = useWidth<HTMLDivElement>();
@@ -87,17 +95,21 @@ export function MissView({ data, site, scn, onSite, update }: Props) {
   liveKey.current = bestKey;
   startNow.current = scn.start_s;
 
-  const tableReady = useTableRange(data, scn.start_s, scn.start_s + scn.stay_s);
-  const key = set ? JSON.stringify([set.meta.id, scn.start_s, scn.stay_s, scn.rules]) : '';
+  const table = useTableRange(data, scn.start_s, scn.start_s + scn.stay_s);
+  const key = set ? JSON.stringify([set.meta.id, scn.start_s, scn.stay_s, scn.rules, table.epoch]) : '';
   useEffect(() => {
     if (!set) return;
     let live = true;
     setProgress(0);
     data.engine.miss(missJob(set, scn.start_s, scn.start_s + scn.stay_s, scn.rules), (f) => live && setProgress(f))
       .then((a) => live && setAnswer({ key, a }))
-      .catch((e) => live && setErr(String(e)));
+      .catch((e) => live && setJobErr({ key, text: String(e) }));
     return () => { live = false; };
   }, [key]);
+  const jobError = jobErr && jobErr.key === key ? jobErr.text : null;
+  const answered = !!(answer && answer.key === key);
+  const settled = !targetId || !!err || answered || !!jobError || table.state === 'error';
+  useEffect(() => { if (settled) onSettled?.(); }, [settled]);
 
   if (!targetId) {
     const withGrid = data.sites.filter((s) => s.miss_target_id);
@@ -239,7 +251,10 @@ export function MissView({ data, site, scn, onSite, update }: Props) {
       <div class={`verdict ${a ? (tolerant ? 'go' : 'no-go') : ''}`} style={{ display: 'block', borderLeftWidth: 8, borderLeftStyle: 'solid', paddingLeft: 10, marginBottom: 10 }}>
         <h3 style={{ margin: 0 }} data-testid="miss-headline">
           {a ? <VerdictBadge v={tolerant ? 'go' : 'no-go'} small label={tolerant ? 'MISS-TOLERANT' : 'NOT MISS-TOLERANT'} /> : null}{' '}
-          {a ? <>Land within {radius} m and {formatPct(share)} of the ground still meets the rules</> : tableReady ? <>Testing {pts.length} landing points… {formatPct(progress)}</> : <>{LOADING_TABLE_TEXT}</>}
+          {a ? <>Land within {radius} m and {formatPct(share)} of the ground still meets the rules</>
+            : table.state !== 'ok' ? <TableStatus tr={table} />
+            : jobError ? <span role="alert">Could not run the miss test: {jobError}</span>
+            : <>Testing {pts.length} landing points… {formatPct(progress)}</>}
         </h3>
         <p style={{ margin: '4px 0 0' }}>
           {a ? (tolerant ? `That is at least ${formatPct(MISS_TOLERANT_SHARE)}, so this date is miss-tolerant.` : `Below the ${formatPct(MISS_TOLERANT_SHARE)} needed for a miss-tolerant date.`) : ' '}{' '}

@@ -2,7 +2,7 @@
 // Guided Athena story: five short steps, built for a 375 px phone. Facts come only from the cited
 // sources (LROC images 1401 and 1408, SpacePolicyOnline); distances are computed here from the
 // cited coordinates.
-import { LOADING_TABLE_TEXT, useTableRange } from './useTableRange';
+import { TableStatus, useTableRange } from './useTableRange';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Site } from '../data/types';
 import { formatUtc, fromInputUtc, toInputUtc } from '../format';
@@ -90,8 +90,9 @@ function MissContrast({ data, scn, update }: Props) {
     .filter((s): s is Site => !!s && !!s.miss_target_id && grids.has(s.miss_target_id));
   const [rows, setRows] = useState<{ key: string; list: { site: Site; r250: ReturnType<typeof litRange>; r500: ReturnType<typeof litRange> }[] } | null>(null);
   const [show, setShow] = useState(sites[0]?.id ?? '');
-  const key = JSON.stringify([sites.map((s) => s.id), scn.start_s, scn.stay_s, scn.rules]);
-  const tableReady = useTableRange(data, scn.start_s, scn.start_s + scn.stay_s);
+  const table = useTableRange(data, scn.start_s, scn.start_s + scn.stay_s);
+  const key = JSON.stringify([sites.map((s) => s.id), scn.start_s, scn.stay_s, scn.rules, table.epoch]);
+  const [error, setError] = useState<{ key: string; text: string } | null>(null);
   useEffect(() => {
     let live = true;
     (async () => {
@@ -104,16 +105,20 @@ function MissContrast({ data, scn, update }: Props) {
         if (!live) return;
       }
       if (live) setRows({ key, list });
-    })().catch(() => {});
+    })().catch((e) => { if (live) setError({ key, text: String(e) }); });
     return () => { live = false; };
   }, [key]);
   const list = rows && rows.key === key ? rows.list : null;
+  const err = error && error.key === key ? error.text : null;
   const shown = sites.find((s) => s.id === show) ?? sites[0];
   const spread = (r: ReturnType<typeof litRange>) => (r ? 100 * (r.max - r.min) : NaN);
   return (
     <>
       <h3 class="chart-title">Share of the stay in sunlight, at the target and anywhere within the miss</h3>
-      {!list && <p>{tableReady ? 'Testing every landing point around both targets…' : LOADING_TABLE_TEXT}</p>}
+      {!list && table.state !== 'ok' && <p><TableStatus tr={table} /></p>}
+      {!list && table.state === 'ok' && (err
+        ? <p role="alert" data-testid="story-contrast-error">Could not test the landing points: {err}</p>
+        : <p>Testing every landing point around both targets…</p>)}
       {list && (
         <div class="scroll-x" tabIndex={0} role="region" aria-label="Sunlight at both targets (scrolls sideways)">
           <table data-testid="story-contrast">

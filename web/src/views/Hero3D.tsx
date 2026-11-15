@@ -12,6 +12,7 @@ import { formatDeg, formatPct, formatUtc } from '../format';
 import type { AppData } from '../state/data';
 import type { Scenario } from '../state/scenario';
 import type { Scene3DProps } from './Scene3D';
+import { LOADING_TABLE_TEXT, TableStatus, type TableRange } from './useTableRange';
 import {
   FILL_LIGHT_LABEL, firstLitJump_s, needsFillLight, nextPlayOffset_s, PLAY_TICK_MS, playStep_s, TIME3D_STEP_S,
 } from './hero3dTime';
@@ -28,6 +29,8 @@ interface Props {
   /** The engine's series for the current stay (fresh answers only), or null while it is computing. */
   series?: Series | null;
   update: (patch: Partial<Scenario>) => void;
+  /** The App's fetch of the stay's table year(s): its error (with Retry) is shown here instead of the loading text. */
+  table?: TableRange;
 }
 
 export function hasWebGL(): boolean {
@@ -50,7 +53,7 @@ async function loadTerrain(m: Manifest, id: string): Promise<{ meta: TerrainMeta
 
 let sceneModule: Promise<{ default: ComponentType<Scene3DProps> }> | null = null;
 
-export function Hero3D({ data, site, place, scn, now, series = null, update }: Props) {
+export function Hero3D({ data, site, place, scn, now, series = null, update, table }: Props) {
   const terrainId = site?.terrain_id ?? null;
   const [terrain, setTerrain] = useState<{ id: string; meta: TerrainMeta; heights: Int16Array } | null>(null);
   const [Scene, setScene] = useState<ComponentType<Scene3DProps> | null>(null);
@@ -135,8 +138,16 @@ export function Hero3D({ data, site, place, scn, now, series = null, update }: P
 
   const meta = terrain.meta;
   const t_s = scn.start_s + scn.t_off_s;
-  // The App fetches the stay's year(s) and re-renders when they arrive.
-  if (!data.hasRange(t_s, t_s)) return <section class="card"><p role="status">Loading Sun and Earth positions…</p></section>;
+  // The App fetches the stay's year(s) and re-renders when they arrive (or shows why they did not).
+  if (!data.hasRange(t_s, t_s)) {
+    return (
+      <section class="card">
+        {table?.state === 'error'
+          ? <p data-testid="hero3d-table-error"><TableStatus tr={table} /></p>
+          : <p role="status">{LOADING_TABLE_TEXT}</p>}
+      </section>
+    );
+  }
   const sky = skyAt(data.table, t_s, meta.center.lat_deg, meta.center.lon_deg, 0);
   const halfExtent_m = ((meta.size - 1) / 2) * meta.spacing_m;
   let landing: [number, number] | null = null;

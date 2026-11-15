@@ -22,7 +22,10 @@ export function jobRange(job: Job): [number, number] | null {
   if (job.type === 'window' || job.type === 'miss') return [job.job.start_s, job.job.end_s];
   const d = job.job.day_starts_s;
   if (!d.length) return null;
-  return [Math.min(...d), Math.max(...d) + job.job.stay_s];
+  // A loop, not Math.min(...d): a long day list would overflow the argument stack.
+  let lo = d[0], hi = d[0];
+  for (const t of d) { if (t < lo) lo = t; if (t > hi) hi = t; }
+  return [lo, hi + job.job.stay_s];
 }
 
 type Timed = { result: unknown; ms: number };

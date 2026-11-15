@@ -24,6 +24,10 @@ import { Hero3D } from './views/Hero3D';
 import { Story } from './views/Story';
 import { AboutData, SiteSource, TerrainCredit } from './views/Credits';
 import { RulesContext } from './views/Term';
+import { TableStatus, useTableRange } from './views/useTableRange';
+
+/** Wait before the background prefetch of the other table years tries again after a failure. */
+const PREFETCH_RETRY_MS = 20_000;
 
 export function App() {
   const [data, setData] = useState<AppData | null>(null);
@@ -38,6 +42,10 @@ export function App() {
   /** Bumped whenever a year of the Sun and Earth table arrives, so main-thread look-ups re-run. */
   const [tableTick, setTableTick] = useState(0);
   const prefetched = useRef(false);
+  /** Bumped by a timer after a failed background prefetch, so it tries again. */
+  const [prefetchTry, setPrefetchTry] = useState(0);
+  /** The miss test on the first screen has its answer (or has nothing to compute); see the prefetch below. */
+  const [missSettled, setMissSettled] = useState(false);
 
   useEffect(() => {
     loadAppData(() => setFixtureTick((x) => x + 1))
@@ -78,8 +86,13 @@ export function App() {
   }, [data, req]);
   const place = currentPlace(tagged, req);
 
+  // Fetch the year(s) of the Sun and Earth table this stay reads (the engine jobs wait for the same fetch).
+  // On failure the report card shows the error with a Retry button; table.epoch re-runs the window job after it.
+  const stayStart_s = scn?.start_s ?? 0, stayEnd_s = scn ? scn.start_s + scn.stay_s : 0;
+  const table = useTableRange(data, stayStart_s, stayEnd_s);
+
   // Score the window in the worker whenever the place, its mask, the dates or the rules change.
-  const key = place && scn ? windowKey(req, place, scn) : '';
+  const key = place && scn ? `${windowKey(req, place, scn)}#${table.epoch}` : '';
   useEffect(() => {
     reqKey.current = key;
     setJobError(null);
@@ -90,22 +103,25 @@ export function App() {
       .catch((e) => { if (reqKey.current === key) setJobError(String(e)); });
   }, [key]);
 
-  // Fetch the year(s) of the Sun and Earth table this stay reads (the engine jobs wait for the same fetch).
-  const stayStart_s = scn?.start_s ?? 0, stayEnd_s = scn ? scn.start_s + scn.stay_s : 0;
+  // Once the first answer is on screen, and the miss test's answer too when the miss test is the open view
+  // (the default link), fetch the other years while the browser is idle, so later date changes, calendars
+  // and searches do not wait, and the first screen never shares the network with them. After a failure it
+  // tries again on the next answer or after PREFETCH_RETRY_MS.
+  const firstScreenDone = !!result && (scn?.view !== 'miss' || missSettled);
   useEffect(() => {
-    if (!data || !scn) return;
-    data.ensureRange(stayStart_s, stayEnd_s).catch(() => { /* the window job reports the same failure */ });
-  }, [data, stayStart_s, stayEnd_s]);
-
-  // Once the first answer is on screen, fetch the other years while the browser is idle, so later
-  // date changes, calendars and searches do not wait.
-  useEffect(() => {
-    if (!data || !result || prefetched.current) return;
+    if (!data || !firstScreenDone || prefetched.current) return;
     prefetched.current = true;
-    const go = () => { data.store.ensureAll().catch(() => { prefetched.current = false; }); };
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const go = () => {
+      data.store.ensureAll().catch(() => {
+        prefetched.current = false;
+        timer = setTimeout(() => setPrefetchTry((x) => x + 1), PREFETCH_RETRY_MS);
+      });
+    };
     const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
     if (w.requestIdleCallback) w.requestIdleCallback(go, { timeout: 5000 }); else setTimeout(go, 1000);
-  }, [data, result]);
+    return () => { if (timer) clearTimeout(timer); };
+  }, [data, result, firstScreenDone, prefetchTry]);
 
   const t_s = scn ? scn.start_s + scn.t_off_s : 0;
   const now = useMemo(() => {
@@ -172,7 +188,9 @@ export function App() {
           <ScenarioControls scn={scn} epochMs={epochMs} rangeS={tableRange(data.eph.meta)} onChange={update} />
         </section>
 
-        {jobError && <p role="alert">The engine failed: {jobError}</p>}
+        {table.state === 'error'
+          ? <p data-testid="table-status"><TableStatus tr={table} /></p>
+          : jobError && <p role="alert">The engine failed: {jobError}</p>}
 
         <TimeBar scn={scn} epochMs={epochMs} onTime={(t_off_s) => update({ t_off_s })} />
 
@@ -212,7 +230,7 @@ export function App() {
         )}
         {scn.view === 'miss' && (
           <div role="tabpanel" aria-label="Miss test">
-            <MissView data={data} site={site} scn={scn} onSite={(id) => update({ site_id: id })} update={update} />
+            <MissView data={data} site={site} scn={scn} onSite={(id) => update({ site_id: id })} update={update} onSettled={() => setMissSettled(true)} />
             <TerrainCredit />
           </div>
         )}
@@ -223,7 +241,7 @@ export function App() {
         )}
         {scn.view === '3d' && (
           <div role="tabpanel" aria-label="3D view">
-            <Hero3D data={data} site={site} place={place} scn={scn} now={now} series={answer?.series ?? null} update={update} />
+            <Hero3D data={data} site={site} place={place} scn={scn} now={now} series={answer?.series ?? null} update={update} table={table} />
             <TerrainCredit />
           </div>
         )}
