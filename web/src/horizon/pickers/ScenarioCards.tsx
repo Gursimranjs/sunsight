@@ -95,8 +95,8 @@ export function ScenarioCards({ scn, update }: Props) {
             <button type="button" onClick={() => { const x = makeRules(PRESETS[scn.preset]); update({ rules: x, stay_s: x.stay_s }); }}>Reset to preset</button>
           </div>
         </div>
-        <p style={{ fontSize: '0.85rem' }}>
-          Starting defaults from the build plan; only continuous sunlight for a 6.5-day crew stay
+        <p style={{ fontSize: '0.85rem' }} data-testid="scenario-rules-source">
+          These limits are our own starting assumptions. Only continuous sunlight for a 6.5-day crew stay
           comes from NASA. Masks exist for 2 m and 10 m observers; other heights use the nearest.
         </p>
       </details>
