@@ -7,7 +7,7 @@ import './styles.css';
 
 type Ui = 'classic' | 'horizon';
 /** The interface shown when the link has no ui param. The note-009 flip changes this one line to 'horizon'. */
-export const DEFAULT_UI: Ui = 'classic';
+export const DEFAULT_UI: Ui = 'horizon';
 const UI_PARAM = 'ui';
 
 function uiOf(search: string): Ui {

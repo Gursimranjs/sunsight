@@ -170,15 +170,24 @@ test('a site without a miss grid has no game button', async ({ page }) => {
   await expect(page.getByTestId('hz-game-button')).toHaveCount(0);
 });
 
-test('?ui=classic and no ui param open the classic interface; ?ui=horizon opens the horizon one', async ({ page }) => {
-  for (const q of ['', 'ui=classic&']) {
+test('?ui=classic opens the classic interface and keeps the flag; no ui param and ?ui=horizon open the horizon one', async ({ page }) => {
+  await page.goto(`./?ui=classic&${BASE}`);
+  await expect(page.getByTestId('verdict-word')).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId('hz-app')).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: 'Report card' })).toBeVisible();
+  // The classic interface rewrites the address bar; the explicit flag survives, so a reload stays classic.
+  await page.getByRole('tab', { name: 'Miss test' }).click();
+  await expect(page).toHaveURL(/view=miss/);
+  await expect(page).toHaveURL(/ui=classic/);
+  await page.reload();
+  await expect(page.getByTestId('verdict-word')).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId('hz-app')).toHaveCount(0);
+  for (const q of ['', 'ui=horizon&']) {
     await page.goto(`./?${q}${BASE}`);
+    await expect(page.getByTestId('hz-app')).toBeVisible();
     await expect(page.getByTestId('verdict-word')).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByTestId('hz-app')).toHaveCount(0);
-    await expect(page.getByRole('tab', { name: 'Report card' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Report card' })).toHaveCount(0);
   }
-  await openHz(page, BASE);
-  await expect(page.getByTestId('hz-app')).toBeVisible();
 });
 
 test('changing the date shows the stale state ("Updating", data-stale=true) until the new answer is in', async ({ page }) => {
