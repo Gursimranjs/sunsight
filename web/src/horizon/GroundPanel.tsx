@@ -60,7 +60,6 @@ export function GroundPanel(p: Props) {
         ) : <h2 class="hz-word">Computing…</h2>}
       </div>
       {v && p.missLine}
-      {v && p.gameEntry}
       {p.status}
       <div class="hz-readouts">
         <Readout k="Sun now">
@@ -71,6 +70,8 @@ export function GroundPanel(p: Props) {
         <Readout k="Earth contact" id="hz-contact">{cds ? next(cds.contact, 'Contact lost', 'Contact back', p.epochMs, ['contact-loss', 'contact-back']) : '—'}</Readout>
       </div>
       <PlayBar t_off_s={p.t_off_s} stay_s={p.stay_s} startMs={p.epochMs + p.start_s * 1000} series={p.series} lit_threshold={p.lit_threshold} onTime={p.onTime} />
+      {/* Beside "Play the stay" (note 010 #5): the game entry, for sites with a miss-test grid. */}
+      {v && p.gameEntry}
       <details class="hz-sources">
         <summary>Sources and method</summary>
         {p.sources}
