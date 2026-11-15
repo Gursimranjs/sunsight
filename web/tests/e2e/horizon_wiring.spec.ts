@@ -89,7 +89,7 @@ test('editing a rule says "(edited rules)" in the mission line and shows the hon
   const scn = page.getByTestId('hz-scenario-button');
   await expect(scn).toHaveText('crew sortie, 6.5 days');
   await scn.click();
-  await expect(page.getByTestId('rules-source')).toHaveText(/^Starting defaults from the build plan; only continuous sunlight for a 6\.5-day crew stay comes from NASA\./);
+  await expect(page.getByTestId('rules-source')).toHaveText(/^These limits are our own starting assumptions\. Only continuous sunlight for a 6\.5-day crew stay comes from NASA\./);
   await page.getByTestId('rules-disclosure').locator('summary').click();
   const gap = page.getByTestId('hz-picker').getByLabel('Longest contact gap allowed (h)');
   await gap.fill('7');

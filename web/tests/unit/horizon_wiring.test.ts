@@ -59,9 +59,9 @@ describe('scenario phrase', () => {
     // A longer stay is not a rule: the phrase already says the days.
     expect(rulesEdited({ ...s, stay_s: 10 * 86400 }, epochMs)).toBe(false);
   });
-  it("shows the classic rules editor's honest label word for word", () => {
-    const classic = readFileSync(new URL('../../src/views/RulesEditor.tsx', import.meta.url), 'utf8');
-    expect(classic).toContain(RULES_SOURCE_TEXT);
+  it('says where the limits come from in plain words (note 011 item 4)', () => {
+    expect(RULES_SOURCE_TEXT).toBe('These limits are our own starting assumptions. Only continuous sunlight for a 6.5-day crew stay comes from NASA.');
+    expect(RULES_SOURCE_TEXT).not.toMatch(/build plan/);
   });
 });
 

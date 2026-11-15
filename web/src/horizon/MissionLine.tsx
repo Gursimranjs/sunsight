@@ -49,8 +49,8 @@ export function scenarioPhrase(p: PresetId, stay_s: number, edited = false): str
   return `${PRESET_LABELS[p].toLowerCase()}, ${Number((stay_s / 86400).toFixed(2))} days${edited ? ' (edited rules)' : ''}`;
 }
 
-/** The build plan's honest label for the rules (the classic rules editor's sentence). */
-export const RULES_SOURCE_TEXT = 'Starting defaults from the build plan; only continuous sunlight for a 6.5-day crew stay comes from NASA.';
+/** Note 011 item 4: plain words for the source of the limits (a visitor has no build plan). */
+export const RULES_SOURCE_TEXT = 'These limits are our own starting assumptions. Only continuous sunlight for a 6.5-day crew stay comes from NASA.';
 
 export type PickerKind = 'site' | 'date' | 'scenario';
 
