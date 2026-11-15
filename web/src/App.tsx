@@ -180,7 +180,7 @@ export function App() {
         )}
         {scn.view === 'miss' && (
           <div role="tabpanel" aria-label="Miss test">
-            <MissView data={data} site={site} scn={scn} onSite={(id) => update({ site_id: id })} />
+            <MissView data={data} site={site} scn={scn} onSite={(id) => update({ site_id: id })} update={update} />
             <TerrainCredit />
           </div>
         )}
