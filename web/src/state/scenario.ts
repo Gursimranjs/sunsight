@@ -39,6 +39,16 @@ export function defaultScenario(site_id: string | null): Scenario {
   };
 }
 
+/**
+ * The link the site opens on when the address has no query (review note 003 B). Found from computed data
+ * by pipeline/sunsight/default_scenario.py, recorded in docs/submission/default_scenario.json: the target
+ * passes ("go") while most ground within 250 m does not, so the miss test teaches something on first visit.
+ * The robotic preset has no such case at any of the three miss-test targets in 2027-2030; crew does.
+ * A unit test holds this equal to the recorded choice.
+ */
+export const DEFAULT_QUERY = 'site=shackleton_ridge_rim&start=2029-07-24T00:00Z&preset=crew&view=miss';
+export const DEFAULT_SITE_ID = 'shackleton_ridge_rim';
+
 /** Table range in seconds after row 0 within which interpolation stays inside the table. */
 export function tableRange(meta: Pick<EphemerisMeta, 'row_count' | 'step_s'>): { min_s: number; max_s: number } {
   return { min_s: 0, max_s: (meta.row_count - 2) * meta.step_s };

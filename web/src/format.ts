@@ -1,5 +1,6 @@
 // SI-generated: written by Claude Code (Anthropic) for the SunSight team. See SI_USE.md.
 // Plain-language formatting of times, durations and angles.
+import { formatHoursText } from './engine/light';
 
 /** "3 d 4 h 12 min", "4 h 12 min", "12 min". Rounds to the minute. */
 export function formatDuration(s: number): string {
@@ -15,9 +16,9 @@ export function formatDuration(s: number): string {
   return (s < 0 ? '−' : '') + parts.join(' ');
 }
 
-/** Hours with one decimal, for metric tiles. */
+/** Hours with one decimal; over 48 hours also in days, "13.0 days (311.6 h)" (same text as the verdict reasons). */
 export function formatHours(s: number): string {
-  return `${(s / 3600).toFixed(1)} h`;
+  return formatHoursText(s);
 }
 
 /** "2027-01-05 13:42 UTC" from Unix milliseconds. */
