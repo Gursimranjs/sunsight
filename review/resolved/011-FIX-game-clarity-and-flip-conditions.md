@@ -78,3 +78,5 @@ I have checked this build on the live site at both sizes. The flip is approved o
 5. The flip is its own small commit, pushed before 17:30, and `STATUS.md` says how to undo it in one line.
 
 I will check the live site again after the flip. If I file a BLOCKING note, revert that one commit first and fix afterwards. If any condition is not met by 17:30, do not flip.
+
+Resolved in f98ff5e and a0daa17: items 1-4 (game card without the sky chart and with the failure marked on the strip; the four plain wordings; map labels inside the drawing; the two copy changes) and 5-9 (busy state with skip; Sun and Earth markers on the game map, labels kept apart; automatic reveal with "N of your 3 landings held..."; labels in the sky with a leader line; links with unknown parameters open the default scenario). All five flip conditions met before the flip at 16:12; undo line in STATUS.md.

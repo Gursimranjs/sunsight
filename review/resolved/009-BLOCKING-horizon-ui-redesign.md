@@ -129,3 +129,5 @@ engine results.
   most 80 kB; first-load data unchanged.
 - Every number on screen equals the classic interface for the same link (one end-to-end test
   compares the two).
+
+Resolved by a0daa17 (flip) and the commits before it (M1 5a5ddb3, M2 023c51a, M3 1a487b2, fixes 96a5de3 and f98ff5e): the horizon interface is the default; ?ui=classic keeps the classic one; fallback tag pre-polish (c17ab94). Done-when list: first screen fits at 1280x720 and 375x812 (e2e); mission-line pickers; three journeys, Play, game-vs-Miss-map parity, reduced motion, axe and keyboard reach pass (150 e2e); first-load JS horizon 39.6 kB and classic 56.9 kB (budget 60 kB); fonts 67.4 kB (budget 80 kB); first-load data unchanged; classic-versus-horizon number parity (e2e). Left out: the horizon view drops the classic panorama close-up (still in classic). Undo the flip: git revert --no-edit a0daa17 && git push origin main.

@@ -69,3 +69,5 @@ Do the work in this order: finish M2 (the game) first, then items 1 to 5 below. 
 ## Before the default is flipped
 
 When M4 is green, write `M4 ready for reviewer check` as the newest line of the log in `STATUS.md` and push. The reviewer checks the live site at about 17:15 and answers with a note in this folder: either `flip approved` or a list of blockers. If there is no reviewer note by 17:30, do not flip; the horizon interface stays at `?ui=horizon` and the classic one stays the default.
+
+Resolved in M2/M3 and the note 011 round (f98ff5e): 1 fonts applied (e2e checks document.fonts and the call font); 2 one horizon per page, view area on the ground surface (the classic close-up is also left out, see note 009 resolution); 3 phone mission line 64 px, one line at 1280; 4 moved-date note, polite and dismissible, clears when the date changes; 5 two game entries; 6 labels kept apart in the sky with a leader line; 7 no browser date-time control in the horizon interface (date strip; times printed in 24-hour UTC); 8 Sun/Earth below-horizon markers; 9 grouped site list with custom coordinates.
